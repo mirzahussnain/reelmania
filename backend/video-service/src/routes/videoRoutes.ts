@@ -1,5 +1,5 @@
-import {addNewComment, createVideo, deleteVideo, getUserVideos, getVideoById, getVideos, updateLikes} from "@/controllers/videoController";
-import { authMiddleware } from "@/middlewares/authMiddleware";
+import {addNewComment, createVideo, deleteVideo, getCommentsByVideoId, getLikesByVideoId, getUserVideos, getVideoById, getVideos, updateLikes} from "../controllers/videoController";
+import { authMiddleware } from "../middelwares/authMiddleware";
 import fs from "fs";
 // import { sasGenerator } from "@/middlewares/sasGenerator";
 import express, { Request, Response } from "express";
@@ -31,6 +31,8 @@ videoRouter.get("/",getVideos)
 
 videoRouter.get("/user/:userId",getUserVideos) // get videos of a user
 videoRouter.get("/:videoId",getVideoById)
+videoRouter.get("/:videoId/likes",getLikesByVideoId);
+videoRouter.get("/:videoId/comments",getCommentsByVideoId)
 videoRouter.post("/video",authMiddleware,upload.single("video"),createVideo) //create new video
 videoRouter.post("/:videoId/comments",authMiddleware,addNewComment) //add new comment
 videoRouter.put("/:videoId/likes",authMiddleware,updateLikes)

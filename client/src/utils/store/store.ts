@@ -7,7 +7,6 @@ import { videoApi } from "./features/video/videoApi";
 import authSlice from "./features/user/authSlice";
 import videoSlice from "./features/video/videoSlice";
 import filteredVideoSlice from "./features/video/FilteredVideoSlice.ts";
-import persistStore from "redux-persist/es/persistStore";
 import storage from "redux-persist/lib/storage";
 
 import persistReducer from "redux-persist/es/persistReducer";

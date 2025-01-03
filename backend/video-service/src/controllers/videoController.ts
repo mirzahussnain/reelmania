@@ -1,5 +1,5 @@
-import { connectBlobStorage } from "@utils/blob_connection.config";
-import prisma from "@utils/dbconnection.config";
+import { connectBlobStorage } from "../utils/blob_connection.config";
+import prisma from "../utils/dbconnection.config";
 import { v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
 import fs from "fs";
@@ -97,6 +97,63 @@ export const getUserVideos = async (req: Request, res: Response) => {
         return;
     }
 };
+
+export const getLikesByVideoId = async (req: Request, res: Response) => {
+    try{
+        const videoId=req?.params?.videoId;
+        if(!videoId){
+            res.status(400).send("Video Id is missing")
+            return;
+        }
+        const result=await prisma.videos.findUnique({
+            where:{
+                id:videoId
+            },
+            select:{
+                Likes:true
+            }
+        })
+        if(!result){
+            res.status(404).send("Video Not Found")
+            return;
+        }
+        res.status(200).send({message:"Likes Fetched Successfully",likes:result?.Likes})
+        return;
+
+    }catch(err:any){
+        res.status(500).send(`Operation Failed:${err}`)
+        console.log(err)
+        return;
+    }
+}
+
+export const getCommentsByVideoId = async (req: Request, res: Response) => {
+    try{
+        const videoId=req?.params?.videoId;
+        if(!videoId){
+            res.status(400).send("Video Id is missing")
+            return;
+        }
+        const result=await prisma.videos.findUnique({
+            where:{
+                id:videoId
+            },
+            select:{
+                comments:true
+            }
+        })
+        if(!result){
+            res.status(404).send("Video Not Found")
+            return;
+        }
+        res.status(200).send({message:"Comments Fetched Successfully",comments:result?.comments})
+        return;
+    }catch(err:any){
+        res.status(500).send(`Operation Failed:${err}`)
+        console.log(err)
+        return;
+    }
+}
 
 export const createVideo = async (req: Request, res: Response) => {
     try {

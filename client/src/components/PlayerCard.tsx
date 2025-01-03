@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { FaCommentDots, FaHeart } from "react-icons/fa";
 import { FiShare2 } from "react-icons/fi";
 import { gsap } from "gsap";
-import { Link, useNavigate } from "react-router-dom";
-import { VideoLikes, VideoType } from "../types";
+import { Link} from "react-router-dom";
+import { CommentType, VideoLikes, VideoType } from "../types";
 import { dateFormatter } from "../utils/functions/formatter.ts";
-import { useUpdateLikesMutation } from "../utils/store/features/video/videoApi.ts";
+import { useLazyGetCommentsByVideoIdQuery, useLazyGetLikesByVideoIdQuery, useUpdateLikesMutation } from "../utils/store/features/video/videoApi.ts";
 import { useAppSelector } from "../utils/hooks/storeHooks.tsx";
 import { RootState } from "../utils/store/store.ts";
 import { connectSocket } from "../utils/functions/socket.ts";
@@ -17,17 +17,20 @@ const PlayerCard = ({
   setIsModalOpen,
 }: {
   video: VideoType;
-  setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>> | any;
+  setIsModalOpen: ({isOpen}:{isOpen:boolean})=>void;
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [getVideoLikes]=useLazyGetLikesByVideoIdQuery();
+  const [getComments]=useLazyGetCommentsByVideoIdQuery();
   const [updateLikes] = useUpdateLikesMutation();
   const { token } = useAppSelector((state: RootState) => state.auth);
   const user = useAppSelector((state: RootState) => state.user);
 
   const [pending, setPending] = useState(false); 
-  const [likes,setLikes] = useState<VideoLikes[]>(video?.Likes);
+  const [likes,setLikes] = useState<VideoLikes[]>();
   const socket = token ? connectSocket(token) : null;
   const [openShareModel,setOpenShareModel]=useState(false);
+  const [comments,setComments]=useState<CommentType[]>([]);
   const handleLikes = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     try {
@@ -54,6 +57,41 @@ const PlayerCard = ({
     }
   };
 
+
+  useEffect(()=>{
+    const fetchLikes=async(videoId:string)=>{
+    try{
+      if(videoId){
+       const query=await getVideoLikes(videoId).unwrap();
+       if(query && query?.likes){
+        setLikes(query?.likes)
+       }
+      }
+    }catch(err){
+      console.log(err)
+    }
+
+
+  }
+  const fetchComments=async(videoId:string)=>{
+    try{
+      if(videoId){
+        const query=await getComments(videoId).unwrap();
+        if(query && query?.comments){
+          let videoComments=[...query?.comments];
+         setComments(videoComments.sort((a,b)=>new Date(b.posted_at).getTime()-new Date(a.posted_at).getTime()));
+        }
+      }
+    }catch(err){
+      console.log(err)
+    }
+  }
+  
+      if(video?.id){
+        fetchLikes(video.id);
+        fetchComments(video.id);
+      }
+  },[])
   useEffect(() => {
     try { if (socket) {
         socket.connect();
@@ -110,7 +148,7 @@ const PlayerCard = ({
           } else {
             if (videoRef.current) {
               videoRef.current.pause();
-              setIsModalOpen(false);
+              setIsModalOpen({isOpen:false});
             }
             gsap.to(videoRef.current, {
               opacity: 0.5,
@@ -202,11 +240,11 @@ const PlayerCard = ({
         <button
           className="flex flex-col items-center justify-center mt-5"
           onClick={() => {
-            return token ? setIsModalOpen(true) : toast.error("Sign In Required");
+            return token ? setIsModalOpen({isOpen:true}) : toast.error("Sign In Required");
           }}
         >
           <FaCommentDots className="text-3xl" />
-          <span className="text-center text-sm">{video?.comments.length}</span>
+          <span className="text-center text-sm">{comments.length}</span>
         </button>
         <div className="relative">
 
@@ -231,4 +269,6 @@ const PlayerCard = ({
   );
 };
 
-export default PlayerCard;
+export default React.memo(PlayerCard, (prevProps, nextProps) => {
+  return prevProps.video.id === nextProps.video.id;
+});

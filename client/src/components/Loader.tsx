@@ -1,8 +1,7 @@
 import { MutatingDots } from "react-loader-spinner";
 
-type Props = {};
 
-const Loader = (props: Props) => {
+const Loader = () => {
   return (
     <div className=" w-full h-full flex items-center justify-center top-0 right-0 z-[100] absolute">
       <MutatingDots

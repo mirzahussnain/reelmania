@@ -1,15 +1,17 @@
 import express, { Express, Request, Response } from "express";
 import dotenv from"dotenv";
-import userRouter from "@/routes/userRoutes";
+import userRouter from "../src/routes/userRoutes";
 import { clerkMiddleware } from "@clerk/express";
 import bodyParser from "body-parser";
-import errorRouter from "@/routes/errorRoute";
-import hookRouter from "./routes/webhookRoutes";
+import errorRouter from "../src/routes/errorRoute";
+import hookRouter from "../src/routes/webhookRoutes";
 import cors from "cors"
 import morgan from "morgan"
 dotenv.config()
 const app: Express = express();
-const client_url=process.env.FRONTEND_URL
+const client_url=process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')
+: [];
+console.log(client_url)
 const port = process.env.PORT
 app.use(cors(
   {

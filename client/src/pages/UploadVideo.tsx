@@ -4,7 +4,6 @@ import Modal from "react-modal";
 import { useUploadVideoMutation } from "../utils/store/features/video/videoApi";
 import { useAppSelector } from "../utils/hooks/storeHooks";
 import { RootState } from "../utils/store/store";
-import Loader from "../components/Loader";
 import { toast } from "react-toastify";
 import { MutatingDots } from "react-loader-spinner";
 
@@ -130,8 +129,8 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
       if (response?.isSuccess) {
         setIsUploaded(true);
         toast.success(`${response?.data?.message}`);
-      } else if (response.isError) {
-        toast.error(response?.error?.data?.message);
+      } else if (response.isError && response?.data && response?.data?.message) {
+        toast.error(JSON.stringify(response?.error));
         setIsUploaded(false);
       }
   }, [response]);

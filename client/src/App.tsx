@@ -44,7 +44,6 @@ const App = () => {
   const Admin=useMemo(()=>loadLazyRoute("Admin"),[]);
   const Explore=useMemo(()=>loadLazyRoute("Explore"),[]);
   const Welcome=useMemo(()=>loadLazyRoute("Welcome"),[]);
-  const SharedVideo=useMemo(()=>loadLazyRoute("SharedVideo"),[]);
   const NotFound = useMemo(() => loadLazyRoute("NotFound"), []); 
   const {token}=useAppSelector((state:RootState)=>state.auth)
   const videos=useAppSelector((state:RootState)=>state.video.videos)

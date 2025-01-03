@@ -1,6 +1,6 @@
 import { SignIn } from "@clerk/clerk-react"
 import { TiHome } from "react-icons/ti";
-import { useLocation, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import useScreenWidth from "../utils/hooks/useScreenWidth";
 import { FaChevronLeft } from "react-icons/fa";
 

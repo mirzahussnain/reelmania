@@ -6,7 +6,7 @@ import {
   createUser,
   deleteUser,
   updateUser,
-} from "@/controllers/userController";
+} from "../controllers/userController";
 
 dotenv.config();
 export const userManagement = async (req: Request, res: Response) => {

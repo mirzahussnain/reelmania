@@ -52,8 +52,8 @@ const Home = () => {
             >
               <PlayerCard
                 video={video}
-                setIsModalOpen={(isOpen: boolean) =>
-                  setOpenVideoIndex(isOpen ? index : null)
+                setIsModalOpen={({isOpen}:{isOpen:boolean}) =>
+                  isOpen?setOpenVideoIndex(index):setOpenVideoIndex(null)
                 }
               />
             </div>
@@ -72,8 +72,8 @@ const Home = () => {
             >
               <Comments
                 video={video}
-                setIsModalOpen={(isOpen: boolean) =>
-                  setOpenVideoIndex(isOpen ? index : null)
+                setIsModalOpen={({isOpen}:{isOpen:boolean}) =>
+                  isOpen?setOpenVideoIndex(index):setOpenVideoIndex(null) 
                 }
               />
             </div>

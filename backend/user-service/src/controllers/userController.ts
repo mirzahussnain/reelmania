@@ -22,7 +22,9 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const getUser = async (req: Request, res: Response) => {
   try {
+   
     const userId = req?.params?.userId;
+   
     // Fetch the user from the database
     const user = await prisma.users.findUnique({
       where: {
@@ -42,6 +44,7 @@ export const getUser = async (req: Request, res: Response) => {
     return;
   } catch (err: any) {
     // Log the error and send a server error response
+    console.log(err)
    
     res.status(500).json({ message: `User not Found`, error: err.message });
   }

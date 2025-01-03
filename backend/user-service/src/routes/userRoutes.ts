@@ -10,7 +10,7 @@ import {
     updateFollower,
     getFollowers,
     updateUserRole
-} from '@/controllers/userController';
+} from '../controllers/userController';
 import { requireAuth } from "@clerk/express";
 import { authMiddleware } from "../middlewares/authMiddleware";
 

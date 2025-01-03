@@ -1,20 +1,34 @@
 import { FaCommentDots, FaHeart } from "react-icons/fa";
 import { FaX } from "react-icons/fa6";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { CommentType, FollowerType, userType, VideoType } from "../types";
+import {
+  CommentType,
+  FollowerType,
+  userType,
+  VideoLikes,
+  VideoType,
+} from "../types";
 import {
   useGetUserProfileQuery,
   useLazyGetUserFollowersQuery,
   useLazyGetUserProfileQuery,
   useUpdateUserFollowerMutation,
 } from "../utils/store/features/user/userApi";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { dateFormatter } from "../utils/functions/formatter.ts";
 import { useAppSelector } from "../utils/hooks/storeHooks.tsx";
 import { RootState } from "../utils/store/store.ts";
-import { useAddNewCommentMutation, useLazyFetchVideoByIdQuery } from "../utils/store/features/video/videoApi.ts";
+import {
+  useAddNewCommentMutation,
+  useLazyFetchVideoByIdQuery,
+  useLazyGetCommentsByVideoIdQuery,
+  useLazyGetLikesByVideoIdQuery,
+} from "../utils/store/features/video/videoApi.ts";
 import { toast } from "react-toastify";
 import { useAuth } from "@clerk/clerk-react";
+import { connectSocket } from "../utils/functions/socket.ts";
+import { IoFilter } from "react-icons/io5";
+import { IoIosArrowRoundDown, IoIosArrowRoundUp } from "react-icons/io";
 
 // VideoInfo component to display video content, user information, and comments
 const VideoInfo = () => {
@@ -22,20 +36,28 @@ const VideoInfo = () => {
   const { data: videoUser } = useGetUserProfileQuery(
     videoState?.uploaded_by?.id
   );
-  const videoId=useParams().videoId;
+  const videoId = useParams().videoId;
   const [fetchFollowers] = useLazyGetUserFollowersQuery();
   const userData = useAppSelector((state: RootState) => state.user);
-  const [user,setUser]=useState<userType | null>(userData)
+  const [user, setUser] = useState<userType | null>(userData);
   const token = useAppSelector((state: RootState) => state.auth.token);
   const [commentText, setCommentText] = useState("");
   const [postComment] = useAddNewCommentMutation();
   const [followUser] = useUpdateUserFollowerMutation();
   const [followStatus, setFollowStatus] = useState<boolean>();
-  const [getVideo]=useLazyFetchVideoByIdQuery();
-  const [getUser]=useLazyGetUserProfileQuery();
-  const {isSignedIn}=useAuth();
-  const navigateTo=useNavigate();
-  
+  const [getVideo] = useLazyFetchVideoByIdQuery();
+  const [getUser] = useLazyGetUserProfileQuery();
+  const [comments, setComments] = useState<CommentType[]>([]);
+  const [likes, setLikes] = useState<VideoLikes[]>([]);
+  const [getComments] = useLazyGetCommentsByVideoIdQuery();
+  const [getLikes] = useLazyGetLikesByVideoIdQuery();
+  const { isSignedIn } = useAuth();
+  const navigateTo = useNavigate();
+  const socket = token ? connectSocket(token) : null;
+  const [filter, setFilter] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const handleCommentSubmit = async (e: ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -45,9 +67,9 @@ const VideoInfo = () => {
 
       const comment: CommentType = {
         author: {
-          id: user?.id,
-          username: user?.username,
-          avatar_url: user?.avatar_url,
+          id: user?.id || "",
+          username: user?.username || "",
+          avatar_url: user?.avatar_url || "",
         },
         posted_at: new Date(),
         text: commentText,
@@ -65,7 +87,13 @@ const VideoInfo = () => {
       if (query) {
         setCommentText("");
         toast.success(query?.data?.message);
-        setVideoState(query?.data?.newVideo);
+        if (
+          comments.every(
+            (comment: CommentType) => comment.author.id !== user?.id
+          )
+        ) {
+          setComments([query?.newComments, ...comments]);
+        }
       } else {
         throw new Error(query?.error?.data?.message);
       }
@@ -101,32 +129,135 @@ const VideoInfo = () => {
     }
   };
 
-  useEffect(()=>{
-    const fetchVideoData=async()=>{
-      if(!videoId){
-        toast.error("Video id is missing")
+  const captureVideoFrame = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (!video || !canvas || video.videoWidth === 0) return;
+    
+    // Set canvas dimensions
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Draw the current frame
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleLoadedMetadata = () => {
+      // Seek to 1 second to get a better thumbnail
+      video.currentTime = 1;
+    };
+
+    const handleSeeked = () => {
+      captureVideoFrame();
+    };
+
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('seeked', handleSeeked);
+
+    return () => {
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('seeked', handleSeeked);
+    };
+  }, [videoState?.video_url]);
+
+  useEffect(() => {
+    try {
+      if (socket) {
+        socket.connect();
+        socket.on("likesChange", ({ updatedLikes, videoId }) => {
+          if (videoId == videoState?.id && updatedLikes) {
+            setLikes(updatedLikes);
+          }
+        });
+
+        try {
+          if (!socket) return;
+          socket.connect();
+          socket.on("newCommentAdded", ({ newComment }) => {
+            if (newComment) {
+              setComments((prevComments) => [newComment, ...prevComments]);
+            } else {
+              toast.error("Invalid video data received");
+            }
+          });
+        } catch (err) {
+          if (err instanceof Error) {
+            toast.error(err.message || "Failed to connect to socket.");
+          } else {
+            toast.error("Failed to connect to socket.");
+          }
+        }
+      }
+      return () => {
+        if (socket) {
+          socket?.off("newCommentAdded");
+          socket.off("likesChange");
+          socket.disconnect();
+        }
+      };
+    } catch (err) {
+      if (err instanceof Error) {
+        toast.error(err.message || "Socket Error");
+      } else {
+        toast.error("Socket Error");
+      }
+    }
+  }, [socket]);
+
+  useEffect(() => {
+    const fetchVideoData = async () => {
+      if (!videoId) {
+        toast.error("Video id is missing");
         return;
       }
-      const query=await getVideo(videoId).unwrap();
-      if(query && query?.video){
-        setVideoState(query?.video)
+      const query = await getVideo(videoId).unwrap();
+      if (query && query?.video) {
+        setVideoState(query?.video);
       }
+    };
 
-    }
-
-    const fetchUserData=async()=>{
-      const query=await getUser(videoState?.uploaded_by?.id).unwrap();
-      if(query && query?.body){
-        setUser(query?.body)
+    const fetchUserData = async () => {
+      const query = await getUser(videoState?.uploaded_by?.id).unwrap();
+      if (query && query?.body) {
+        setUser(query?.body);
       }
+    };
+    const fetchComments = async (videoId: string) => {
+      const query = await getComments(videoId).unwrap();
+      if (query && query?.comments) {
+        let videoComments=[...query?.comments];
+        setComments(videoComments.sort((a:any,b:any)=>new Date(b.posted_at).getTime()-new Date(a.posted_at).getTime()));
+      }
+    };
+    const fetchLikes = async (videoId: string) => {
+      const query = await getLikes(videoId).unwrap();
+      if (query && query?.likes) {
+        setLikes(query?.likes);
+      }
+    };
+    if (!videoState) {
+      fetchVideoData();
     }
-    if(!videoState){
-      fetchVideoData()
+    if (videoState && user?.id == "") {
+      fetchUserData();
     }
-    if(videoState && !user){
-      fetchUserData()
+    if (videoState?.id) {
+      fetchComments(videoState?.id);
+      fetchLikes(videoState?.id);
     }
-  })
+  },[]);
+
+  useEffect(()=>{
+    console.log(user)
+  },[user])
 
   useEffect(() => {
     const getFollowers = async (userId: string) => {
@@ -144,16 +275,47 @@ const VideoInfo = () => {
     }
   }, [videoUser]);
 
+  useEffect(() => {
+    if (filter) {
+      let videoComments = [...comments];
+    
+      setComments(
+        videoComments.sort(
+          (a, b) =>
+            new Date(a.posted_at).getTime() - new Date(b.posted_at).getTime()
+        )
+      );
+    
+    } else {
+      let videoComments = [...comments];
+
+      setComments(
+        videoComments.sort(
+          (a, b) =>
+            new Date(b.posted_at).getTime() - new Date(a.posted_at).getTime()
+        )
+      );
+    }
+  }, [filter]);
+
+ 
   return (
     // Fullscreen container with center alignment and blur backdrop
-    <div className="w-screen h-screen flex justify-center  overflow-y-auto scrollbar-custom ">
+    <div className="w-screen h-screen flex justify-center  overflow-y-auto scrollbar-custom pt-[18rem]  lg:pt-0 ">
       <div
-        className="w-full h-full flex flex-col lg:flex-row justify-center items-center lg:p-5
+        className="w-full h-full flex flex-col lg:flex-row justify-center items-center 
        backdrop-filter backdrop-blur-lg bg-black/80 relative"
       >
         {/* Video section */}
-        <div className="w-full h-full lg:h-[90%] flex items-center justify-center bg-inherit mb-3 lg:0">
+        <div className="w-full h-full lg:h-[90%] flex items-center justify-center  mb-3 lg:0  bg-transparent py-3 relative"
+        id="video-container">
+         <canvas 
+            ref={canvasRef}
+            className="absolute w-full h-full top-0 backdrop-filter blur-sm -z-[1]  object-cover opacity-50"
+          />
           <video
+          id="video"
+          ref={videoRef}
             className="w-full lg:w-[25rem] h-full object-cover"
             src={videoState?.video_url} // Placeholder video source
             controls // Enables video controls
@@ -199,10 +361,14 @@ const VideoInfo = () => {
                       ? "bg-gray-300 text-gray-600"
                       : "bg-red-600 text-white"
                   }`}
-                  onClick={isSignedIn?handleFollow:()=>{
-                    toast.error("Sign In Required")
-                    navigateTo("/sign-in")
-                  }}
+                  onClick={
+                    isSignedIn
+                      ? handleFollow
+                      : () => {
+                          toast.error("Sign In Required");
+                          navigateTo("/sign-in");
+                        }
+                  }
                 >
                   {followStatus ? "Unfollow" : "Follow"}
                 </button>
@@ -228,27 +394,40 @@ const VideoInfo = () => {
               {/* Likes count */}
               <div className="flex justify-center items-center">
                 <FaHeart className="text-2xl mx-2" />
-                <span>{videoState?.Likes?.length}</span>
+                <span>{likes?.length}</span>
               </div>
               {/* Comments count */}
               <div className="flex justify-center items-center">
                 <FaCommentDots className="text-2xl mx-2" />
-                <span>{videoState?.comments?.length}</span>
+                <span>{comments?.length}</span>
               </div>
             </div>
           </div>
 
           {/* Comments section */}
-          <div className="w-[90%] h-[40%] flex flex-col items-center justify-evenly p-1  overflow-y-auto scrollbar-custom "> 
-            {videoState?.comments?.length > 0 ? (
+          <div className="w-[90%] lg:h-[50%] h-[90%] flex flex-col items-center justify-evenly p-1  overflow-y-auto scrollbar-custom ">
+            {comments?.length > 0 ? (
               <div className="w-full h-full flex flex-col items-center justify-center p-3 ">
-                <h2 className=" text-xl text-white text-center border-b-2 p-2">
-                  All Comments
-                </h2>
+                <div className="w-full flex justify-between items-center">
+                  <h2 className=" text-xl text-white text-center border-b-2 p-2">
+                    All Comments
+                  </h2>
+                  <div className="flex justify-center items-center px-3">
+                    <button
+                      className={`text-2xl ${
+                        filter ? "text-white" : "text-zinc-300"
+                      } mr-10 flex items-center justify-center`}
+                      onClick={() => setFilter((prev) => !prev)}
+                    >
+                      <IoFilter />
+                      {filter ? <IoIosArrowRoundUp /> : <IoIosArrowRoundDown />}
+                    </button>
+                  </div>
+                </div>
 
                 <div className="w-full h-full lg:px-3 py-4 flex flex-col items-center justify-start ">
                   {/* Individual comment */}
-                  {videoState?.comments?.map((comment, index) => (
+                  {comments?.map((comment, index) => (
                     <div
                       key={index}
                       className="w-full flex lg:flex-row justify-center items-center my-2"
@@ -285,54 +464,59 @@ const VideoInfo = () => {
                 No Comments Yet
               </h2>
             )}
-              </div>
-              {
-                isSignedIn?( videoState?.uploaded_by?.id !== user?.id && (
-                  <form
-                    className="w-full flex flex-col items-center justify-center"
-                    onSubmit={handleCommentSubmit}
-                  >
-                    <div className="w-full flex justify-start items-center p-3">
-                      <div className={`w-14 h-14 rounded-full p-2`}>
-                        <img
-                          src={user?.avatar_url}
-                          className={`w-full h-full rounded-full object-cover`}
-                        />
-                      </div>
-                      <textarea
-                        className={`w-full h-20 rounded-xl bg-stone-700 resize-none text-zinc-300 text-lg outline-none p-3
+          </div>
+          {isSignedIn ? (
+            videoState?.uploaded_by?.id !== user?.id && (
+              <form
+                className="w-full flex flex-col items-center justify-center"
+                onSubmit={handleCommentSubmit}
+              >
+                <div className="w-full flex justify-start items-center p-3">
+                  <div className={`w-14 h-14 rounded-full p-2`}>
+                    <img
+                      src={user?.avatar_url}
+                      className={`w-full h-full rounded-full object-cover`}
+                      alt="user"
+                    />
+                  </div>
+                  <textarea
+                    className={`w-full h-20 rounded-xl bg-stone-700 resize-none text-zinc-300 text-lg outline-none p-3
                         focus:outline-zinc-400/40 focus:outline-[1px] placeholder:text-sm`}
-                        placeholder={`Write Your Comment Here`}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        value={commentText}
-                      />
-                    </div>
-                    <div className={`w-full flex justify-end items-center`}>
-                      <button
-                        className={`py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl mr-4`}
-                        type="button"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className={`py-2 px-6 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl`}
-                        type="submit"
-                      >
-                        Post
-                      </button>
-                    </div>
-                  </form>
-                )):(
-                  <button className="p-4 bg-red-500/50 text-white rounded-xl mt-3"
-                  onClick={()=>navigateTo("/sign-in")}>Sign in to comment</button>
-                )
-              }
-           
+                    placeholder={`Write Your Comment Here`}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    value={commentText}
+                  />
+                </div>
+                <div className={`w-full flex justify-end items-center`}>
+                  <button
+                    className={`py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl mr-4`}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className={`py-2 px-6 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl`}
+                    type="submit"
+                  >
+                    Post
+                  </button>
+                </div>
+              </form>
+            )
+          ) : (
+            <button
+              className="p-4 bg-red-500/50 text-white rounded-xl mt-3"
+              onClick={() => navigateTo("/sign-in")}
+            >
+              Sign in to comment
+            </button>
+          )}
+
           {}
         </div>
 
         <button
-          className="p-3 rounded-full absolute top-5 left-10 bg-gray-500 text-white"
+          className="p-3 rounded-full absolute -top-[18rem]  left-50 lg:top-5 left-10 bg-gray-500 text-white"
           onClick={() => window.history.back()}
         >
           <FaX />

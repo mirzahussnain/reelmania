@@ -2,33 +2,33 @@ import { IoFilter } from "react-icons/io5";
 import { CommentType, VideoType } from "../types.ts";
 import { dateFormatter, formatNumber } from "../utils/functions/formatter.ts";
 import { FaX } from "react-icons/fa6";
-import React, { ChangeEvent, Key, useEffect, useState } from "react";
+import  { ChangeEvent, Key, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppSelector } from "../utils/hooks/storeHooks.tsx";
 import { RootState } from "../utils/store/store.ts";
-import { useAddNewCommentMutation } from "../utils/store/features/video/videoApi.ts";
+import { useAddNewCommentMutation, useLazyGetCommentsByVideoIdQuery } from "../utils/store/features/video/videoApi.ts";
 import { connectSocket } from "../utils/functions/socket.ts";
 import { ThreeDots } from "react-loader-spinner";
 import { IoIosArrowRoundDown, IoIosArrowRoundUp } from "react-icons/io";
 import { toast } from "react-toastify";
+import React from "react";
 
 const Comments = ({
   video,
   setIsModalOpen,
 }: {
   video: VideoType;
-  setIsModalOpen: React.Dispatch<React.SetStateAction<number | null>>;
+  setIsModalOpen: ({isOpen}:{isOpen:boolean})=>void
 }) => {
   const user = useAppSelector((state: RootState) => state.user);
   const token = useAppSelector((state: RootState) => state.auth.token);
   const [commentText, setCommentText] = useState("");
-  const [videoComments, setVideoComments] = useState<CommentType[]>(
-    video?.comments
-  );
-  const [postComment, response] = useAddNewCommentMutation();
+  const [videoComments, setVideoComments] = useState<CommentType[]>([]);
+  const [postComment] = useAddNewCommentMutation();
   const [pending, setPending] = useState(false);
   const [filter, setFilter] = useState(false);
   const socket = token ? connectSocket(token) : null;
+  const [getComments] = useLazyGetCommentsByVideoIdQuery();
 
   // Handle Submit
   const handleSumbit = async (e: ChangeEvent<HTMLFormElement>) => {
@@ -69,6 +69,26 @@ const Comments = ({
     }
   };
 
+
+  useEffect(() => {
+    if (video?.id) {
+      const fetchComments = async (videoId: string) => {
+        try {
+          const query = await getComments(videoId).unwrap();
+          if (query && query?.comments) {
+            setVideoComments(query?.comments);
+          }
+        } catch (err) {
+          console.log(err);
+        }
+      };
+      if(video?.id){
+
+        fetchComments(video?.id);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (filter) {
         let comments=[...videoComments];
@@ -85,7 +105,6 @@ const Comments = ({
     try {
       if (!socket) return;
       socket.connect();
-
       socket.on("newCommentAdded", ({ newComment }) => {
         if (newComment) {
           setVideoComments((prevComments) => [newComment, ...prevComments]);
@@ -99,6 +118,7 @@ const Comments = ({
       } else {
         toast.error("Failed to connect to socket.");
       }
+
     }
 
     return () => {
@@ -126,7 +146,7 @@ const Comments = ({
           </button>
           <button
             className="font-thin text-xl text-zinc-300"
-            onClick={() => setIsModalOpen(null)} // Use null to close modal
+            onClick={() => setIsModalOpen({isOpen:false})} // Use null to close modal
           >
             <FaX />
           </button>
@@ -240,4 +260,6 @@ const Comments = ({
   );
 };
 
-export default Comments;
+export default React.memo(Comments, (prevProps, nextProps) => {
+  return prevProps.video.id === nextProps.video.id;
+});

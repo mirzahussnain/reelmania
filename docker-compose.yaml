@@ -1,0 +1,73 @@
+networks:
+  reelmania-network:
+    driver: bridge
+
+services:
+  client:
+    build: 
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: reelmania-client
+    ports:
+      - "80:80"
+    depends_on:
+      - user-service
+      - video-service
+    environment:
+      - VITE_CLERK_PUBLIC_KEY=${VITE_CLERK_PUBLIC_KEY}
+      - VITE_AZURE_STORAGE_CONNECTION_STRING=${VITE_AZURE_STORAGE_CONNECTION_STRING}
+      - VITE_SOCKET_URL=http://video-service:8001
+      - VITE_VIDEO_SERVICE_URL=http://video-service:8001
+      - VITE_USER_SERVICE_URL=http://user-service:8000
+      - VITE_VIDEO_SHARE_BASE_URL=http://localhost:80
+    networks:
+      - reelmania-network
+
+  user-service:
+    build:
+      context: ./backend/user-service
+      dockerfile: Dockerfile
+    container_name: reelmania-user-service
+    ports:
+      - "8000:8000"
+    environment:
+      - USER_DATABASE_URL=${USER_DATABASE_URL}
+      - PORT=8000
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - WEBHOOK_SIGNING_SECRET=${WEBHOOK_SIGNING_SECRET}
+      - FRONTEND_URL=http://client,http://localhost
+    healthcheck:
+      test: ["CMD", "npm", "run", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - reelmania-network
+
+  video-service:
+    build:
+      context: ./backend/video-service
+      dockerfile: Dockerfile
+    container_name: reelmania-video-service
+    ports:
+      - "8001:8001"
+    environment:
+      - VIDEO_DATABASE_URL=${VIDEO_DATABASE_URL}
+      - VIDEO_SERVICE_PORT=8001
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}
+      - AZURE_STORAGE_ACCOUNT_NAME=${AZURE_STORAGE_ACCOUNT_NAME}
+      - AZURE_SHARED_KEY=${AZURE_SHARED_KEY}
+      - AZURE_BLOB_CONTAINER_NAME=${AZURE_BLOB_CONTAINER_NAME}
+      - AZURE_ACCOUNT_URL=${AZURE_ACCOUNT_URL}
+      - FRONT_END_URL=http://client,http://localhost
+      - SOCKET_PATH=/socket.io/
+    healthcheck:
+      test: ["CMD", "npm", "run", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - reelmania-network

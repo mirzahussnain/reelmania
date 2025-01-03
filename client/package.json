@@ -7,7 +7,9 @@
     "dev": "vite ",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+      "docker:build": "docker build -t reelmania-client .",
+    "docker:run": "docker run -p 3000:3000 reelmania-client"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.26.0",

@@ -1,5 +1,5 @@
-import { Protect, useUser } from "@clerk/clerk-react"
-import { Navigate, redirect } from "react-router-dom"
+
+import {  redirect } from "react-router-dom"
 import { checkRole } from "../utils/functions/roles";
 import { FormEvent, useEffect, useState } from "react";
 import { useLazyGetUsersQuery, useLazyUpdateUserRoleQuery } from "../utils/store/features/user/userApi";
@@ -22,7 +22,7 @@ const Admin = () => {
    const [getUsers]=useLazyGetUsersQuery();
    const [user,setUser]=useState<userType | null>(null)
    const [queryRan,setQueryRan]=useState(false);
-   const [updateRole,{isLoading}]=useLazyUpdateUserRoleQuery();
+   const [updateRole]=useLazyUpdateUserRoleQuery();
    const {token}=useAppSelector((state)=>state.auth)
 
    const handleSubmit=async (e: FormEvent<HTMLFormElement>)=>{
@@ -44,7 +44,7 @@ const Admin = () => {
         toast.success(query?.message);
     
    }catch(err){
-    console.log(err)
+   
     toast.error(String(err))
    }finally{
     setRole("")
@@ -94,7 +94,7 @@ const Admin = () => {
                 <option value="Consumer">Consumer</option>
             </select>
             <button className="px-4 py-3 bg-red-700 rounded-xl"
-            type="button" onClick={(e)=>findUser()}>Find User</button>
+            type="button" onClick={()=>findUser()}>Find User</button>
             <button className="px-4 py-3 bg-blue-400/30 rounded-xl"
             type="submit">Change Role</button>
         </form>

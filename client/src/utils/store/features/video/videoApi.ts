@@ -10,7 +10,7 @@ export const videoApi = createApi({
         baseUrl: `${BASE_URL}/videos`,
         credentials: 'include',
     }),
-    tagTypes: ["Videos", "SAS"],
+    tagTypes: ["Videos", "SAS","Comments","Likes"],
     endpoints: (builder) => ({
         fetchAllVideos: builder.query({
             query: () => "/",
@@ -49,6 +49,14 @@ export const videoApi = createApi({
             }),
             invalidatesTags: ["Videos"]
         }),
+        getCommentsByVideoId: builder.query({
+            query: (videoId) => `/${videoId}/comments`,
+            providesTags: ["Comments"]
+        }),
+        getLikesByVideoId: builder.query({
+            query: (videoId) => `/${videoId}/likes`,
+            providesTags: ["Likes"]
+        }),
        
         addNewComment: builder.mutation({
             query: ({comment, videoId, token}: { comment: CommentType, videoId: string, token: string | null }) => ({
@@ -73,7 +81,7 @@ export const videoApi = createApi({
                     console.log(err)
                 }
               },
-              invalidatesTags: ['Videos']
+              invalidatesTags: ['Comments']
             }),
         updateLikes: builder.mutation({
             query: ({videoId, userData, token}: { videoId: string, userData: {userId:string,userName:string}, token: string }) => ({
@@ -95,7 +103,7 @@ export const videoApi = createApi({
                   }
                 } catch {}
               },
-              invalidatesTags: ['Videos']
+              invalidatesTags: ['Likes']
             }),
         //  uploadVideo:builder.mutation({
         //       queryFn: async ({ url, data }, api) => {
@@ -142,7 +150,9 @@ export const {
    useFetchVideoByIdQuery,
    useLazyFetchVideoByIdQuery,
    useDeleteUserVideoMutation,
-   useLazyFetchAllVideosQuery
+   useLazyFetchAllVideosQuery,
+   useLazyGetCommentsByVideoIdQuery,
+   useLazyGetLikesByVideoIdQuery
 } = videoApi
 
 export default videoApi.reducer;

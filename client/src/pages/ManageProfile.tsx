@@ -1,8 +1,7 @@
 import { UserProfile } from "@clerk/clerk-react";
 
-type Props = {};
 
-const ManageProfile = (props: Props) => {
+const ManageProfile = () => {
   return (
     <div className="w-full h-full p-2 lg:py-16 flex justify-center lg:items-start items-center">
       <UserProfile
