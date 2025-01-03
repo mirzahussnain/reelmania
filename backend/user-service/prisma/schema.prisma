@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+model followers {
+  follower_id                         String
+  following_id                        String
+  created_at                          DateTime @default(now()) @db.Timestamp(6)
+  users_followers_follower_idTousers  users    @relation("followers_follower_idTousers", fields: [follower_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_follower")
+  users_followers_following_idTousers users    @relation("followers_following_idTousers", fields: [following_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_following")
+
+  @@id([follower_id, following_id])
+  @@index([follower_id], map: "idx_followers_follower_id")
+  @@index([following_id], map: "idx_followers_following_id")
+}
+
+model users {
+  id                                      String      @id
+  first_name                              String
+  last_name                               String
+  role                                    String      @default("Consumer")
+  created_at                              DateTime    @default(now()) @db.Timestamp(6)
+  email                                   String      @unique
+  username                                String      @unique
+  avatar_url                              String
+  followers_followers_follower_idTousers  followers[] @relation("followers_follower_idTousers")
+  followers_followers_following_idTousers followers[] @relation("followers_following_idTousers")
+}
+
+enum crdb_internal_region {
+  aws_eu_west_1 @map("aws-eu-west-1")
+}

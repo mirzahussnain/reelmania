@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+type VideosCommentsAuthor {
+  id         String
+  username   String
+  avatar_url String
+}
+
+type VideoLiker {
+  id       String
+  username String
+}
+
+type VideosComments {
+  author    VideosCommentsAuthor
+  posted_at DateTime
+  text      String
+}
+
+type VideosLikes {
+  liked_by VideoLiker
+}
+
+type Uploader {
+  id       String
+  username String
+}
+
+model videos {
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
+  Likes       VideosLikes[]
+  comments    VideosComments[]
+  hashtags    String[]
+  title       String
+  uploaded_at DateTime
+  uploaded_by Uploader
+  video_url   String
+}
