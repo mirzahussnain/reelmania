@@ -7,6 +7,14 @@ services:
     build: 
       context: ./client
       dockerfile: Dockerfile
+      args:
+          - VITE_CLERK_PUBLIC_KEY=${VITE_CLERK_PUBLIC_KEY}
+          - VITE_AZURE_STORAGE_CONNECTION_STRING=${VITE_AZURE_STORAGE_CONNECTION_STRING}
+          - VITE_SOCKET_URL=${VITE_SOCKET_URL}
+          - VITE_VIDEO_SERVICE_URL=${VITE_VIDEO_SERVICE_URL}
+          - VITE_USER_SERVICE_URL=${VITE_USER_SERVICE_URL}
+          - VITE_VIDEO_SERVICE_PORT=${VIDEO_SERVICE_PORT}
+          - VITE_VIDEO_SHARE_BASE_URL=${VITE_VIDEO_SHARE_BASE_URL}
     container_name: reelmania-client
     ports:
       - "80:80"
@@ -16,10 +24,11 @@ services:
     environment:
       - VITE_CLERK_PUBLIC_KEY=${VITE_CLERK_PUBLIC_KEY}
       - VITE_AZURE_STORAGE_CONNECTION_STRING=${VITE_AZURE_STORAGE_CONNECTION_STRING}
-      - VITE_SOCKET_URL=http://video-service:8001
-      - VITE_VIDEO_SERVICE_URL=http://video-service:8001
-      - VITE_USER_SERVICE_URL=http://user-service:8000
-      - VITE_VIDEO_SHARE_BASE_URL=http://localhost:80
+      - VITE_SOCKET_URL=${VITE_SOCKET_URL}
+      - VITE_VIDEO_SERVICE_URL=${VITE_VIDEO_SERVICE_URL}
+      - VITE_USER_SERVICE_URL=${VITE_USER_SERVICE_URL}
+      - VITE_VIDEO_SERVICE_PORT=${VIDEO_SERVICE_PORT}
+      - VITE_VIDEO_SHARE_BASE_URL=${VITE_VIDEO_SHARE_BASE_URL}
     networks:
       - reelmania-network
 
@@ -32,11 +41,11 @@ services:
       - "8000:8000"
     environment:
       - USER_DATABASE_URL=${USER_DATABASE_URL}
-      - PORT=8000
+      - PORT=${USER_SERVICE_PORT}
       - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
       - WEBHOOK_SIGNING_SECRET=${WEBHOOK_SIGNING_SECRET}
-      - FRONTEND_URL=http://client,http://localhost
+      - FRONTEND_URL=${FRONTEND_URL}
     healthcheck:
       test: ["CMD", "npm", "run", "healthcheck"]
       interval: 30s
@@ -62,8 +71,8 @@ services:
       - AZURE_SHARED_KEY=${AZURE_SHARED_KEY}
       - AZURE_BLOB_CONTAINER_NAME=${AZURE_BLOB_CONTAINER_NAME}
       - AZURE_ACCOUNT_URL=${AZURE_ACCOUNT_URL}
-      - FRONT_END_URL=http://client,http://localhost
-      - SOCKET_PATH=/socket.io/
+      - FRONTEND_URL=${FRONTEND_URL}
+      - SOCKET_PATH=${SOCKET_PATH}
     healthcheck:
       test: ["CMD", "npm", "run", "healthcheck"]
       interval: 30s

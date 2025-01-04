@@ -11,7 +11,7 @@ dotenv.config()
 const app: Express = express();
 const client_url=process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')
 : [];
-console.log(client_url)
+
 const port = process.env.PORT
 app.use(cors(
   {

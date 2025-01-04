@@ -3,7 +3,7 @@ import { Server as HttpServer } from 'http';
 import dotenv from "dotenv"
 dotenv.config();
 export const initializeSocketServer = (httpServer: HttpServer) => {
-  const origin_url=process.env.FRONT_END_URL ? process.env.FRONT_END_URL.split(',')
+  const origin_url=process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')
   : [];
   const socketPath=process.env.SOCKET_PATH
   const io = new SocketServer(httpServer, {

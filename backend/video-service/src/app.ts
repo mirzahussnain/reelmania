@@ -9,7 +9,7 @@ import { initializeSocketServer } from "../src/utils/socketServer"
 import { setSocketInstance } from "./controllers/socketController"
 
 dotenv.config()
-const origin_url=process.env.FRONT_END_URL ? process.env.FRONT_END_URL.split(',')
+const origin_url=process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')
 : [];
 const app:Express=express();
 app.use(express.json());
