@@ -1,19 +1,14 @@
 import { BlobServiceClient } from "@azure/storage-blob";
-import { DefaultAzureCredential } from "@azure/identity";
 import dotenv from "dotenv";
 import { exit } from "process";
 dotenv.config();
 export const connectBlobStorage = () => {
   try {
-    
-    const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
-    const containerName=process.env.AZURE_BLOB_CONTAINER_NAME
-    if (!accountName || !containerName) throw Error("Azure Storage accountName or containerName not found");
-
-    const blobServiceClient = new BlobServiceClient(
-      `https://${accountName}.blob.core.windows.net`,
-      new DefaultAzureCredential()
-    );
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    if (!connectionString) throw Error("Azure Storage connection string not found");
+    const containerName = process.env.AZURE_BLOB_CONTAINER_NAME;
+    if (!containerName) throw Error("Azure Storage container name not found");
+    const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
     const containerClient = blobServiceClient.getContainerClient(containerName);
     return containerClient;
   } catch (err: any) {

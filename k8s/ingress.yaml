@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: reelmania-ingress
+  annotations:
+    ingressClassName: nginx
+spec:
+  rules:
+  - host: reelmania-client.azurewebsites.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: client-service
+            port:
+              number: 80
+  - host: reelmania-user-service.azurewebsites.net
+    http:   
+      paths:
+      - path: /users
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 8000
+  - host: reelmania-video-service.azurewebsites.net
+    http:
+      paths:
+      - path: /videos
+        pathType: Prefix
+        backend:
+          service:
+            name: video-service
+            port:
+              number: 8001

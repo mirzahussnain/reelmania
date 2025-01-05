@@ -12,7 +12,7 @@ const app: Express = express();
 const client_url=process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')
 : [];
 
-const port = process.env.PORT
+const port = process.env.USER_SERVICE_PORT
 app.use(cors(
   {
     origin:client_url,

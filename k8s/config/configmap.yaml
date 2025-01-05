@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reelmania-config
+data:
+  FRONTEND_URL: "https://reelmania-client.azurewebsites.net"
+  SOCKET_PATH: "/socket.io/"
+  VIDEO_SERVICE_PORT: "8001"
+  USER_SERVICE_PORT: "8000"
+  VITE_SOCKET_URL: "https://reelmania-video-service.azurewebsites.net"
+  VITE_VIDEO_SERVICE_URL: "https://reelmania-video-service.azurewebsites.net"
+  VITE_USER_SERVICE_URL: "https://reelmania-user-service.azurewebsites.net"
+  VITE_VIDEO_SHARE_BASE_URL: "https://reelmania-client.azurewebsites.net"
+
+---

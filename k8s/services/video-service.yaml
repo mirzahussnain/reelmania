@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: video-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: video-service
+  template:
+    metadata:
+      labels:
+        app: video-service
+    spec:
+      containers:
+      - name: video-service
+        image: hussnainse/reelmania-video-service:latest
+        ports:
+        - containerPort: 8001
+        envFrom:
+        - configMapRef:
+            name: reelmania-config
+        - secretRef:
+            name: reelmania-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: video-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8001
+    targetPort: 8001
+  selector:
+    app: video-service
+---

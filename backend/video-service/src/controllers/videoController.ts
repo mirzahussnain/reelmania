@@ -3,7 +3,6 @@ import prisma from "../utils/dbconnection.config";
 import { v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
 import fs from "fs";
-import { error } from "console";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {

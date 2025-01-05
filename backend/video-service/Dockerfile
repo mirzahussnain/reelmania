@@ -1,6 +1,5 @@
 FROM node:18-alpine as builder
 
-
 WORKDIR /src
 COPY package*.json ./
 RUN npm ci
