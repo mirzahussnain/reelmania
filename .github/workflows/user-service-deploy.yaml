@@ -5,7 +5,7 @@ on:
     branches:
       - main  # Trigger on push to the main branch
     paths:
-      - 'backend/user-service/**'  # Trigger only when changes are made in the user-service directory
+      - './**'  # Trigger only when changes are made in the user-service directory
 
 jobs:
   build:
@@ -38,5 +38,5 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'reelmania-user-service'  # The name of the Azure Web App
-          publish-profile: ${{ secrets.USER_USER_PROFILE }}  # Add publish profile in GitHub Secrets
+          publish-profile: ${{ secrets.USER_SERVICE_USER_PROFILE }}  # Add publish profile in GitHub Secrets
           images: 'hussnainse/reelmania-user-service:latest'  # Container image to deploy

@@ -5,7 +5,7 @@ on:
     branches:
       - main  # Trigger on push to the main branch
     paths:
-      - 'client/**'  # Trigger only when changes are made in the client directory
+      - './**'  # Trigger only when changes are made in the client directory
 
 jobs:
   build:
