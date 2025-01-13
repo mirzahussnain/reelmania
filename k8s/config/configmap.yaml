@@ -4,7 +4,7 @@ metadata:
   name: reelmania-config
 data:
   FRONTEND_URL: "https://reelmania-client.azurewebsites.net"
-  SOCKET_PATH: "/socket.io/"
+  SOCKET_PATH: "/videosocket/"
   VIDEO_SERVICE_PORT: "8001"
   USER_SERVICE_PORT: "8000"
   VITE_SOCKET_URL: "https://reelmania-video-service.azurewebsites.net"

@@ -3,7 +3,7 @@ import cors from "cors"
 import dotenv from "dotenv"
 import videoRouter from "../src/routes/videoRoutes"
 import { clerkMiddleware } from "@clerk/express"
-import errorRouter from "../src/routes/errorRoutes";
+
 import { createServer } from "http"
 import { initializeSocketServer } from "../src/utils/socketServer"
 import { setSocketInstance } from "./controllers/socketController"
@@ -21,11 +21,8 @@ app.use(cors({
   })); 
 
 const PORT=process.env.VIDEO_SERVICE_PORT || 4000
-app.get("/",(req:Request,res:Response)=>{
-    res.status(200).send("Welcome To Videos Api")
-})
-app.use("/errors",errorRouter)
-app.use("/videos",videoRouter)
+
+app.use("/api/videos",videoRouter)
 const httpServer = createServer(app);
 
 // Initialize Socket.IO

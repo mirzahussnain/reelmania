@@ -28,7 +28,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      console.log("Storing Video In Database...");
+      toast.info("Storing Video In Database...");
       const metaData = {
         Likes: [],
         comments: [],
@@ -130,7 +130,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
         setIsUploaded(true);
         toast.success(`${response?.data?.message}`);
       } else if (response.isError && response?.data && response?.data?.message) {
-        toast.error(JSON.stringify(response?.error));
+        toast.error(JSON.stringify(response?.data?.message));
         setIsUploaded(false);
       }
   }, [response]);

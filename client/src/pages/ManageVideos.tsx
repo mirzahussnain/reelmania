@@ -19,7 +19,7 @@ const ManageVideos = () => {
   const { data,isLoading } = useFetchUserVideosQuery(
     user?.id,
     {
-      skip: !isSignedIn && !user,
+      skip: !isSignedIn || !user?.id,
     }
   );
   ReactModal.setAppElement("#root");
@@ -59,7 +59,7 @@ const ManageVideos = () => {
           {userVideos?.length > 0 ? (
             <div
               className="w-full h-full p-5 grid grid-cols-[repeat(auto-fill,_minmax(215px,_1fr))] gap-[0.4rem] overflow-y-auto
-               scrollbar-custom bg-gradient-to-br from-zinc-800/80 to-white/20 backdrop-filter backdrop-blur-2xl rounded-b-2xl "
+               scrollbar-custom max-lg:scrollbar-hide bg-gradient-to-br from-zinc-800/80 to-white/20 backdrop-filter backdrop-blur-2xl rounded-b-2xl "
             >
               {userVideos.map((userVideo, index) => (
                 <VideoCard key={index} videoInfo={userVideo} />

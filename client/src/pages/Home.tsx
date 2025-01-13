@@ -10,12 +10,13 @@ import Loader from "../components/Loader";
 import Comments from "../components/Comments";
 import useScreenWidth from "../utils/hooks/useScreenWidth";
 import { toast } from "react-toastify";
-
 const Home = () => {
   const { data, isLoading,isError} = useFetchAllVideosQuery({});
+
   const dispatch = useAppDispatch();
   const videos = useAppSelector((state: RootState) => state.video.videos);
   const screenWidth = useScreenWidth();
+ 
   const [openVideoIndex, setOpenVideoIndex] = useState<number | null>(null);
   useEffect(() => {
     if (data?.videos) {
@@ -26,6 +27,8 @@ const Home = () => {
       
     }
   }, [data,dispatch]);
+
+
 
   return  isLoading ? (
     <Loader />
@@ -60,7 +63,7 @@ const Home = () => {
 
             {/* Comments Container */}
             <div
-              className={`bg-zinc-900 lg:bg-transparent fixed top-[7rem] lg:top-[4.6rem] right-0 lg:w-[30rem] w-full lg:h-[39rem] h-[90%] transform transition-transform duration-300 ease-in-out ${
+              className={`bg-zinc-900 lg:bg-transparent fixed z-[50] top-[7rem] lg:top-[4.6rem] right-0 lg:w-[30rem] w-full lg:h-[39rem] h-[90%] transform transition-transform duration-300 ease-in-out ${
                 openVideoIndex === index
                   ? screenWidth >= 1024
                     ? "-translate-x-20"

@@ -16,7 +16,7 @@ const VideoCard = ({ videoInfo }: { videoInfo: VideoType }) => {
     e.stopPropagation();
     try{
 
-
+  
       if(!token){
         toast.error("User not authenticated")
       }
@@ -24,9 +24,9 @@ const VideoCard = ({ videoInfo }: { videoInfo: VideoType }) => {
         toast.error("Video Id is missing")
       }
       toast.info("Deleting Video...")
-      const response=await deleteVideo(videoInfo?.id).unwrap();
-     if(!isLoading){
-      toast.success(response.message)
+      const response=await deleteVideo({id:videoInfo?.id,token}).unwrap();
+     if(!isLoading && response?.status==200){
+      toast.success(response?.data?.message)
      }
       
     }catch(err){

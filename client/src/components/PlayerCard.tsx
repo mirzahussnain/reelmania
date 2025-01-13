@@ -15,9 +15,11 @@ import Share from "./Share.tsx";
 const PlayerCard = ({
   video,
   setIsModalOpen,
+  
 }: {
   video: VideoType;
   setIsModalOpen: ({isOpen}:{isOpen:boolean})=>void;
+
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [getVideoLikes]=useLazyGetLikesByVideoIdQuery();
@@ -94,16 +96,22 @@ const PlayerCard = ({
   },[])
   useEffect(() => {
     try { if (socket) {
+      if(socket.connected) return;
         socket.connect();
       socket.on("likesChange", ({updatedLikes,videoId}) => {
         if (videoId == video?.id && updatedLikes) {
           setLikes(updatedLikes);
         }
       });
+      socket.on("newCommentAdded",({newComment})=>{
+
+        setComments((prevComments) => [newComment, ...prevComments])
+      })
     }
     return () => {
       if (socket) {
         socket.off("likesChange");
+        socket.off("newAddedComment")
         socket.disconnect();
     };
 }}catch(err){
@@ -179,7 +187,7 @@ const PlayerCard = ({
   }, []);
 
   return (
-    <div className="lg:static relative w-full lg:h-[88vh] h-[100vh] lg:rounded-l-2xl  lg:flex lg:justify-center transition-all ease-in-out duration-200  ">
+    <div className="lg:static relative w-full lg:h-[88vh] h-[90vh] lg:rounded-l-2xl  lg:flex lg:justify-center transition-all ease-in-out duration-200  ">
       <div className="relative w-full lg:w-11/12 h-full lg:rounded-2xl ">
         <video
           ref={videoRef}

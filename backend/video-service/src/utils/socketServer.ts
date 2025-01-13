@@ -5,11 +5,10 @@ dotenv.config();
 export const initializeSocketServer = (httpServer: HttpServer) => {
   const origin_url=process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')
   : [];
-  const socketPath=process.env.SOCKET_PATH
   const io = new SocketServer(httpServer, {
-    path: '/socket.io/',
+    path: '/videosocket/',
     cors: {
-      origin: origin_url, // Your frontend URL
+      origin: origin_url, 
       methods: ["GET", "POST", "PUT", "DELETE"],
       credentials: true
     }

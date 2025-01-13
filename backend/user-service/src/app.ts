@@ -21,12 +21,12 @@ app.use(cors(
   }
 ))
 // app.use(morgan("combined")); // Use 'combined' format for detailed logs
-app.use("/webhook/*", bodyParser.raw({ type: "application/json" }));
+app.use("/api/webhook/*", bodyParser.raw({ type: "application/json" }));
 app.use(express.json())
 app.use(clerkMiddleware());
-app.use("/users", userRouter);
-app.use("/errors",errorRouter);
-app.use("/webhook/user",hookRouter)
+app.use("/api/users", userRouter);
+app.use("/api/users/errors",errorRouter);
+app.use("/api/webhook/user",hookRouter)
 
 app.listen(port, () => {
   console.log(`Server is Running at port:${port}`);

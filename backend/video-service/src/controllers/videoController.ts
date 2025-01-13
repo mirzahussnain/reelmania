@@ -155,9 +155,10 @@ export const getCommentsByVideoId = async (req: Request, res: Response) => {
 }
 
 export const createVideo = async (req: Request, res: Response) => {
+    const videoFile = req.file;
+    const metadata = JSON.parse(req.body.metadata);
+    const filePath = videoFile?.path;
     try {
-        const videoFile = req.file;
-        const metadata = JSON.parse(req.body.metadata);
 
         if (!metadata) {
             throw new Error("Video Meta-Data is Missing");
@@ -165,8 +166,10 @@ export const createVideo = async (req: Request, res: Response) => {
         if (!videoFile) {
             throw new Error("Video file is missing");
         }
+        if(!filePath){
+            throw new Error("File Path is invalid")
+        }
 
-        const filePath = videoFile.path;
         const stream = fs.createReadStream(filePath);
         const azureContainer = connectBlobStorage();
         const userName = metadata?.uploaded_by?.username;
@@ -184,6 +187,15 @@ export const createVideo = async (req: Request, res: Response) => {
         }
 
         if (fileExists) {
+            if (filePath) {
+                try {
+                    await fs.promises.unlink(filePath);
+                } catch (unlinkError) {
+                    console.error('Error deleting temporary file:', unlinkError);
+                    // Continue execution even if file deletion fails
+                }
+            }
+
             res
                 .status(400)
                 .send("File with the same name already exists in blob storage.");
@@ -202,7 +214,14 @@ export const createVideo = async (req: Request, res: Response) => {
             throw new Error("Failed to upload video data");
         }
 
-        fs.unlinkSync(filePath);
+         if (filePath) {
+            try {
+                await fs.promises.unlink(filePath);
+            } catch (unlinkError) {
+                console.error('Error deleting temporary file:', unlinkError);
+                // Continue execution even if file deletion fails
+            }
+        }
 
         const req_data: {
             title: string;
@@ -229,11 +248,26 @@ export const createVideo = async (req: Request, res: Response) => {
             .send({ message: "Video Created Successfully.", video: result });
         return;
     } catch (err: any) {
-        console.error(err);
-        res
-            .status(500)
-            .send(`Video is not Stored in Database:${err}`);
+        if (filePath) {
+            try {
+                await fs.promises.unlink(filePath);
+            } catch (unlinkError) {
+                console.error('Error deleting temporary file:', unlinkError);
+                // Continue execution even if file deletion fails
+            }
+        }
+        const statusCode = err.message.includes("exists") ? 400 : 500;
+        res.status(statusCode).json({
+            error: `Video is not Stored in Database: ${err.message}`
+        });
         return;
+    }finally{
+        if (filePath) {
+            try {
+                await fs.promises.access(filePath);
+                await fs.promises.unlink(filePath);
+            } catch {}
+        }
     }
 };
 export const deleteVideo=async(req:Request,res:Response)=>{
@@ -263,17 +297,22 @@ export const deleteVideo=async(req:Request,res:Response)=>{
                     id:videoId
                 }
             })
+
+            
             if(result){
-                res.status(200).send("Video Deleted Successfully.")
+                res.status(200).json({message:"Video Deleted Successfully."})
                 return;
             }
         }
+        else{
+            res.status(500).send(`Video could not be deleted`)
+            return;
+
+        }
        
-      
-        return;
     }catch(err:any){
-        console.log(err)
-        res.status(500).send(`Video could not be deleted: ${err.message}`)
+       
+        res.status(500).send({message:`Video could not be deleted: ${err.message}`})
         return;
     }
 }
@@ -306,7 +345,7 @@ export const addNewComment = async (req: Request, res: Response) => {
         // Emit socket event for new comment
         res
             .status(200)
-            .send({ message: "Comment Posted Successfully", newVideos: result,videoId:videoId,newComments:result.comments[result?.comments.length-1] });
+            .send({ message: "Comment Posted Successfully", newVideos: result,videoId:videoId,newComments:result.comments[result?.comments.length-1]});
         return;
     } catch (err: any) {
         console.error(err);

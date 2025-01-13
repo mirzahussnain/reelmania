@@ -4,7 +4,7 @@ import { dateFormatter, formatNumber } from "../utils/functions/formatter.ts";
 import { FaX } from "react-icons/fa6";
 import  { ChangeEvent, Key, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAppSelector } from "../utils/hooks/storeHooks.tsx";
+import {  useAppSelector } from "../utils/hooks/storeHooks.tsx";
 import { RootState } from "../utils/store/store.ts";
 import { useAddNewCommentMutation, useLazyGetCommentsByVideoIdQuery } from "../utils/store/features/video/videoApi.ts";
 import { connectSocket } from "../utils/functions/socket.ts";
@@ -12,6 +12,7 @@ import { ThreeDots } from "react-loader-spinner";
 import { IoIosArrowRoundDown, IoIosArrowRoundUp } from "react-icons/io";
 import { toast } from "react-toastify";
 import React from "react";
+
 
 const Comments = ({
   video,
@@ -77,6 +78,7 @@ const Comments = ({
           const query = await getComments(videoId).unwrap();
           if (query && query?.comments) {
             setVideoComments(query?.comments);
+           
           }
         } catch (err) {
           console.log(err);
@@ -87,7 +89,7 @@ const Comments = ({
         fetchComments(video?.id);
       }
     }
-  }, []);
+  }, [video?.id]);
 
   useEffect(() => {
     if (filter) {
@@ -104,10 +106,13 @@ const Comments = ({
   useEffect(() => {
     try {
       if (!socket) return;
+      if(socket.connected) return;
       socket.connect();
-      socket.on("newCommentAdded", ({ newComment }) => {
+      socket.on("newCommentAdded", ({ newComment,videoId }) => {
         if (newComment) {
-          setVideoComments((prevComments) => [newComment, ...prevComments]);
+          if(video?.id==videoId){
+            setVideoComments((prevComments) => [newComment, ...prevComments]);
+          }
         } else {
           toast.error("Invalid video data received");
         }

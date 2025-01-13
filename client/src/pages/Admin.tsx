@@ -27,6 +27,7 @@ const Admin = () => {
 
    const handleSubmit=async (e: FormEvent<HTMLFormElement>)=>{
     e.preventDefault();
+   
    try{
     if(!username || !role ){
         toast.error("Username or Role is missing")
@@ -45,7 +46,7 @@ const Admin = () => {
     
    }catch(err){
    
-    toast.error(String(err))
+    toast.error("Operation Failed")
    }finally{
     setRole("")
     setUser(null)
@@ -63,7 +64,7 @@ const Admin = () => {
         toast.info("No user with given username exist.")
         return;
     }
-    toast.success(`User Found with username:${user?.username} and role:${user?.role}`)
+    toast.success(`A ${user?.role} is found with username ${user?.username}`)
     setUser(user)
     setRole(user?.role);
    }
@@ -72,7 +73,6 @@ const Admin = () => {
         if(queryRan) return;
         const query=await getUsers({}).unwrap();
         if(query){
-           toast.success(query?.message)
             setUsers(query?.users)
             setQueryRan(true);
         }
@@ -89,7 +89,7 @@ const Admin = () => {
             value={username}
             onChange={(e)=>setUsername(e.target.value)}
           />
-            <select value={role} onChange={((e)=>setRole(e.target.value))}  className="lg:px-20 px-12 py-2 rounded-md text-center" >
+            <select value={role!=""?role:"Select Role"} onChange={((e)=>setRole(e.target.value))}  className="lg:px-20 px-12 py-2 rounded-md text-center" >
                 <option className="w-full" value={"Creator"}>Creator</option>
                 <option value="Consumer">Consumer</option>
             </select>

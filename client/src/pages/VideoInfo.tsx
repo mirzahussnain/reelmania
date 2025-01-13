@@ -256,7 +256,7 @@ const VideoInfo = () => {
   },[]);
 
   useEffect(()=>{
-    console.log(user)
+    
   },[user])
 
   useEffect(() => {
@@ -301,7 +301,7 @@ const VideoInfo = () => {
  
   return (
     // Fullscreen container with center alignment and blur backdrop
-    <div className="w-screen h-screen flex justify-center  overflow-y-auto scrollbar-custom pt-[18rem]  lg:pt-0 ">
+    <div className="w-screen h-screen flex justify-center  overflow-y-auto max-sm:scrollbar-hide scrollbar-custom pt-[18rem]  lg:pt-0 ">
       <div
         className="w-full h-full flex flex-col lg:flex-row justify-center items-center 
        backdrop-filter backdrop-blur-lg bg-black/80 relative"

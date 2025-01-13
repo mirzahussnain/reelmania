@@ -6,13 +6,13 @@ import {
   Outlet,
 } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useEffect } from "react";
 import Layout from "./components/Layout";
 import Loader from "./components/Loader";
 import {useGetMyProfileQuery} from "./utils/store/features/user/userApi";
 import { useAppDispatch, useAppSelector } from "./utils/hooks/storeHooks";
 import { userSignedIn, userSignedOut } from "./utils/store/features/user/userSlice";
-import { loadLazyRoute } from "./utils/functions/routeLoader";
+import { routes } from "./utils/functions/routeLoader";
 import { RootState } from "./utils/store/store";
 import { setToken } from "./utils/store/features/user/authSlice";
 
@@ -34,66 +34,53 @@ const ProtectedRoute = () => {
 
 // Main App Component
 const App = () => {
-  const Home = useMemo(() => loadLazyRoute("Home"), []);
-  const ManageProfile = useMemo(() => loadLazyRoute("ManageProfile"), []);
-  const ManageVideos = useMemo(() => loadLazyRoute("ManageVideos"), []);
-  const VideoInfo = useMemo(() => loadLazyRoute("VideoInfo"), []);
-  const Login = useMemo(() => loadLazyRoute("SignIn"), []);
-  const Register = useMemo(() => loadLazyRoute("SignUp"), []);
-  const UserProfile=useMemo(() => loadLazyRoute("UserProfile"), []);
-  const Admin=useMemo(()=>loadLazyRoute("Admin"),[]);
-  const Explore=useMemo(()=>loadLazyRoute("Explore"),[]);
-  const Welcome=useMemo(()=>loadLazyRoute("Welcome"),[]);
-  const NotFound = useMemo(() => loadLazyRoute("NotFound"), []); 
+  const Home = routes["Home"]
+  const ManageProfile = routes["ManageProfile"];
+  const ManageVideos = routes["ManageVideos"];
+  const VideoInfo =routes["VideoInfo"];
+  const Login = routes["SignIn"];
+  const Register =routes["SignUp"];
+  const UserProfile=routes["UserProfile"];
+  const Admin=routes["Admin"];
+  const Explore=routes["Explore"];
+  const Welcome=routes["Welcome"];
+  const NotFound = routes["NotFound"]; 
   const {token}=useAppSelector((state:RootState)=>state.auth)
-  const videos=useAppSelector((state:RootState)=>state.video.videos)
   const { isSignedIn, user } = useUser();
   const dispatch = useAppDispatch();
-  const { getToken } = useAuth();
+  const {getToken}=useAuth();
+  
 
-
-  const queryParam = useMemo(() => ({
+  const queryParam = {
     id: user?.id,
     token,
-  }), [user?.id, token]);
+  };
 
   const { data} = useGetMyProfileQuery(queryParam, {
-    skip: !isSignedIn,
+    skip: !isSignedIn || !user?.id
   });
 
   useEffect(() => {
-    const fetchSessionToken = async () => {
-      if (getToken) {
-        try {
-          const fetchedToken = await getToken(); // Await the token asynchronously
-          dispatch(setToken(fetchedToken)); // Set the token in the state
-        } catch (error) {
-          console.error("Error fetching token:", error);
-        }
-      }
-    };
-
-    if (isSignedIn && user) {
-      fetchSessionToken(); // Only fetch token if user is signed in
+    // Fetch token if it doesn't exist
+    if (isSignedIn) {
+      const fetchToken = async () => {
+        const newToken = await getToken();
+        dispatch(setToken(newToken));
+      };
+      fetchToken();
     }
-  }, [isSignedIn, user, getToken,videos]);
-
-  useEffect(() => {
-    if(!isSignedIn)
-    {
-      dispatch(setToken(null))
-      dispatch(userSignedOut())
-    }
-   },[isSignedIn,dispatch])
-
- 
-  useEffect(() => {
-   
+  
+    // Handle user state updates if signed in
     if (isSignedIn && data) {
-     
       dispatch(userSignedIn(data.body));
     }
-  }, [isSignedIn, data, dispatch,user]);
+  
+    // Handle user sign-out if user signs out
+    if (!isSignedIn) {
+      dispatch(setToken(null));
+      dispatch(userSignedOut());
+    }
+  }, [isSignedIn, data, dispatch, token, getToken]);
 
   return (
     <BrowserRouter>

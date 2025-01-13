@@ -7,7 +7,7 @@ const BASE_URL=import.meta.env.VITE_VIDEO_SERVICE_URL as string;
 export const videoApi = createApi({
     reducerPath: "videos",
     baseQuery: fetchBaseQuery({
-        baseUrl: `${BASE_URL}/videos`,
+        baseUrl: `${BASE_URL}/api/videos`,
         credentials: 'include',
     }),
     tagTypes: ["Videos", "SAS","Comments","Likes"],
@@ -27,11 +27,12 @@ export const videoApi = createApi({
             providesTags:["Videos"]
         }),
         deleteUserVideo:builder.mutation({
-            query:(id)=>({
+            query:({id,token})=>({
                 url:`/${id}`,
                 method:"DELETE",
                 headers:{
-                    "Content-Type":"application/json"
+                    "Content-Type":"application/json",
+                    Authorization:`Bearer ${token}`
                 }
             }),
             invalidatesTags:["Videos"]
@@ -75,7 +76,7 @@ export const videoApi = createApi({
                   socket.connect();
                   if (socket) {
                    
-                    socket.emit("newComment", { videoId: data?.videoId,newComment:data?.newComments,newVideo:data?.newVideos });
+                    socket.emit("newComment", { videoId: data?.videoId,newComment:data?.newComments,newVideo:data?.newVideos,commentCount:data?.commentsCount });
                   }
                 } catch(err) {
                     console.log(err)
@@ -97,6 +98,7 @@ export const videoApi = createApi({
                 try {
                   const { data } = await queryFulfilled;
                   const socket = connectSocket("");
+                  console.log(socket)
                   if (socket) {
                    
                     socket.emit("likeUpdated", { videoId:data?.videoId,updatedLikes:data?.updatedLikes });
@@ -105,26 +107,6 @@ export const videoApi = createApi({
               },
               invalidatesTags: ['Likes']
             }),
-        //  uploadVideo:builder.mutation({
-        //       queryFn: async ({ url, data }, api) => {
-        //         try {
-        //           const response = await axios.post(url, data,{
-        //             onUploadProgress:upload=>{
-        //               let uploadloadProgress = upload?.total ? Math.round((100 * upload.loaded) / upload.total) : 0;
-        //               api.dispatch(setUploadProgress(uploadloadProgress))
-        //             }
-        //           });
-        //           return { data: response.data };
-        //         } catch (error: any) {
-        //           return {
-        //             error: {
-        //               status: error.response?.status,
-        //               data: error.response?.data || error.message,
-        //             },
-        //           };
-        //         }
-        //       }
-        //     }),
         fetchSasToken: builder.query({
             query: (token) => ({
                 url: "/generate/sas",

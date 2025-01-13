@@ -19,7 +19,7 @@ spec:
   - host: reelmania-user-service.azurewebsites.net
     http:   
       paths:
-      - path: /users
+      - path: /api/users
         pathType: Prefix
         backend:
           service:
@@ -29,7 +29,7 @@ spec:
   - host: reelmania-video-service.azurewebsites.net
     http:
       paths:
-      - path: /videos
+      - path: /api/videos
         pathType: Prefix
         backend:
           service:

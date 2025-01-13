@@ -1,17 +1,15 @@
 import { lazy } from "react";
 
-export const loadLazyRoute = (path: string) => lazy(() => {
-  if (path.includes("Home")) return import("../../pages/Home");
-  if (path.includes("ManageProfile")) return import("../../pages/ManageProfile");
-  if (path.includes("ManageVideos")) return import("../../pages/ManageVideos");
-  if (path.includes("VideoInfo")) return import("../../pages/VideoInfo");
-  if (path.includes("SignIn")) return import("../../pages/SignIn");
-  if (path.includes("SignUp")) return import("../../pages/SignUp");
-  if (path.includes("UserProfile")) return import("../../pages/UserProfile");
-  if(path.includes("Explore")) return import("../../pages/Explore");
-  if(path.includes("Welcome")) return import("../../pages/Welcome");
-  if(path.includes("NotFound")) return import("../../pages/NotFound");
-  if(path.includes("Admin")) return import("../../pages/Admin");
-
-  return Promise.reject(new Error("Unknown path"));
-});
+export const routes = {
+  Home: lazy(() => import("../../pages/Home")),
+  ManageProfile: lazy(() => import("../../pages/ManageProfile")),
+  ManageVideos: lazy(() => import("../../pages/ManageVideos")),
+  VideoInfo: lazy(() => import("../../pages/VideoInfo")),
+  SignIn: lazy(() => import("../../pages/SignIn")),
+  SignUp: lazy(() => import("../../pages/SignUp")),
+  UserProfile: lazy(() => import("../../pages/UserProfile")),
+  Explore: lazy(() => import("../../pages/Explore")),
+  Welcome: lazy(() => import("../../pages/Welcome")),
+  NotFound: lazy(() => import("../../pages/NotFound")),
+  Admin: lazy(() => import("../../pages/Admin")),
+};
