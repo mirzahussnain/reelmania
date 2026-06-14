@@ -8,7 +8,7 @@ import { store } from "./utils/store/store.ts";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import {ToastContainer} from "react-toastify";
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLIC_KEY;
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 let persisttor = persistStore(store);
 
 if (!PUBLISHABLE_KEY) {

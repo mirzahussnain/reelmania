@@ -9,8 +9,7 @@ const filteredVideosSlice = createSlice({
     initialState,
     reducers: {
         setFilteredVideos(_state:VideoType[], action: PayloadAction<VideoType[]>) {
-
-            return [...action.payload];
+            return Array.isArray(action.payload) ? [...action.payload] : [];
         },
         clearFilteredVideos(_state:VideoType[],action: PayloadAction<VideoType[]>) {
 

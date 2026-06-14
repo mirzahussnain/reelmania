@@ -32,13 +32,12 @@ export const SearcBar = ({
       if (allVideos.length === 0) {
       getVideos({}).unwrap();
       }
-  }, [allVideos]);
+  }, []);
 
   useEffect(()=>{
     if(response.isSuccess){
-       
-       dispatch(setAllVideos(response?.data?.videos))
-      dispatch(setFilteredVideos(response?.data?.videos))
+       dispatch(setAllVideos(response?.data?.videos || []))
+      dispatch(setFilteredVideos(response?.data?.videos || []))
     }
   },[response])
   

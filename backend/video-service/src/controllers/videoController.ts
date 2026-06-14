@@ -1,12 +1,19 @@
-import { connectBlobStorage } from "../utils/blob_connection.config";
 import prisma from "../utils/dbconnection.config";
 import { v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
-import fs from "fs";
+import { StorageFactory } from "../providers/StorageFactory";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
-        const videos = await prisma.videos.findMany({});
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+
+        const videos = await prisma.videos.findMany({
+            skip,
+            take: limit,
+            orderBy: { uploaded_at: "desc" },
+        });
 
         if (videos.length === 0) {
             res
@@ -14,15 +21,13 @@ export const getVideos = async (req: Request, res: Response) => {
                 .send({ message: "No Video Exists in Database", videos: null });
             return;
         }
-        // Shuffle the videos array for random order
-        const shuffledVideos = videos.sort(() => Math.random() - 0.5);
 
+      // Sort comments for each video
+      videos.forEach((video)=>{
+        video.comments = video.comments.sort((a,b)=>b.posted_at.getTime()-a.posted_at.getTime());
+      });
 
-      shuffledVideos.forEach((video)=>{
-        video.comments=video.comments.sort((a,b)=>b.posted_at.getTime()-a.posted_at.getTime())
-      })
-
-        let formattedDateVideos = shuffledVideos.map((video) => ({
+        let formattedDateVideos = videos.map((video) => ({
             ...video,
             uploaded_at: video.uploaded_at.toISOString(),
         }
@@ -30,12 +35,13 @@ export const getVideos = async (req: Request, res: Response) => {
     
         res
             .status(200)
-            .send({ message: "Videos Fetched Successfully", videos: formattedDateVideos });
+            .send({ message: "Videos Fetched Successfully", videos: formattedDateVideos, page, limit });
         return;
-    } catch (err: any) {
+    } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Unknown error";
         res
             .status(500)
-            .send(`Operation Failed:${err}`);
+            .send(`Operation Failed:${errorMsg}`);
         return;
     }
 };
@@ -154,74 +160,37 @@ export const getCommentsByVideoId = async (req: Request, res: Response) => {
     }
 }
 
-export const createVideo = async (req: Request, res: Response) => {
-    const videoFile = req.file;
-    const metadata = JSON.parse(req.body.metadata);
-    const filePath = videoFile?.path;
+export const generateUploadUrl = async (req: Request, res: Response) => {
     try {
-
-        if (!metadata) {
-            throw new Error("Video Meta-Data is Missing");
-        }
-        if (!videoFile) {
-            throw new Error("Video file is missing");
-        }
-        if(!filePath){
-            throw new Error("File Path is invalid")
-        }
-
-        const stream = fs.createReadStream(filePath);
-        const azureContainer = connectBlobStorage();
-        const userName = metadata?.uploaded_by?.username;
-        const blobs = azureContainer.listBlobsFlat();
-        let fileExists = false;
-
-        for await (const blob of blobs) {
-            if (blob.name.includes(userName) &&
-                blob.name.includes(videoFile.originalname)
-            ) {
-                fileExists = true;
-                console.log("File Matched");
-                break;
-            }
-        }
-
-        if (fileExists) {
-            if (filePath) {
-                try {
-                    await fs.promises.unlink(filePath);
-                } catch (unlinkError) {
-                    console.error('Error deleting temporary file:', unlinkError);
-                    // Continue execution even if file deletion fails
-                }
-            }
-
-            res
-                .status(400)
-                .send("File with the same name already exists in blob storage.");
+        const { fileName, contentType } = req.body;
+        if (!fileName || !contentType) {
+            res.status(400).json({ error: "fileName and contentType are required" });
             return;
         }
 
-        const uniqueBlobName = `${userName}/${uuidv4()}-${videoFile.originalname}`;
-        const blobClient = azureContainer.getBlockBlobClient(uniqueBlobName);
-        const uploadBlobResponse = await blobClient.uploadStream(
-            stream,
-            videoFile.size,
-            5
-        );
+        const uniqueName = `${uuidv4()}-${fileName}`;
+        const storageProvider = StorageFactory.getProvider();
+        const signedUrl = await storageProvider.generateSignedUploadUrl(uniqueName, contentType);
 
-        if (!uploadBlobResponse) {
-            throw new Error("Failed to upload video data");
+        res.status(200).json({ signedUrl, fileName: uniqueName });
+        return;
+    } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Unknown error";
+        res.status(500).json({ error: `Failed to generate upload URL: ${errorMsg}` });
+    }
+};
+
+export const createVideo = async (req: Request, res: Response) => {
+    const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : req.body;
+    const fileName = req.body.fileName;
+
+    try {
+        if (!metadata || !fileName) {
+            throw new Error("Video Meta-Data or fileName is Missing");
         }
 
-         if (filePath) {
-            try {
-                await fs.promises.unlink(filePath);
-            } catch (unlinkError) {
-                console.error('Error deleting temporary file:', unlinkError);
-                // Continue execution even if file deletion fails
-            }
-        }
+        const storageProvider = StorageFactory.getProvider();
+        const publicUrl = storageProvider.getPublicUrl(fileName);
 
         const req_data: {
             title: string;
@@ -240,82 +209,51 @@ export const createVideo = async (req: Request, res: Response) => {
             hashtags: string[];
         } = metadata;
 
-        const videoData = { ...req_data, video_url: blobClient.url };
+        const videoData = { ...req_data, video_url: publicUrl };
         const result = await prisma.videos.create({ data: videoData });
 
-        res
-            .status(200)
-            .send({ message: "Video Created Successfully.", video: result });
+        res.status(200).json({ message: "Video Created Successfully.", video: result });
         return;
-    } catch (err: any) {
-        if (filePath) {
-            try {
-                await fs.promises.unlink(filePath);
-            } catch (unlinkError) {
-                console.error('Error deleting temporary file:', unlinkError);
-                // Continue execution even if file deletion fails
-            }
-        }
-        const statusCode = err.message.includes("exists") ? 400 : 500;
-        res.status(statusCode).json({
-            error: `Video is not Stored in Database: ${err.message}`
-        });
+    } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Unknown error";
+        res.status(500).json({ error: `Video is not Stored in Database: ${errorMsg}` });
         return;
-    }finally{
-        if (filePath) {
-            try {
-                await fs.promises.access(filePath);
-                await fs.promises.unlink(filePath);
-            } catch {}
-        }
     }
 };
-export const deleteVideo=async(req:Request,res:Response)=>{
-    const videoId=req?.params?.videoId;
-    try{
-        if(!videoId){
-            throw new Error("Video Id is missing")
+export const deleteVideo = async (req: Request, res: Response) => {
+    const videoId = req?.params?.videoId;
+    try {
+        if (!videoId) {
+            throw new Error("Video Id is missing");
         }
-        const result=await prisma.videos.findUnique({
-            where:{
-                id:videoId
-            }
-        })
-        if(!result){
+        const result = await prisma.videos.findUnique({ where: { id: videoId } });
+        if (!result) {
             throw new Error("Video Does not exist");
         }
-        const startIndex=result?.video_url.indexOf("/videos")
-        const actualFileName=result?.video_url?.substring(startIndex).replace("/videos/","");
-        const azureClient=connectBlobStorage();
-        const blobClient=azureClient.getBlobClient(actualFileName)
-        const blobResponse=await blobClient.deleteIfExists({
-            deleteSnapshots:"include"
-        });
-        if(blobResponse.succeeded){
-            const result=await prisma.videos.delete({
-                where:{
-                    id:videoId
-                }
-            })
+        
+        // Extract filename from URL (e.g. http://minio:9000/videos/filename.mp4 -> filename.mp4)
+        const parts = result.video_url.split('/');
+        const actualFileName = parts[parts.length - 1];
 
-            
-            if(result){
-                res.status(200).json({message:"Video Deleted Successfully."})
+        const storageProvider = StorageFactory.getProvider();
+        const deleted = await storageProvider.deleteFile(actualFileName);
+        
+        if (deleted) {
+            const deleteResult = await prisma.videos.delete({ where: { id: videoId } });
+            if (deleteResult) {
+                res.status(200).json({ message: "Video Deleted Successfully." });
                 return;
             }
-        }
-        else{
-            res.status(500).send(`Video could not be deleted`)
+        } else {
+            res.status(500).json({ error: "Video file could not be deleted from storage" });
             return;
-
         }
-       
-    }catch(err:any){
-       
-        res.status(500).send({message:`Video could not be deleted: ${err.message}`})
+    } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Unknown error";
+        res.status(500).json({ error: `Video could not be deleted: ${errorMsg}` });
         return;
     }
-}
+};
 
 export const addNewComment = async (req: Request, res: Response) => {
     const videoId = req.params.videoId;

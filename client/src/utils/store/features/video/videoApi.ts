@@ -38,15 +38,25 @@ export const videoApi = createApi({
             invalidatesTags:["Videos"]
         }),
 
-        uploadVideo: builder.mutation({
-            query: ({formData, token}: { formData: FormData, token: string | null }) => ({
-                url: "/video",
+        generateUploadUrl: builder.mutation({
+            query: ({ fileName, contentType, token }: { fileName: string, contentType: string, token: string | null }) => ({
+                url: "/generate-upload-url",
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`
                 },
-                body: formData
-
+                body: { fileName, contentType }
+            })
+        }),
+        uploadVideo: builder.mutation({
+            query: ({ metadata, fileName, token }: { metadata: any, fileName: string, token: string | null }) => ({
+                url: "/video",
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: { metadata, fileName }
             }),
             invalidatesTags: ["Videos"]
         }),
@@ -124,8 +134,9 @@ export const videoApi = createApi({
 
 export const {
     useFetchAllVideosQuery,
-    useUploadVideoMutation,
     useFetchUserVideosQuery,
+    useGenerateUploadUrlMutation,
+    useUploadVideoMutation,
     useFetchSasTokenQuery,
     useAddNewCommentMutation,
     useUpdateLikesMutation,

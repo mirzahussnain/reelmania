@@ -1,21 +1,28 @@
 import { Request, Response } from "express";
 
-import { PrismaClient } from "@prisma/client";
-
-
-const prisma=new PrismaClient()
+import prisma from "../utils/dbconnection.config";
 
 export const getUsers = async (req: Request, res: Response) => {
-  try{
-    const result=await prisma.users.findMany({})
-    if(result.length==0){
-      res.status(404).json({message:"No user found."})
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const result = await prisma.users.findMany({
+      skip,
+      take: limit,
+      orderBy: { created_at: "desc" },
+    });
+
+    if (result.length === 0) {
+      res.status(404).json({ success: false, message: "No user found." });
       return;
     }
-    res.status(200).json({message:"Users found.",users:result})
+    res.status(200).json({ success: true, message: "Users found.", users: result, page, limit });
     return;
-  }catch (err){
-    res.status(500).json({message:"Something went wrong.",error:err})
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ success: false, message: "Something went wrong.", error: errorMsg });
     return;
   }
 };
@@ -35,18 +42,18 @@ export const getUser = async (req: Request, res: Response) => {
     // Check if user exists
     if (!user) {
       // Respond with 404 if user is not found
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ success: false, message: "User not found" });
       return;
     }
 
     // Send successful response
-    res.status(200).json({ message: "User Found Successfully", body: user });
+    res.status(200).json({ success: true, message: "User Found Successfully", body: user });
     return;
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Log the error and send a server error response
-    console.log(err)
-   
-    res.status(500).json({ message: `User not Found`, error: err.message });
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error(err);
+    res.status(500).json({ success: false, message: `User not Found`, error: errorMsg });
   }
 };
 
@@ -59,7 +66,7 @@ export const createUser = async (req: Request, res: Response) => {
     });
 
     if (existingUser) {
-      res.status(400).json({ message: "User already exists" });
+      res.status(400).json({ success: false, message: "User already exists" });
       return;
     }
 
@@ -67,11 +74,12 @@ export const createUser = async (req: Request, res: Response) => {
     const data = { ...req.body, created_at: ISO_date };
     const user = await prisma.users.create({ data });
 
-    res.status(200).json({ message: "User Created Successfully", body: user });
+    res.status(200).json({ success: true, message: "User Created Successfully", body: user });
     return;
-  } catch (err: any) {
-    console.log(err);
-    res.status(500).send(`User Creation Failed: ${err}`);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error(err);
+    res.status(500).json({ success: false, message: `User Creation Failed`, error: errorMsg });
   }
 };
 
@@ -88,10 +96,11 @@ export const updateUser = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(200).json({ message: "User Updated Successfully", body: result });
+    res.status(200).json({ success: true, message: "User Updated Successfully", body: result });
     return;
-  } catch (err: any) {
-    res.status(500).send(`User Updation Failed: ${err}`);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ success: false, message: `User Updation Failed`, error: errorMsg });
   }
 };
 
@@ -100,11 +109,11 @@ export const updateUserRole=async(req:Request,res:Response)=>{
     const username=req?.params?.username;
     const newRole=req?.body?.newRole
     if(!username){
-      res.status(401).send("User name is missing")
+      res.status(401).json({ success: false, message: "User name is missing" });
       return;
     }
     if(!newRole){
-      res.status(401).send("User Role is missing")
+      res.status(401).json({ success: false, message: "User Role is missing" });
       return;
     }
     const result=await prisma.users.update({
@@ -118,11 +127,12 @@ export const updateUserRole=async(req:Request,res:Response)=>{
       }
     })
 
-    res.status(200).send({message:"USER ROLE UPDATED SUCCESSFULLY",data:result})
+    res.status(200).json({success: true, message:"USER ROLE UPDATED SUCCESSFULLY",data:result})
     return;
 
-  }catch(err){
-    res.status(500).send("OPERATION FAILED")
+  }catch(err: unknown){
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ success: false, message: "OPERATION FAILED", error: errorMsg });
   }
 }
 export const deleteUser = async (req: Request, res: Response) => {
@@ -134,10 +144,11 @@ export const deleteUser = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(200).send("User deleted successfully");
+    res.status(200).json({ success: true, message: "User deleted successfully" });
     return;
-  } catch (err: any) {
-    res.status(500).send(`User deletion failed: ${err?.message}`);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ success: false, message: `User deletion failed`, error: errorMsg });
   }
 };
 
@@ -145,7 +156,7 @@ export const getFollowers=async(req:Request,res:Response)=>{
   try{
     const userId=req?.params?.userId;
     if(!userId){
-      res.status(401).send("User Id is missing");
+      res.status(401).json({ success: false, message: "User Id is missing" });
       return;
     }
     const result=await prisma.followers.findMany({
@@ -154,11 +165,12 @@ export const getFollowers=async(req:Request,res:Response)=>{
       }
     })
 
-    res.status(200).send({message:"Followers Fetched Successfully",result})
+    res.status(200).json({ success: true, message:"Followers Fetched Successfully",result})
     return;
 
-  }catch(err){
-    res.status(500).json({body:err,message:"Operation Failed"})
+  }catch(err: unknown){
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({success: false, message:"Operation Failed", error: errorMsg})
     return;
   }
 }
@@ -170,7 +182,7 @@ export const updateFollower=async (req:Request,res:Response)=>{
     const follower_id:string=req?.body?.followerId;
     const following_id:string=req?.params?.userId;
     if(!follower_id || !following_id){
-      res.status(500).send("Follower or Following Id is missing");
+      res.status(500).json({ success: false, message: "Follower or Following Id is missing" });
       return;
     }
     const followedBy=await prisma.followers.findUnique({
@@ -191,10 +203,10 @@ export const updateFollower=async (req:Request,res:Response)=>{
         }
       })
       if(result){
-        res.status(200).send({message:"Unfollowed",result:null})
+        res.status(200).json({ success: true, message:"Unfollowed",result:null})
         return;
       }
-      res.status(500).send("Operation Failed")
+      res.status(500).json({ success: false, message: "Operation Failed" });
       return;
     }
     else{
@@ -204,15 +216,16 @@ export const updateFollower=async (req:Request,res:Response)=>{
         following_id
       }})
       if(!result){
-        res.status(500).send("Operation Failed!")
+        res.status(500).json({ success: false, message: "Operation Failed!" });
         return;
       }
-      res.status(200).send({message:"Follower Added Successfully",result})
+      res.status(200).json({ success: true, message:"Follower Added Successfully",result})
       return;
     }
   }
-  catch(err){
-    console.log(err)
-    res.status(500).send(err)
+  catch(err: unknown){
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error(err)
+    res.status(500).json({ success: false, message: "Operation Failed", error: errorMsg })
   }
 }

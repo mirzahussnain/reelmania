@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaExchangeAlt, FaPlus } from "react-icons/fa";
 import Modal from "react-modal";
-import { useUploadVideoMutation } from "../utils/store/features/video/videoApi";
+import { useUploadVideoMutation, useGenerateUploadUrlMutation } from "../utils/store/features/video/videoApi";
 import { useAppSelector } from "../utils/hooks/storeHooks";
 import { RootState } from "../utils/store/store";
 import { toast } from "react-toastify";
@@ -20,6 +20,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
   const { token } = useAppSelector((state: RootState) => state.auth);
   const user = useAppSelector((state: RootState) => state.user);
   const [postToMongo, response] = useUploadVideoMutation();
+  const [generateUploadUrl] = useGenerateUploadUrlMutation();
   const cacheTimerRef = useRef<(ReturnType<typeof setTimeout>) | null>(null);
   const [timeLeft, setTimeLeft] = useState(40);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -43,13 +44,29 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
       if (!cachedFile) {
         throw new Error("File is not selected.");
       }
-      const formData = new FormData();
-      formData.append("video", cachedFile);
-      formData.append("metadata", JSON.stringify(metaData));
       if (!token) {
         throw new Error("User is not signed in.");
       }
-      await postToMongo({ formData, token }).unwrap();
+
+      // Step 1: Generate Pre-Signed URL
+      const { signedUrl, fileName } = await generateUploadUrl({ 
+        fileName: cachedFile.name, 
+        contentType: cachedFile.type, 
+        token 
+      }).unwrap();
+
+      // Step 2: Upload directly to S3 / Cloudflare R2 / MinIO
+      const uploadRes = await fetch(signedUrl, {
+        method: "PUT",
+        body: cachedFile,
+        headers: { "Content-Type": cachedFile.type },
+      });
+
+      if (!uploadRes.ok) throw new Error("Direct upload failed.");
+
+      // Step 3: Save metadata to MongoDB
+      await postToMongo({ metadata: metaData, fileName, token }).unwrap();
+      
       setCachedFile(null);
       setFileURL(null);
       setTitle("");
