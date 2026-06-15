@@ -24,6 +24,16 @@ export const videoApi = createApi({
             },
             providesTags: ["Videos"]
         }),
+        fetchForYouVideos: builder.query({
+            query: ({ token }: { token: string | null }) => ({
+                url: "/foryou",
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }),
+            providesTags: ["Videos"]
+        }),
         fetchVideoById:builder.query({
             query:(videoId)=>`/${videoId}`,
         }),
@@ -165,6 +175,7 @@ export const {
    useLazyFetchVideoByIdQuery,
    useDeleteUserVideoMutation,
    useLazyFetchAllVideosQuery,
+   useLazyFetchForYouVideosQuery,
    useLazyGetCommentsByVideoIdQuery,
    useLazyGetLikesByVideoIdQuery
 } = videoApi

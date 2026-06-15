@@ -3,12 +3,28 @@ import { v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
 import { StorageFactory } from "../providers/StorageFactory";
 
+import { getRedisClient } from "../utils/redis";
+
 export const getVideos = async (req: Request, res: Response) => {
     try {
         const cursor = req.query.cursor as string | undefined;
         const limit = parseInt(req.query.limit as string) || 10;
         const q = req.query.q as string | undefined;
         const type = req.query.type as string | undefined;
+
+        // Redis Caching
+        const redisClient = getRedisClient();
+        const cacheKey = `explore:limit_${limit}:cursor_${cursor || 'initial'}:q_${q || 'none'}:type_${type || 'none'}`;
+        
+        try {
+            const cachedData = await redisClient.get(cacheKey);
+            if (cachedData) {
+                res.status(200).send(JSON.parse(cachedData));
+                return;
+            }
+        } catch (cacheErr) {
+            console.error("Redis Cache Read Error:", cacheErr);
+        }
 
         let whereClause: any = {};
 
@@ -40,7 +56,8 @@ export const getVideos = async (req: Request, res: Response) => {
         });
 
         if (videos.length === 0) {
-            res.status(200).send({ message: "No Video Exists in Database", videos: [], nextCursor: null });
+            const emptyPayload = { message: "No Video Exists in Database", videos: [], nextCursor: null };
+            res.status(200).send(emptyPayload);
             return;
         }
 
@@ -50,8 +67,16 @@ export const getVideos = async (req: Request, res: Response) => {
         }));
 
         const nextCursor = videos.length === limit ? videos[videos.length - 1].id : null;
-    
-        res.status(200).send({ message: "Videos Fetched Successfully", videos: formattedDateVideos, nextCursor, limit });
+        
+        const payload = { message: "Videos Fetched Successfully", videos: formattedDateVideos, nextCursor, limit };
+        
+        try {
+            await redisClient.setEx(cacheKey, 60, JSON.stringify(payload));
+        } catch (cacheErr) {
+            console.error("Redis Cache Write Error:", cacheErr);
+        }
+
+        res.status(200).send(payload);
         return;
     } catch (err: unknown) {
         const errorMsg = err instanceof Error ? err.message : "Unknown error";
@@ -121,16 +146,27 @@ export const getUserVideos = async (req: Request, res: Response) => {
 export const getLikesByVideoId = async (req: Request, res: Response) => {
     try {
         const videoId = req?.params?.videoId;
+        const cursor = req.query.cursor as string | undefined;
+        const limit = parseInt(req.query.limit as string) || 20;
+
         if (!videoId) {
             res.status(400).send("Video Id is missing");
             return;
         }
 
+        const cursorObj = cursor ? { id: cursor } : undefined;
+
         const likes = await prisma.like.findMany({
             where: {
                 videoId: videoId
-            }
+            },
+            take: limit,
+            skip: cursor ? 1 : 0,
+            cursor: cursorObj,
+            orderBy: { id: "desc" }
         });
+
+        const nextCursor = likes.length === limit ? likes[likes.length - 1].id : null;
 
         const mappedLikes = likes.map((like) => ({
             liked_by: {
@@ -139,7 +175,7 @@ export const getLikesByVideoId = async (req: Request, res: Response) => {
             }
         }));
 
-        res.status(200).send({ message: "Likes Fetched Successfully", likes: mappedLikes });
+        res.status(200).send({ message: "Likes Fetched Successfully", likes: mappedLikes, nextCursor });
         return;
     } catch (err: any) {
         res.status(500).send(`Operation Failed:${err}`);

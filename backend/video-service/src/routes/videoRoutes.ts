@@ -3,9 +3,12 @@ import express from "express";
 import {addNewComment, createVideo, deleteVideo, getCommentsByVideoId, getLikesByVideoId, getUserVideos, getVideoById, getVideos, updateLikes, generateUploadUrl} from "../controllers/videoController";
 import { authMiddleware } from "../middelwares/authMiddleware";
 
+import { getForYouFeed } from "../controllers/feedController";
+
 const videoRouter=express.Router();
 
 videoRouter.get("/",getVideos)
+videoRouter.get("/foryou", authMiddleware, getForYouFeed)
 
 // STATIC ROUTES (Must come before dynamic routes!)
 videoRouter.get("/generate-upload-url", (req, res) => { res.status(405).json({ error: "Method Not Allowed - Use POST" }); });

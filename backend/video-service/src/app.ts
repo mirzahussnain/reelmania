@@ -20,6 +20,10 @@ app.use(cors({
     credentials: true, // If you're using cookies or authentication
   })); 
 
+import { connectRedis } from "../src/utils/redis";
+connectRedis();
+
+
 const PORT=process.env.VIDEO_SERVICE_PORT || 4000
 
 app.use("/api/videos",videoRouter)

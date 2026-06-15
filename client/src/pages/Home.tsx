@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PlayerCard from "../components/PlayerCard";
 import { useAppDispatch, useAppSelector } from "../utils/hooks/storeHooks";
 import {
-  useLazyFetchAllVideosQuery,
+  useLazyFetchForYouVideosQuery,
 } from "../utils/store/features/video/videoApi";
 import { RootState } from "../utils/store/store";
 import { setAllVideos, appendVideos } from "../utils/store/features/video/videoSlice";
@@ -11,16 +11,17 @@ import Comments from "../components/Comments";
 import useScreenWidth from "../utils/hooks/useScreenWidth";
 import { toast } from "react-toastify";
 import { useInView } from "react-intersection-observer";
+import { useAuth } from "@clerk/clerk-react";
 
 const Home = () => {
-  const [fetchVideos, { isLoading, isFetching }] = useLazyFetchAllVideosQuery();
+  const { getToken } = useAuth();
+  const [fetchForYou, { isLoading, isFetching }] = useLazyFetchForYouVideosQuery();
 
   const dispatch = useAppDispatch();
   const videos = useAppSelector((state: RootState) => state.video.videos);
   const screenWidth = useScreenWidth();
  
   const [openVideoIndex, setOpenVideoIndex] = useState<number | null>(null);
-  const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
 
   const { ref, inView } = useInView({
@@ -29,33 +30,39 @@ const Home = () => {
 
   // Initial load
   useEffect(() => {
-    fetchVideos({ limit: 10 }).unwrap().then((res) => {
-      if (res?.videos) {
-        dispatch(setAllVideos(res.videos));
-        setCursor(res.nextCursor);
-        setHasMore(!!res.nextCursor);
-      }
-    }).catch(() => {
-        toast.error("Failed to fetch videos");
-    });
+    const loadInitial = async () => {
+        const token = await getToken();
+        fetchForYou({ token }).unwrap().then((res) => {
+        if (res?.videos) {
+            dispatch(setAllVideos(res.videos));
+            setHasMore(res.videos.length > 0);
+        }
+        }).catch(() => {
+            toast.error("Failed to fetch videos");
+        });
+    }
+    loadInitial();
   }, []);
 
   // Infinite scroll trigger
   useEffect(() => {
-    if (inView && hasMore && !isFetching && cursor) {
-      fetchVideos({ cursor, limit: 10 }).unwrap().then((res) => {
-        if (res?.videos?.length > 0) {
-          dispatch(appendVideos(res.videos));
-          setCursor(res.nextCursor);
-          setHasMore(!!res.nextCursor);
-        } else {
-          setHasMore(false);
-        }
-      }).catch(() => {
-        toast.error("Failed to fetch more videos");
-      });
+    if (inView && hasMore && !isFetching) {
+      const loadMore = async () => {
+          const token = await getToken();
+          fetchForYou({ token }).unwrap().then((res) => {
+            if (res?.videos?.length > 0) {
+              dispatch(appendVideos(res.videos));
+              setHasMore(true);
+            } else {
+              setHasMore(false);
+            }
+          }).catch(() => {
+            toast.error("Failed to fetch more videos");
+          });
+      }
+      loadMore();
     }
-  }, [inView, hasMore, isFetching, cursor, fetchVideos, dispatch]);
+  }, [inView, hasMore, isFetching, fetchForYou, dispatch, getToken]);
 
   return  isLoading ? (
     <Loader />
