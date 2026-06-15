@@ -4,19 +4,37 @@ import { IStorageProvider } from "../interfaces/IStorageProvider";
 
 export class S3StorageProvider implements IStorageProvider {
   private s3Client: S3Client;
+  private s3PresignClient: S3Client;
   private bucketName: string;
 
   constructor() {
     this.bucketName = process.env.S3_BUCKET_NAME || "videos";
     
+    // Internal client for server-to-MinIO operations (e.g. Delete)
     this.s3Client = new S3Client({
       region: process.env.S3_REGION || "us-east-1",
-      endpoint: process.env.S3_ENDPOINT, // Required for MinIO/Cloudflare
+      endpoint: process.env.S3_ENDPOINT, // e.g. http://minio:9000
       credentials: {
         accessKeyId: process.env.S3_ACCESS_KEY || "minioadmin",
         secretAccessKey: process.env.S3_SECRET_KEY || "minioadmin",
       },
-      forcePathStyle: true, // Required for MinIO
+      forcePathStyle: true,
+    });
+
+    // Public client for generating Presigned URLs that the browser can use
+    // We strip out the "/videos" part from S3_PUBLIC_DOMAIN to get the base endpoint
+    const publicEndpoint = process.env.S3_PUBLIC_DOMAIN 
+      ? process.env.S3_PUBLIC_DOMAIN.split(`/${this.bucketName}`)[0] 
+      : "http://localhost:9000";
+
+    this.s3PresignClient = new S3Client({
+      region: process.env.S3_REGION || "us-east-1",
+      endpoint: publicEndpoint, // e.g. http://localhost:9000
+      credentials: {
+        accessKeyId: process.env.S3_ACCESS_KEY || "minioadmin",
+        secretAccessKey: process.env.S3_SECRET_KEY || "minioadmin",
+      },
+      forcePathStyle: true,
     });
   }
 
@@ -27,8 +45,8 @@ export class S3StorageProvider implements IStorageProvider {
       ContentType: contentType,
     });
 
-    // URL expires in 15 minutes
-    const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 900 });
+    // Generate the URL using the presign client so the host in the signature matches the frontend's host
+    const signedUrl = await getSignedUrl(this.s3PresignClient, command, { expiresIn: 900 });
     return signedUrl;
   }
 

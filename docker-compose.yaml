@@ -57,7 +57,7 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - VIDEO_DATABASE_URL=${VIDEO_DATABASE_URL:-mongodb://mongodb:27017/videos}
+      - VIDEO_DATABASE_URL=${VIDEO_DATABASE_URL:-mongodb://mongodb:27017/videos?replicaSet=rs0}
       - VIDEO_SERVICE_PORT=${VIDEO_SERVICE_PORT:-8001}
       - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
@@ -96,12 +96,27 @@ services:
   mongodb:
     image: mongo:6
     container_name: reelmania-mongodb
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     networks:
       - reelmania-network
+
+  mongodb-setup:
+    image: mongo:6
+    container_name: reelmania-mongodb-setup
+    depends_on:
+      - mongodb
+    networks:
+      - reelmania-network
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mongosh --host mongodb:27017 --eval 'rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongodb:27017\"}]})' || true;
+      exit 0;
+      "
 
   minio:
     image: minio/minio
@@ -112,6 +127,7 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data

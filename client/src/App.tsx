@@ -61,13 +61,17 @@ const App = () => {
   });
 
   useEffect(() => {
-    // Fetch token if it doesn't exist
+    // Fetch token if it doesn't exist or is expiring
+    let intervalId: NodeJS.Timeout;
     if (isSignedIn) {
       const fetchToken = async () => {
         const newToken = await getToken();
         dispatch(setToken(newToken));
       };
       fetchToken();
+      
+      // Auto-refresh the token every 30 seconds to prevent 401s during long sessions
+      intervalId = setInterval(fetchToken, 30000);
     }
   
     // Handle user state updates if signed in
@@ -80,6 +84,10 @@ const App = () => {
       dispatch(setToken(null));
       dispatch(userSignedOut());
     }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [isSignedIn, data, dispatch, token, getToken]);
 
   return (

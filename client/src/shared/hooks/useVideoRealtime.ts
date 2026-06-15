@@ -32,9 +32,16 @@ export const useVideoRealtime = (videoId: string | undefined) => {
 
       setPending(true);
       const userData = { userId: user?.id, userName: user?.username };
-      await updateLikes({ videoId, userData, token }).unwrap();
+      const query = await updateLikes({ videoId, userData, token }).unwrap();
+      
+      console.log("Mutation response:", query);
+      
+      if (query?.updatedLikes) {
+        console.log("Setting local likes to:", query.updatedLikes);
+        setLikes(query.updatedLikes);
+      }
     } catch (err) {
-      console.log(err);
+      console.log("Mutation error:", err);
     } finally {
       setPending(false);
     }
@@ -73,15 +80,18 @@ export const useVideoRealtime = (videoId: string | undefined) => {
   useEffect(() => {
     try {
       if (socket) {
-        if (socket.connected) return;
-        socket.connect();
+        if (!socket.connected) {
+          socket.connect();
+        }
         socket.on("likesChange", ({ updatedLikes, videoId: returnedVideoId }) => {
           if (returnedVideoId == videoId && updatedLikes) {
             setLikes(updatedLikes);
           }
         });
-        socket.on("newCommentAdded", ({ newComment }) => {
-          setComments((prevComments) => [newComment, ...prevComments]);
+        socket.on("newCommentAdded", ({ newComment, videoId: returnedVideoId }) => {
+          if (returnedVideoId === videoId) {
+            setComments((prevComments) => [newComment, ...prevComments]);
+          }
         });
       }
       return () => {

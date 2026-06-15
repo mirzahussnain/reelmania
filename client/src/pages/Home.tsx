@@ -2,33 +2,60 @@ import { useEffect, useState } from "react";
 import PlayerCard from "../components/PlayerCard";
 import { useAppDispatch, useAppSelector } from "../utils/hooks/storeHooks";
 import {
-  useFetchAllVideosQuery,
+  useLazyFetchAllVideosQuery,
 } from "../utils/store/features/video/videoApi";
 import { RootState } from "../utils/store/store";
-import { setAllVideos } from "../utils/store/features/video/videoSlice";
+import { setAllVideos, appendVideos } from "../utils/store/features/video/videoSlice";
 import Loader from "../components/Loader";
 import Comments from "../components/Comments";
 import useScreenWidth from "../utils/hooks/useScreenWidth";
 import { toast } from "react-toastify";
+import { useInView } from "react-intersection-observer";
+
 const Home = () => {
-  const { data, isLoading,isError} = useFetchAllVideosQuery({});
+  const [fetchVideos, { isLoading, isFetching }] = useLazyFetchAllVideosQuery();
 
   const dispatch = useAppDispatch();
   const videos = useAppSelector((state: RootState) => state.video.videos);
   const screenWidth = useScreenWidth();
  
   const [openVideoIndex, setOpenVideoIndex] = useState<number | null>(null);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+
+  const { ref, inView } = useInView({
+    threshold: 0.5,
+  });
+
+  // Initial load
   useEffect(() => {
-    if (data?.videos) {
-      dispatch(setAllVideos(data.videos));
-    }
-    else if(isError){
+    fetchVideos({ limit: 10 }).unwrap().then((res) => {
+      if (res?.videos) {
+        dispatch(setAllVideos(res.videos));
+        setCursor(res.nextCursor);
+        setHasMore(!!res.nextCursor);
+      }
+    }).catch(() => {
         toast.error("Failed to fetch videos");
-      
+    });
+  }, []);
+
+  // Infinite scroll trigger
+  useEffect(() => {
+    if (inView && hasMore && !isFetching && cursor) {
+      fetchVideos({ cursor, limit: 10 }).unwrap().then((res) => {
+        if (res?.videos?.length > 0) {
+          dispatch(appendVideos(res.videos));
+          setCursor(res.nextCursor);
+          setHasMore(!!res.nextCursor);
+        } else {
+          setHasMore(false);
+        }
+      }).catch(() => {
+        toast.error("Failed to fetch more videos");
+      });
     }
-  }, [data,dispatch]);
-
-
+  }, [inView, hasMore, isFetching, cursor, fetchVideos, dispatch]);
 
   return  isLoading ? (
     <Loader />
@@ -40,8 +67,11 @@ const Home = () => {
           <span className="font-semibold">No Video Exists in Database</span>
         </div>
       ) : (
-        videos.map((video: any, index) => (
+        videos.map((video: any, index) => {
+          const isLastVideo = index === videos.length - 1;
+          return (
           <div
+            ref={isLastVideo ? ref : null}
             className="w-full h-full flex lg:justify-center snap-start lg:mt-5 lg:last:mb-20 lg:py-3"
             key={index}
           >
@@ -81,8 +111,9 @@ const Home = () => {
               />
             </div>
           </div>
-        ))
+        )})
       )}
+      {isFetching && cursor && <div className="py-4 text-white">Loading more...</div>}
     </main>
   );
 };

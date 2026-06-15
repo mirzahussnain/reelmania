@@ -16,9 +16,14 @@ const videoSlice = createSlice({
     setAllVideos: (state, action: PayloadAction<VideoType[]>) => {
       state.videos = Array.isArray(action.payload) ? [...action.payload] : [];
     },
+    appendVideos: (state, action: PayloadAction<VideoType[]>) => {
+      if (Array.isArray(action.payload)) {
+        state.videos = [...state.videos, ...action.payload];
+      }
+    },
   },
 });
 
 
-export const { setAllVideos } = videoSlice.actions;
+export const { setAllVideos, appendVideos } = videoSlice.actions;
 export default videoSlice.reducer;

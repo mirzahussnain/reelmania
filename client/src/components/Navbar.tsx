@@ -47,13 +47,19 @@ const Navbar: React.FC = () => {
               <MdManageAccounts className="text-2xl" />
               <span className="mx-2 text-lg">Manage Profile</span>
             </NavLink>
-            {user?.role?.includes("Creator") && (
+            <NavLink
+              to={`/users/${user?.username}/videos/manage`}
+              className=" py-2 lg:mr-10 w-full lg:w-auto text-center border-y-[1px] lg:mt-0 lg:border-none lg:py-4 flex justify-center items-center"
+            >
+              <FaRegEdit className="text-2xl" />
+              <span className="mx-2 text-lg">Manage Videos</span>
+            </NavLink>
+            {user?.role?.toLowerCase() === "admin" && (
               <NavLink
-                to={`/users/${user?.username}/videos/manage`}
+                to={`/admin`}
                 className=" py-2 lg:mr-10 w-full lg:w-auto text-center border-y-[1px] lg:mt-0 lg:border-none lg:py-4 flex justify-center items-center"
               >
-                <FaRegEdit className="text-2xl" />
-                <span className="mx-2 text-lg">Manage Videos</span>
+                <span className="mx-2 text-lg">Admin Panel</span>
               </NavLink>
             )}
           </>

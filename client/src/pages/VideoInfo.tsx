@@ -87,13 +87,7 @@ const VideoInfo = () => {
       if (query) {
         setCommentText("");
         toast.success(query?.data?.message);
-        if (
-          comments.every(
-            (comment: CommentType) => comment.author.id !== user?.id
-          )
-        ) {
-          setComments([query?.newComments, ...comments]);
-        }
+        setComments([query?.newComments, ...comments]);
       } else {
         throw new Error(query?.error?.data?.message);
       }
@@ -181,11 +175,9 @@ const VideoInfo = () => {
         try {
           if (!socket) return;
           socket.connect();
-          socket.on("newCommentAdded", ({ newComment }) => {
-            if (newComment) {
+          socket.on("newCommentAdded", ({ newComment, videoId: returnedVideoId }) => {
+            if (returnedVideoId === videoId) {
               setComments((prevComments) => [newComment, ...prevComments]);
-            } else {
-              toast.error("Invalid video data received");
             }
           });
         } catch (err) {

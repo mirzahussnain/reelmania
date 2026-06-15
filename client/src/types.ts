@@ -37,8 +37,8 @@ export type LoaderType = {
 
 export type VideoType={
   id? : string,
-  Likes:VideoLikes[]
-  comments:CommentType[]
+  likeCount: number,
+  commentCount: number,
   hashtags:string[]
   title:string
   uploaded_at:string

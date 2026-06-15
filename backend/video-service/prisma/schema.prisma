@@ -7,39 +7,46 @@ datasource db {
   url      = env("VIDEO_DATABASE_URL")
 }
 
-type VideosCommentsAuthor {
-  id         String
-  username   String
-  avatar_url String
-}
-
-type VideoLiker {
-  id       String
-  username String
-}
-
-type VideosComments {
-  author    VideosCommentsAuthor
-  posted_at DateTime
-  text      String
-}
-
-type VideosLikes {
-  liked_by VideoLiker
-}
-
 type Uploader {
   id       String
   username String
 }
 
 model videos {
-  id          String           @id @default(auto()) @map("_id") @db.ObjectId
-  Likes       VideosLikes[]
-  comments    VideosComments[]
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   hashtags    String[]
   title       String
   uploaded_at DateTime
   uploaded_by Uploader
   video_url   String
+  commentCount Int      @default(0)
+  likeCount    Int      @default(0)
+  comments    Comment[]
+  likes       Like[]
+
+  @@index([uploaded_at(sort: Desc), id])
+  @@index([hashtags])
+}
+
+model Comment {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  videoId     String   @db.ObjectId
+  video       videos   @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  userId      String
+  username    String
+  avatar_url  String
+  posted_at   DateTime
+  text        String
+
+  @@index([videoId, posted_at(sort: Desc)])
+}
+
+model Like {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  videoId   String     @db.ObjectId
+  video     videos     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  userId    String
+  username  String
+
+  @@unique([videoId, userId])
 }

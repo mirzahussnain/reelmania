@@ -8,10 +8,10 @@ export const setSocketInstance = (socketInstance: SocketServer) => {
   
   io.on('connection', (socket) => {
     socket.on('newComment', ({videoId, newComment,newVideo,commentCount}) => {
-      io.emit('newCommentAdded', {videoId, newComment,newVideo,commentCount});
+      socket.broadcast.emit('newCommentAdded', {videoId, newComment,newVideo,commentCount});
     });
     socket.on('likeUpdated',({updatedLikes,videoId})=>{
-        io.emit('likesChange', {updatedLikes,videoId});
+        socket.broadcast.emit('likesChange', {updatedLikes,videoId});
     })
 
     io.on('disconnect', () => {

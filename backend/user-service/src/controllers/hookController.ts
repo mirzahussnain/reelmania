@@ -67,7 +67,7 @@ export const userManagement = async (req: Request, res: Response) => {
       last_name: last_name,
       email: email_addresses[0]?.email_address,
       created_at: email_addresses[0]?.created_at,
-      role: process.env.DEFAULT_USER_ROLE || "Consumer ",
+      role: process.env.DEFAULT_USER_ROLE || "Consumer",
     };
     req.body = userInfo;
 

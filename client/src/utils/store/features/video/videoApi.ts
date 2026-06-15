@@ -13,7 +13,15 @@ export const videoApi = createApi({
     tagTypes: ["Videos", "SAS","Comments","Likes"],
     endpoints: (builder) => ({
         fetchAllVideos: builder.query({
-            query: () => "/",
+            query: (args: any = {}) => {
+                const params = new URLSearchParams();
+                if (args.cursor) params.append("cursor", args.cursor);
+                if (args.q) params.append("q", args.q);
+                if (args.type) params.append("type", args.type);
+                if (args.limit) params.append("limit", args.limit.toString());
+                const queryString = params.toString();
+                return `/${queryString ? '?' + queryString : ''}`;
+            },
             providesTags: ["Videos"]
         }),
         fetchVideoById:builder.query({
@@ -61,7 +69,18 @@ export const videoApi = createApi({
             invalidatesTags: ["Videos"]
         }),
         getCommentsByVideoId: builder.query({
-            query: (videoId) => `/${videoId}/comments`,
+            query: (args: any) => {
+                let videoId, params = new URLSearchParams();
+                if (typeof args === 'string') {
+                    videoId = args;
+                } else {
+                    videoId = args.videoId;
+                    if (args.cursor) params.append("cursor", args.cursor);
+                    if (args.limit) params.append("limit", args.limit.toString());
+                }
+                const queryString = params.toString();
+                return `/${videoId}/comments${queryString ? '?' + queryString : ''}`;
+            },
             providesTags: ["Comments"]
         }),
         getLikesByVideoId: builder.query({
@@ -108,12 +127,14 @@ export const videoApi = createApi({
                 try {
                   const { data } = await queryFulfilled;
                   const socket = connectSocket("");
+                  socket.connect();
                   console.log(socket)
                   if (socket) {
-                   
-                    socket.emit("likeUpdated", { videoId:data?.videoId,updatedLikes:data?.updatedLikes });
+                    socket.emit("likeUpdated", { videoId: data?.videoId, updatedLikes: data?.updatedLikes });
                   }
-                } catch {}
+                } catch(err) {
+                    console.log(err)
+                }
               },
               invalidatesTags: ['Likes']
             }),

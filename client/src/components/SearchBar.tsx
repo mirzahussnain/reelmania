@@ -35,9 +35,8 @@ export const SearcBar = ({
   }, []);
 
   useEffect(()=>{
-    if(response.isSuccess){
+    if(response.isSuccess && !filterMode){
        dispatch(setAllVideos(response?.data?.videos || []))
-      dispatch(setFilteredVideos(response?.data?.videos || []))
     }
   },[response])
   
@@ -47,31 +46,23 @@ export const SearcBar = ({
     } else {
       setVideos(filteredVideos);
     }
-  }, [filter, dispatch, filteredVideos,allVideos]);
+  }, [dispatch, filteredVideos, allVideos, filterMode]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (filter === "hashtag" && searchText) {
-      const filteredVideos = allVideos?.filter((video) =>
-        video.hashtags.some((hashtag: string) => hashtag.includes(searchText))
-      );
-      if (filteredVideos.length > 0) {
-        dispatch(setFilteredVideos(filteredVideos));
-        alert("Videos Found");
-        setFilterMode(true);
-      } else {
-        alert("Videos with given hashtags are not found");
-      }
-    } else if (filter === "title" && searchText) {
-      const filteredVideos = allVideos?.filter((video) =>
-        video.title.includes(searchText)
-      );
-      if (filteredVideos.length > 0) {
-        dispatch(setFilteredVideos(filteredVideos));
-        alert("Videos Found");
-        setFilterMode(true);
-      } else {
-        alert("Videos with given title are not found");
+    if (searchText) {
+      try {
+        const query = await getVideos({ q: searchText, type: filter }).unwrap();
+        if (query?.videos?.length > 0) {
+          dispatch(setFilteredVideos(query.videos));
+          alert("Videos Found");
+          setFilterMode(true);
+        } else {
+          alert("Videos not found for this search");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Search failed");
       }
     }
   };

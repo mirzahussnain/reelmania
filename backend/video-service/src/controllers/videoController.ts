@@ -5,43 +5,58 @@ import { StorageFactory } from "../providers/StorageFactory";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
-        const page = parseInt(req.query.page as string) || 1;
+        const cursor = req.query.cursor as string | undefined;
         const limit = parseInt(req.query.limit as string) || 10;
-        const skip = (page - 1) * limit;
+        const q = req.query.q as string | undefined;
+        const type = req.query.type as string | undefined;
+
+        let whereClause: any = {};
+
+        if (q) {
+            if (type === "hashtag") {
+                whereClause = {
+                    hashtags: {
+                        has: q
+                    }
+                };
+            } else if (type === "title") {
+                whereClause = {
+                    title: {
+                        contains: q,
+                        mode: 'insensitive'
+                    }
+                };
+            }
+        }
+
+        const cursorObj = cursor ? { id: cursor } : undefined;
 
         const videos = await prisma.videos.findMany({
-            skip,
             take: limit,
-            orderBy: { uploaded_at: "desc" },
+            skip: cursor ? 1 : 0,
+            cursor: cursorObj,
+            where: whereClause,
+            orderBy: { uploaded_at: "desc" }
         });
 
         if (videos.length === 0) {
-            res
-                .status(200)
-                .send({ message: "No Video Exists in Database", videos: null });
+            res.status(200).send({ message: "No Video Exists in Database", videos: [], nextCursor: null });
             return;
         }
-
-      // Sort comments for each video
-      videos.forEach((video)=>{
-        video.comments = video.comments.sort((a,b)=>b.posted_at.getTime()-a.posted_at.getTime());
-      });
 
         let formattedDateVideos = videos.map((video) => ({
             ...video,
             uploaded_at: video.uploaded_at.toISOString(),
-        }
-    ));
+        }));
+
+        const nextCursor = videos.length === limit ? videos[videos.length - 1].id : null;
     
-        res
-            .status(200)
-            .send({ message: "Videos Fetched Successfully", videos: formattedDateVideos, page, limit });
+        res.status(200).send({ message: "Videos Fetched Successfully", videos: formattedDateVideos, nextCursor, limit });
         return;
     } catch (err: unknown) {
         const errorMsg = err instanceof Error ? err.message : "Unknown error";
-        res
-            .status(500)
-            .send(`Operation Failed:${errorMsg}`);
+        console.error(err);
+        res.status(500).send(`Operation Failed:${errorMsg}`);
         return;
     }
 };
@@ -104,58 +119,73 @@ export const getUserVideos = async (req: Request, res: Response) => {
 };
 
 export const getLikesByVideoId = async (req: Request, res: Response) => {
-    try{
-        const videoId=req?.params?.videoId;
-        if(!videoId){
-            res.status(400).send("Video Id is missing")
+    try {
+        const videoId = req?.params?.videoId;
+        if (!videoId) {
+            res.status(400).send("Video Id is missing");
             return;
         }
-        const result=await prisma.videos.findUnique({
-            where:{
-                id:videoId
-            },
-            select:{
-                Likes:true
-            }
-        })
-        if(!result){
-            res.status(404).send("Video Not Found")
-            return;
-        }
-        res.status(200).send({message:"Likes Fetched Successfully",likes:result?.Likes})
-        return;
 
-    }catch(err:any){
-        res.status(500).send(`Operation Failed:${err}`)
-        console.log(err)
+        const likes = await prisma.like.findMany({
+            where: {
+                videoId: videoId
+            }
+        });
+
+        const mappedLikes = likes.map((like) => ({
+            liked_by: {
+                id: like.userId,
+                username: like.username
+            }
+        }));
+
+        res.status(200).send({ message: "Likes Fetched Successfully", likes: mappedLikes });
+        return;
+    } catch (err: any) {
+        res.status(500).send(`Operation Failed:${err}`);
+        console.log(err);
         return;
     }
 }
 
 export const getCommentsByVideoId = async (req: Request, res: Response) => {
-    try{
-        const videoId=req?.params?.videoId;
-        if(!videoId){
-            res.status(400).send("Video Id is missing")
+    try {
+        const videoId = req.params.videoId;
+        const cursor = req.query.cursor as string | undefined;
+        const limit = parseInt(req.query.limit as string) || 20;
+
+        if (!videoId) {
+            res.status(400).send("Video Id is missing");
             return;
         }
-        const result=await prisma.videos.findUnique({
-            where:{
-                id:videoId
+
+        const cursorObj = cursor ? { id: cursor } : undefined;
+
+        const comments = await prisma.comment.findMany({
+            where: { videoId: videoId },
+            take: limit,
+            skip: cursor ? 1 : 0,
+            cursor: cursorObj,
+            orderBy: { posted_at: "desc" }
+        });
+
+        const nextCursor = comments.length === limit ? comments[comments.length - 1].id : null;
+
+        const mappedComments = comments.map(comment => ({
+            author: {
+                id: comment.userId,
+                username: comment.username,
+                avatar_url: comment.avatar_url
             },
-            select:{
-                comments:true
-            }
-        })
-        if(!result){
-            res.status(404).send("Video Not Found")
-            return;
-        }
-        res.status(200).send({message:"Comments Fetched Successfully",comments:result?.comments})
+            posted_at: comment.posted_at,
+            text: comment.text
+        }));
+
+        res.status(200).send({ message: "Comments Fetched Successfully", comments: mappedComments, nextCursor });
         return;
-    }catch(err:any){
-        res.status(500).send(`Operation Failed:${err}`)
-        console.log(err)
+    } catch (err: any) {
+        console.error(err);
+        res.status(500).send(`Operation Failed:${err}`);
         return;
     }
 }
@@ -181,10 +211,12 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
 };
 
 export const createVideo = async (req: Request, res: Response) => {
-    const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : req.body;
-    const fileName = req.body.fileName;
-
     try {
+        const metadata = typeof req.body.metadata === 'string' 
+            ? JSON.parse(req.body.metadata) 
+            : (req.body.metadata || req.body);
+        const fileName = req.body.fileName;
+
         if (!metadata || !fileName) {
             throw new Error("Video Meta-Data or fileName is Missing");
         }
@@ -196,20 +228,16 @@ export const createVideo = async (req: Request, res: Response) => {
             title: string;
             uploaded_by: { id: string; username: string };
             uploaded_at: Date;
-            likes: [{ liked_by: string }];
-            comments: [{
-                author: {
-                    id: string;
-                    username: string;
-                    avatar_url: string
-                };
-                posted_at: Date;
-                text: string
-            }];
             hashtags: string[];
         } = metadata;
 
-        const videoData = { ...req_data, video_url: publicUrl };
+        const videoData = { 
+            title: req_data.title,
+            uploaded_by: req_data.uploaded_by,
+            uploaded_at: req_data.uploaded_at,
+            hashtags: req_data.hashtags,
+            video_url: publicUrl 
+        };
         const result = await prisma.videos.create({ data: videoData });
 
         res.status(200).json({ message: "Video Created Successfully.", video: result });
@@ -260,36 +288,50 @@ export const addNewComment = async (req: Request, res: Response) => {
     const newComment = req.body;
 
     try {
-        if (!videoId) {
-            throw new Error("Video Id is missing");
-        }
-        if (!newComment) {
-            throw new Error("Comment is missing");
+        if (!videoId || !newComment) {
+            throw new Error("Video Id or Comment is missing");
         }
 
-        const result = await prisma.videos.update({
-            where: {
-                id: videoId
-            },
+        const createdComment = await prisma.comment.create({
             data: {
-                comments: {
-                    push: newComment,
-                }
-            },
-            include: {
-                comments: true
+                videoId: videoId,
+                userId: newComment.author.id,
+                username: newComment.author.username,
+                avatar_url: newComment.author.avatar_url,
+                posted_at: new Date(),
+                text: newComment.text
             }
         });
-        // Emit socket event for new comment
-        res
-            .status(200)
-            .send({ message: "Comment Posted Successfully", newVideos: result,videoId:videoId,newComments:result.comments[result?.comments.length-1]});
+
+        // Atomically increment commentCount
+        const updatedVideo = await prisma.videos.update({
+            where: { id: videoId },
+            data: {
+                commentCount: { increment: 1 }
+            }
+        });
+
+        const mappedComment = {
+            author: {
+                id: createdComment.userId,
+                username: createdComment.username,
+                avatar_url: createdComment.avatar_url
+            },
+            posted_at: createdComment.posted_at,
+            text: createdComment.text
+        };
+
+        res.status(200).send({ 
+            message: "Comment Posted Successfully", 
+            newVideos: updatedVideo, 
+            videoId: videoId, 
+            newComments: mappedComment,
+            commentsCount: updatedVideo.commentCount 
+        });
         return;
     } catch (err: any) {
         console.error(err);
-        res
-            .status(500)
-            .send(`Operation Failed:${err}`);
+        res.status(500).send(`Operation Failed:${err}`);
         return;
     }
 };
@@ -299,73 +341,64 @@ export const updateLikes = async (req: Request, res: Response) => {
     const userData: { userId: string, userName: string } = req.body.userData;
 
     try {
-        if (!videoId) {
-            throw new Error("Video ID is required");
-        }
-        if (!userData?.userId || !userData?.userName) {
-            throw new Error("User data is incomplete");
+        if (!videoId || !userData?.userId || !userData?.userName) {
+            throw new Error("Video ID or User data is incomplete");
         }
 
-        const video = await prisma.videos.findUnique({
-            where: { id: videoId },
-            select: {
-                Likes: true
+        const existingLike = await prisma.like.findUnique({
+            where: {
+                videoId_userId: {
+                    videoId: videoId,
+                    userId: userData.userId
+                }
             }
         });
 
-        if (!video) {
-            res
-                .status(404)
-                .send({ message: "Video not found" });
-            return;
-        }
+        let updatedLikesCount = 0;
 
-        const hasLiked = video.Likes?.some(like =>
-            like.liked_by?.id === userData.userId
-        );
-
-        let result;
-        if (hasLiked) {
-            result = await prisma.videos.update({
-                where: { id: videoId },
-                data: {
-                    Likes: {
-                        set: video.Likes.filter(like =>
-                            like.liked_by?.id !== userData.userId
-                        )
-                    }
-                }
+        if (existingLike) {
+            // User already liked it, so UNLIKE
+            await prisma.like.delete({
+                where: { id: existingLike.id }
             });
+
+            const updatedVideo = await prisma.videos.update({
+                where: { id: videoId },
+                data: { likeCount: { decrement: 1 } }
+            });
+            updatedLikesCount = updatedVideo.likeCount;
         } else {
-            result = await prisma.videos.update({
-                where: { id: videoId },
+            // User hasn't liked it, so LIKE
+            await prisma.like.create({
                 data: {
-                    Likes: {
-                        push: {
-                            liked_by: {
-                                id: userData.userId,
-                                username: userData.userName
-                            }
-                        }
-                    }
+                    videoId: videoId,
+                    userId: userData.userId,
+                    username: userData.userName
                 }
             });
-        }
-     
-        res
-            .status(200)
-            .send({
-                message: hasLiked ? "Like removed successfully" : "Like added successfully",
-                video: result,
-                updatedLikes: result.Likes,
-                videoId:videoId
+
+            const updatedVideo = await prisma.videos.update({
+                where: { id: videoId },
+                data: { likeCount: { increment: 1 } }
             });
+        }
+
+        const allLikes = await prisma.like.findMany({
+            where: { videoId: videoId }
+        });
+
+        const mappedLikes = allLikes.map((like) => ({
+            liked_by: {
+                id: like.userId,
+                username: like.username
+            }
+        }));
+
+        res.status(200).send({ message: "Likes Updated", videoId, updatedLikes: mappedLikes });
         return;
     } catch (err: any) {
-        console.error('Error updating likes:', err);
-        res
-            .status(500)
-            .send(`Operation Failed:${err}`);
+        console.error(err);
+        res.status(500).send(`Operation Failed:${err}`);
         return;
     }
 };

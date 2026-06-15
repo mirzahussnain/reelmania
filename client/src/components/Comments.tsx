@@ -58,10 +58,7 @@ const Comments = ({
       if (query) {
         setCommentText("");
         toast.success(query?.message);
-        if(videoComments.every((comment:CommentType)=>comment.author.id!==user?.id)){
-
-            setVideoComments([query?.newComments, ...videoComments]);
-        }
+        setVideoComments([query?.newComments, ...videoComments]);
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to post comment.");
@@ -106,8 +103,9 @@ const Comments = ({
   useEffect(() => {
     try {
       if (!socket) return;
-      if(socket.connected) return;
-      socket.connect();
+      if (!socket.connected) {
+        socket.connect();
+      }
       socket.on("newCommentAdded", ({ newComment,videoId }) => {
         if (newComment) {
           if(video?.id==videoId){
