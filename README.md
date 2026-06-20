@@ -28,6 +28,10 @@ ReelMania is a TikTok-inspired video platform where users can upload, stream, li
 └─────────┬──────────┘              └──────────┬──────────┘
           │                                    │
 ┌─────────▼──────────┐              ┌──────────▼──────────┐
+│ RabbitMQ (Webhooks)│              │ Redis (Caching)     │
+└─────────┬──────────┘              └──────────┬──────────┘
+          │                                    │
+┌─────────▼──────────┐              ┌──────────▼──────────┐
 │  CockroachDB       │              │  Azure CosmosDB     │
 │  (PostgreSQL)      │              │  (MongoDB API)      │
 └────────────────────┘              └──────────┬──────────┘
@@ -38,6 +42,8 @@ ReelMania is a TikTok-inspired video platform where users can upload, stream, li
                                     └─────────────────────┘
 
 Infrastructure: Docker · Kubernetes (AKS) · Azure App Services
+Message Broker: RabbitMQ (Webhook processing & rate limiting)
+Caching:        Redis (Global feed cache & O(1) reads)
 Auth:           Clerk (JWT + Webhooks)
 Real-time:      Socket.IO (WebSockets)
 ```
@@ -56,8 +62,10 @@ Real-time:      Socket.IO (WebSockets)
 - 🔗 **Share** — share links via WhatsApp, Twitter, Email, or clipboard copy
 
 ### Technical
+- 🚀 **High-Performance Caching** — Redis caches the global trending feed, providing near 0ms load times and combining with Fisher-Yates shuffle algorithms for unique guest experiences.
+- 🐇 **Enterprise Message Queues** — RabbitMQ decouples Clerk Webhooks from the PostgreSQL database, protecting the User Service from massive traffic spikes via asynchronous consumer workers.
 - 🔐 **Clerk authentication** — JWT-secured API routes, Svix webhook sync for user lifecycle events
-- 🏗️ **Microservices** — independently deployable User Service and Video Service with separate databases
+- 🏗️ **Microservices** — independently deployable User Service and Video Service with strict DRY separation of concerns.
 - 🌐 **Kubernetes** — Deployment manifests, ConfigMaps, Secrets, and Ingress rules for full cluster orchestration
 - 🐳 **Dockerised** — multi-stage Docker builds for all three services (client, user-service, video-service)
 - 📊 **Grafana Monitoring** — infrastructure observability integrated via Azure monitoring stack
@@ -76,6 +84,8 @@ Real-time:      Socket.IO (WebSockets)
 | **Backend** | Node.js, Express.js, TypeScript |
 | **ORM** | Prisma |
 | **Databases** | CockroachDB (Users), Azure CosmosDB / MongoDB API (Videos) |
+| **Message Broker** | RabbitMQ |
+| **Caching** | Redis |
 | **File Storage** | Azure Blob Storage |
 | **Real-time** | Socket.IO (WebSockets) |
 | **Containerisation** | Docker (multi-stage builds) |

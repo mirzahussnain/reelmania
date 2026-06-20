@@ -1,0 +1,10 @@
+feat: implement enterprise architecture with RabbitMQ & Redis
+
+- Redis Caching & Randomization: Implemented Redis cache for the global trending feed to ensure near 0ms load times. Added a pure Fisher-Yates `shuffleArray` utility to randomize the global feed for guest users, mimicking TikTok's highly-engaging infinite feed without hitting the database.
+- RabbitMQ Message Broker: Completely decoupled the Clerk Webhook API from PostgreSQL by introducing a RabbitMQ queue (`user_webhook_queue`). 
+- Background Worker: Built `userWorker.ts` consumer to asynchronously process webhooks with `prefetch(10)` rate limiting and strict `ack`/`nack` data loss prevention.
+- Clean Architecture (DRY): Extracted raw Prisma database logic out of Express controllers into a dedicated `UserService` class, enabling both the API and background workers to share the exact same logic.
+- Frontend State Separation: Split Redux state for videos into `forYouVideos` and `exploreVideos` to prevent algorithmic and global feeds from overriding each other.
+- Unauthenticated Handling: Refactored `Home.tsx` so anonymous guests instantly see the cached, shuffled global feed instead of a locked screen, maximizing retention.
+- Pagination Optimization: Implemented Cursor-Based Pagination for Likes and Comments.
+- Documentation: Updated `README.md` to reflect the new RabbitMQ and Redis integrations in the architecture diagrams and tech stack.

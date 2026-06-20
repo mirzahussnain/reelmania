@@ -7,6 +7,7 @@ import {
   deleteUser,
   updateUser,
 } from "../controllers/userController";
+import { rabbitMQService } from "../utils/rabbitmq";
 
 dotenv.config();
 export const userManagement = async (req: Request, res: Response) => {
@@ -69,22 +70,22 @@ export const userManagement = async (req: Request, res: Response) => {
       created_at: email_addresses[0]?.created_at,
       role: process.env.DEFAULT_USER_ROLE || "Consumer",
     };
-    req.body = userInfo;
 
-    if (eventType === "user.created") {
-      await createUser(req,res)
-      return;
-      
-    } else if(eventType==="user.updated") {
-      req.params.id = userInfo.id;
-      await updateUser(req, res);
-      return;
-    }
-  } 
-  else if (eventType === "user.deleted") {
+    await rabbitMQService.sendToQueue("user_webhook_queue", {
+      eventType,
+      data: userInfo,
+    });
+    
+  } else if (eventType === "user.deleted") {
     const { id } = evt?.data;
-    req.params.id = id;
-    await deleteUser(req, res);
-    return;
+    
+    await rabbitMQService.sendToQueue("user_webhook_queue", {
+      eventType,
+      data: { id },
+    });
   }
+
+  // Instantly return 200 OK to Clerk
+  res.status(200).json({ success: true, message: "Webhook received and queued." });
+  return;
 };

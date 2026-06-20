@@ -28,6 +28,9 @@ app.use("/api/users", userRouter);
 app.use("/api/users/errors",errorRouter);
 app.use("/api/webhook/user",hookRouter)
 
+import { startUserWorker } from "./workers/userWorker";
+
 app.listen(port, () => {
   console.log(`Server is Running at port:${port}`);
+  startUserWorker().catch(err => console.error("Worker failed to start", err));
 });

@@ -9,14 +9,14 @@ import {
 } from "../utils/store/features/video/FilteredVideoSlice.ts";
 import { VideoType } from "../types.ts";
 import { useLazyFetchAllVideosQuery } from "../utils/store/features/video/videoApi.ts";
-import { setAllVideos } from "../utils/store/features/video/videoSlice.ts";
+import { setExploreVideos } from "../utils/store/features/video/videoSlice.ts";
 
 export const SearcBar = ({
   setVideos,
 }: {
   setVideos: React.Dispatch<React.SetStateAction<VideoType[]>>;
 }) => {
-  const allVideos = useAppSelector((state: RootState) => state?.video?.videos);
+  const allVideos = useAppSelector((state: RootState) => state?.video?.exploreVideos);
   const [getVideos, response] = useLazyFetchAllVideosQuery();
   const [filter, setFilter] = useState<string>("hashtag");
   const [filterMode, setFilterMode] = useState<boolean>(false);
@@ -36,7 +36,7 @@ export const SearcBar = ({
 
   useEffect(()=>{
     if(response.isSuccess && !filterMode){
-       dispatch(setAllVideos(response?.data?.videos || []))
+       dispatch(setExploreVideos(response?.data?.videos || []))
     }
   },[response])
   

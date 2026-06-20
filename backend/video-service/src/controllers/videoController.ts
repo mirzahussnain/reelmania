@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import { StorageFactory } from "../providers/StorageFactory";
 
 import { getRedisClient } from "../utils/redis";
+import { shuffleArray } from "../utils/shuffleArray";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
@@ -19,7 +20,10 @@ export const getVideos = async (req: Request, res: Response) => {
         try {
             const cachedData = await redisClient.get(cacheKey);
             if (cachedData) {
-                res.status(200).send(JSON.parse(cachedData));
+                const parsedPayload = JSON.parse(cachedData);
+                // Shuffle the cached videos so every guest gets a randomized experience
+                parsedPayload.videos = shuffleArray(parsedPayload.videos);
+                res.status(200).send(parsedPayload);
                 return;
             }
         } catch (cacheErr) {
@@ -71,11 +75,14 @@ export const getVideos = async (req: Request, res: Response) => {
         const payload = { message: "Videos Fetched Successfully", videos: formattedDateVideos, nextCursor, limit };
         
         try {
+            // Cache the ORIGINAL (unshuffled) array so the cache is consistent
             await redisClient.setEx(cacheKey, 60, JSON.stringify(payload));
         } catch (cacheErr) {
             console.error("Redis Cache Write Error:", cacheErr);
         }
 
+        // Shuffle the payload just before sending it to the current user
+        payload.videos = shuffleArray(payload.videos);
         res.status(200).send(payload);
         return;
     } catch (err: unknown) {

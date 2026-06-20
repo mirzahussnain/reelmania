@@ -7,6 +7,7 @@ import { clerkMiddleware } from "@clerk/express"
 import { createServer } from "http"
 import { initializeSocketServer } from "../src/utils/socketServer"
 import { setSocketInstance } from "./controllers/socketController"
+import { connectRedis } from "../src/utils/redis";
 
 dotenv.config()
 const origin_url=process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')
@@ -20,7 +21,6 @@ app.use(cors({
     credentials: true, // If you're using cookies or authentication
   })); 
 
-import { connectRedis } from "../src/utils/redis";
 connectRedis();
 
 

@@ -5,7 +5,7 @@ import {
   useLazyFetchForYouVideosQuery,
 } from "../utils/store/features/video/videoApi";
 import { RootState } from "../utils/store/store";
-import { setAllVideos, appendVideos } from "../utils/store/features/video/videoSlice";
+import { setForYouVideos, appendForYouVideos } from "../utils/store/features/video/videoSlice";
 import Loader from "../components/Loader";
 import Comments from "../components/Comments";
 import useScreenWidth from "../utils/hooks/useScreenWidth";
@@ -14,11 +14,15 @@ import { useInView } from "react-intersection-observer";
 import { useAuth } from "@clerk/clerk-react";
 
 const Home = () => {
-  const { getToken } = useAuth();
-  const [fetchForYou, { isLoading, isFetching }] = useLazyFetchForYouVideosQuery();
+  const { getToken, isSignedIn } = useAuth();
+  const [fetchForYou, { isLoading: isForYouLoading, isFetching: isForYouFetching }] = useLazyFetchForYouVideosQuery();
+  const [fetchAll, { isLoading: isAllLoading, isFetching: isAllFetching }] = useLazyFetchAllVideosQuery();
+
+  const isLoading = isSignedIn ? isForYouLoading : isAllLoading;
+  const isFetching = isSignedIn ? isForYouFetching : isAllFetching;
 
   const dispatch = useAppDispatch();
-  const videos = useAppSelector((state: RootState) => state.video.videos);
+  const videos = useAppSelector((state: RootState) => state.video.forYouVideos);
   const screenWidth = useScreenWidth();
  
   const [openVideoIndex, setOpenVideoIndex] = useState<number | null>(null);
@@ -31,38 +35,59 @@ const Home = () => {
   // Initial load
   useEffect(() => {
     const loadInitial = async () => {
+        if (!isSignedIn) {
+          // Unauthenticated User -> Global Cached Feed (Like TikTok Guest Mode)
+          fetchAll({}).unwrap().then((res) => {
+            if (res?.videos) {
+                dispatch(setForYouVideos(res.videos));
+                setHasMore(res.videos.length > 0);
+            }
+          }).catch(() => toast.error("Failed to fetch trending videos"));
+          return;
+        }
+
+        // Authenticated User -> Personalized Algorithm
         const token = await getToken();
+        if (!token) return; 
+
         fetchForYou({ token }).unwrap().then((res) => {
         if (res?.videos) {
-            dispatch(setAllVideos(res.videos));
+            dispatch(setForYouVideos(res.videos));
             setHasMore(res.videos.length > 0);
         }
-        }).catch(() => {
-            toast.error("Failed to fetch videos");
-        });
+        }).catch(() => toast.error("Failed to fetch personalized feed"));
     }
     loadInitial();
-  }, []);
+  }, [getToken, isSignedIn]);
 
   // Infinite scroll trigger
   useEffect(() => {
     if (inView && hasMore && !isFetching) {
       const loadMore = async () => {
+          if (!isSignedIn) {
+             // Currently Explore Feed backend doesn't support cursor pagination the same way yet,
+             // but we'll try to fetch next batch if supported.
+             // For now, it will just load the same 20 unless the backend randomizes/caches it.
+             // We can just rely on the first batch for guests, or fetch with offset if backend supports it.
+             setHasMore(false); // Stop infinite scroll for guests to prevent loop of same videos for now
+             return;
+          }
+
           const token = await getToken();
+          if (!token) return;
+
           fetchForYou({ token }).unwrap().then((res) => {
             if (res?.videos?.length > 0) {
-              dispatch(appendVideos(res.videos));
+              dispatch(appendForYouVideos(res.videos));
               setHasMore(true);
             } else {
               setHasMore(false);
             }
-          }).catch(() => {
-            toast.error("Failed to fetch more videos");
-          });
+          }).catch(() => toast.error("Failed to fetch more videos"));
       }
       loadMore();
     }
-  }, [inView, hasMore, isFetching, fetchForYou, dispatch, getToken]);
+  }, [inView, hasMore, isFetching, fetchForYou, fetchAll, dispatch, getToken, isSignedIn]);
 
   return  isLoading ? (
     <Loader />
@@ -70,8 +95,8 @@ const Home = () => {
     <main className="w-full h-full flex flex-col items-center overflow-y-scroll snap-y snap-mandatory scrollbar-hide">
       {videos?.length === 0 ? (
         <div className="text-xl tracking-wide w-full h-full flex flex-col justify-center items-center text-zinc-300">
-          <span className="text-5xl mb-3">😔</span>
-          <span className="font-semibold">No Video Exists in Database</span>
+          <span className="text-5xl mb-3">🔒</span>
+          <span className="font-semibold text-center">Please sign in to build your customized Algorithm!<br/>Click "Explore" to view trending videos.</span>
         </div>
       ) : (
         videos.map((video: any, index) => {
@@ -120,7 +145,7 @@ const Home = () => {
           </div>
         )})
       )}
-      {isFetching && cursor && <div className="py-4 text-white">Loading more...</div>}
+      {isFetching && hasMore && <div className="py-4 text-white">Loading more...</div>}
     </main>
   );
 };
