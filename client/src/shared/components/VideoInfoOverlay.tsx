@@ -3,6 +3,12 @@ import { Link } from "react-router-dom";
 import { dateFormatter } from "../../utils/functions/formatter";
 import { VideoType } from "../../types";
 import { cn } from "../utils/cn";
+import { FiShoppingBag } from "react-icons/fi";
+import { AvatarConnectBadge } from "./AvatarConnectBadge";
+import { useGetUserProfileQuery, useUpdateUserFollowerMutation, useGetUserFollowersQuery } from "../../utils/store/features/user/userApi";
+import { useAppSelector } from "../../utils/hooks/storeHooks";
+import { RootState } from "../../utils/store/store";
+import { toast } from "react-toastify";
 
 interface VideoInfoOverlayProps {
   video: VideoType;
@@ -10,31 +16,84 @@ interface VideoInfoOverlayProps {
 
 export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  const user = useAppSelector((state: RootState) => state.user);
+  const { token } = useAppSelector((state: RootState) => state.auth);
+
+  // Dynamically fetch the uploader's profile to get their Clerk avatar
+  const { data: uploaderProfile } = useGetUserProfileQuery(video?.uploaded_by?.id, {
+    skip: !video?.uploaded_by?.id
+  });
+
+  // Fetch the followers of the uploader to check if the current user is already following
+  const { data: followersData } = useGetUserFollowersQuery(video?.uploaded_by?.id, {
+    skip: !video?.uploaded_by?.id
+  });
+
+  const [followUser] = useUpdateUserFollowerMutation();
+
+  const isOwnProfile = Boolean(user?.id && video?.uploaded_by?.id && user.id === video.uploaded_by.id);
+  const isFollowing = Boolean(followersData?.result?.some((f: any) => f?.follower_id === user?.id));
+
+  const handleConnect = async () => {
+    try {
+      if (!token || !user?.id) {
+        toast.error("Please sign in to connect with creators.");
+        return;
+      }
+      if (!video?.uploaded_by?.id) return;
+
+      await followUser({
+        followerId: user.id,
+        followingId: video.uploaded_by.id,
+        token,
+      }).unwrap();
+      
+    } catch (err: any) {
+      toast.error("Failed to connect. Please try again.");
+    }
+  };
 
   return (
-    <section className="absolute left-4 bottom-16 lg:bottom-10 w-[calc(100%-5rem)] lg:w-[calc(100%-6rem)] flex flex-col justify-end items-start z-20 pointer-events-none">
+    <section className="absolute left-4 bottom-6 lg:bottom-6 w-[calc(100%-5rem)] lg:w-[calc(100%-6rem)] flex flex-col justify-end items-start z-20 pointer-events-none">
       
       <div className="w-full relative">
-        <h2 className="flex flex-wrap items-center gap-2 font-semibold text-white drop-shadow-md pointer-events-auto">
-          <Link to={`/users/@${video?.uploaded_by?.username}`} className="hover:underline text-lg">
-            @{video?.uploaded_by?.username}
-          </Link>
-          <span className="text-zinc-200 text-sm font-medium">
-            • {dateFormatter(new Date(video?.uploaded_at))}
-          </span>
-        </h2>
         
-        <div className="w-full relative pointer-events-auto mt-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
-          <div className={cn(
-            "w-full text-sm text-white drop-shadow-md transition-all duration-300 ease-in-out",
-            isExpanded ? "max-h-[40vh] overflow-y-auto" : "max-h-6 overflow-hidden"
-          )}>
-            <p className={cn("mr-12", !isExpanded && "line-clamp-1")}>{video?.title}</p>
+        <div className="flex items-center gap-3 pointer-events-auto mb-2">
+          {/* Reusable Avatar Connect Badge */}
+          <AvatarConnectBadge 
+            username={video?.uploaded_by?.username || "Unknown"}
+            avatarUrl={uploaderProfile?.body?.avatar_url}
+            sizeClassName="w-12 h-12 text-lg"
+            onConnect={handleConnect}
+            isOwnProfile={isOwnProfile}
+            isFollowing={isFollowing}
+          />
+
+          <div className="flex flex-col justify-center">
+            <Link to={`/users/@${video?.uploaded_by?.username}`} className="hover:underline text-lg font-bold text-white drop-shadow-md font-[family-name:var(--font-inter)] leading-tight">
+              @{video?.uploaded_by?.username}
+            </Link>
             
-            {/* Hashtags display only when expanded or part of the flow */}
+            <span className="text-zinc-300 text-xs font-medium drop-shadow-md font-[family-name:var(--font-inter)]">
+              {dateFormatter(new Date(video?.uploaded_at))}
+            </span>
+          </div>
+        </div>
+        
+        <div className="w-full relative pointer-events-auto mt-1 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+          <div className={cn(
+            "w-full drop-shadow-md transition-all duration-300 ease-in-out",
+            isExpanded ? "max-h-[40vh] overflow-y-auto" : "max-h-16 overflow-hidden"
+          )}>
+            <h1 className={cn("text-white font-[family-name:var(--font-inter)] font-semibold text-base mb-1", !isExpanded && "line-clamp-1")}>
+              {video?.title}
+            </h1>
+            
+            {/* Using hashtags as the description block for now */}
             <div className={cn(
-              "flex flex-wrap items-center gap-2 transition-all duration-300 ease-in-out origin-top",
-              isExpanded ? "opacity-100 scale-y-100 mt-2 h-auto" : "opacity-0 scale-y-0 h-0 overflow-hidden"
+              "flex flex-wrap items-center gap-2 transition-all duration-300 ease-in-out font-[family-name:var(--font-inter)] text-zinc-300",
+              isExpanded ? "opacity-100 scale-y-100 mt-1 h-auto" : "opacity-0 scale-y-0 h-0 overflow-hidden"
             )}>
               {video.hashtags.map((hashtag, index) => (
                 <span className="font-semibold text-xs drop-shadow-md" key={index}>
@@ -52,6 +111,14 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
             }}
           >
             {isExpanded ? "less" : "more"}
+          </button>
+        </div>
+
+        {/* Marketplace Asset Link */}
+        <div className="mt-2 pointer-events-auto flex items-center">
+          <button className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md border border-zinc-700/50 hover:border-primary/60 hover:bg-zinc-900/60 text-zinc-200 text-xs font-semibold px-3 py-1.5 rounded-full transition-all shadow-md group">
+            <FiShoppingBag className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" strokeWidth={2.5} />
+            <span>Project File • $5.00</span>
           </button>
         </div>
       </div>

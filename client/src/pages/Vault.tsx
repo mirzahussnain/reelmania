@@ -76,10 +76,13 @@ const Vault: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <button className="px-5 py-2 rounded-full bg-black/40 backdrop-blur-md text-sm font-semibold hover:bg-black/60 transition">
+            <button className="px-5 py-2 rounded-full bg-black/40 backdrop-blur-md text-sm font-semibold hover:bg-black/60 transition border border-white/10">
               Share Profile
             </button>
-            <button className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition">
+            <button className="px-5 py-2 rounded-full bg-black/40 backdrop-blur-md text-sm font-semibold hover:bg-black/60 transition border border-white/10">
+              Share Network
+            </button>
+            <button className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition border border-white/10">
               <FaBell className="text-white" />
             </button>
           </div>
@@ -141,7 +144,7 @@ const Vault: React.FC = () => {
           {/* Action Buttons */}
           <div className="shrink-0 mt-6 lg:mt-0 flex flex-col sm:flex-row gap-4">
             <button className="px-8 py-3 rounded-xl bg-surface-variant border border-white/10 text-on-surface font-bold hover:bg-white/5 transition-colors">
-              Share Network
+              Connect
             </button>
             <button className="px-8 py-3 rounded-xl bg-primary text-on-primary font-bold shadow-[0_0_20px_var(--color-primary)] hover:scale-105 transition-transform">
               Edit Vault

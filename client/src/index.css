@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@600&family=Syne:wght@700;800&display=swap");
 @import "tailwindcss";
 
+
 @theme {
   --color-surface: #111317;
   --color-surface-dim: #111317;
@@ -81,7 +82,24 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+@keyframes circleFill {
+  0% {
+    stroke-dashoffset: 301.59;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-circle-fill {
+  animation: circleFill 1500ms ease-in-out forwards;
 }
