@@ -121,23 +121,28 @@ const Vault: React.FC = () => {
 
             {/* Stats Block */}
             <div className="flex items-center justify-center lg:justify-start gap-8 lg:gap-12">
-              <div className="flex flex-col items-start">
-                <span className="text-2xl lg:text-3xl font-syne font-bold">{userProfile?.followers?.length || 0}</span>
-                <span className="text-[10px] lg:text-xs text-on-surface-variant uppercase tracking-widest font-semibold mt-1">Followers</span>
+              <div className="flex flex-col items-start cursor-pointer hover:text-primary transition-colors">
+                <span className="text-2xl lg:text-3xl font-syne font-bold">
+                  {userProfile?._count?.followers_followers_following_idTousers || 0}
+                </span>
+                <span className="text-[10px] lg:text-xs text-on-surface-variant uppercase tracking-widest font-semibold mt-1">Network</span>
               </div>
-              <div className="flex flex-col items-start">
+              <div className="flex flex-col items-start cursor-pointer hover:text-primary transition-colors">
                 <span className="text-2xl lg:text-3xl font-syne font-bold">{userVideos?.length || 0}</span>
-                <span className="text-[10px] lg:text-xs text-on-surface-variant uppercase tracking-widest font-semibold mt-1">Vaults</span>
+                <span className="text-[10px] lg:text-xs text-on-surface-variant uppercase tracking-widest font-semibold mt-1">Collections</span>
               </div>
               <div className="flex flex-col items-start">
-                <span className="text-2xl lg:text-3xl font-syne font-bold">89k</span>
-                <span className="text-[10px] lg:text-xs text-on-surface-variant uppercase tracking-widest font-semibold mt-1">Impact</span>
+                <span className="text-2xl lg:text-3xl font-syne font-bold text-primary">89k</span>
+                <span className="text-[10px] lg:text-xs text-on-surface-variant uppercase tracking-widest font-semibold mt-1">C-Score</span>
               </div>
             </div>
           </div>
 
-          {/* Edit Button */}
-          <div className="shrink-0 mt-4 lg:mt-0">
+          {/* Action Buttons */}
+          <div className="shrink-0 mt-6 lg:mt-0 flex flex-col sm:flex-row gap-4">
+            <button className="px-8 py-3 rounded-xl bg-surface-variant border border-white/10 text-on-surface font-bold hover:bg-white/5 transition-colors">
+              Share Network
+            </button>
             <button className="px-8 py-3 rounded-xl bg-primary text-on-primary font-bold shadow-[0_0_20px_var(--color-primary)] hover:scale-105 transition-transform">
               Edit Vault
             </button>

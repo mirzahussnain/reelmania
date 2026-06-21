@@ -7,8 +7,6 @@ import {
     updateUser,
     deleteUser,
     getUsers,
-    updateFollower,
-    getFollowers,
     updateUserRole
 } from '../controllers/userController';
 import { requireAuth } from "@clerk/express";
@@ -27,9 +25,7 @@ userRouter.get("/profile/:userId",getUser) //Get other user profile
     userRouter.get("/:userId/myprofile",authMiddleware,getUser); // Get user own profile
     userRouter.put("/:userId/myprofile", authMiddleware,updateUser); // Update user profile
     userRouter.delete("/:userId/myprofile",authMiddleware, deleteUser); // Delete user profile
-    userRouter.put("/:userId/follow",authMiddleware,updateFollower)
     userRouter.put("/:username/role",authMiddleware,updateUserRole)
-    userRouter.get("/:userId/followers",getFollowers)
 
 
     // User Videos Protected Routes

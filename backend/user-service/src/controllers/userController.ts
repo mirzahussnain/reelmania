@@ -38,6 +38,14 @@ export const getUser = async (req: Request, res: Response) => {
       where: {
         id: userId,
       },
+      include: {
+        _count: {
+          select: {
+            followers_followers_following_idTousers: true, // Number of followers
+            followers_followers_follower_idTousers: true,  // Number of people they follow
+          }
+        }
+      }
     });
 
     // Check if user exists
@@ -130,82 +138,3 @@ export const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
-export const getFollowers = async (req: Request, res: Response) => {
-  try {
-    const userId = req?.params?.userId;
-    if (!userId) {
-      res.status(401).json({ success: false, message: "User Id is missing" });
-      return;
-    }
-    const result = await prisma.followers.findMany({
-      where: {
-        following_id: userId
-      }
-    })
-
-    res.status(200).json({ success: true, message: "Followers Fetched Successfully", result })
-    return;
-
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ success: false, message: "Operation Failed", error: errorMsg })
-    return;
-  }
-}
-
-export const updateFollower = async (req: Request, res: Response) => {
-
-  try {
-
-    const follower_id: string = req?.body?.followerId;
-    const following_id: string = req?.params?.userId;
-    if (!follower_id || !following_id) {
-      res.status(500).json({ success: false, message: "Follower or Following Id is missing" });
-      return;
-    }
-    const followedBy = await prisma.followers.findUnique({
-      where: {
-        follower_id_following_id: {
-          follower_id: follower_id,
-          following_id: following_id
-        }
-      }
-    })
-    if (followedBy) {
-      const result = await prisma.followers.delete({
-        where: {
-          follower_id_following_id: {
-            follower_id: follower_id,
-            following_id: following_id
-          }
-        }
-      })
-      if (result) {
-        res.status(200).json({ success: true, message: "Unfollowed", result: null })
-        return;
-      }
-      res.status(500).json({ success: false, message: "Operation Failed" });
-      return;
-    }
-    else {
-
-      const result = await prisma.followers.create({
-        data: {
-          follower_id,
-          following_id
-        }
-      })
-      if (!result) {
-        res.status(500).json({ success: false, message: "Operation Failed!" });
-        return;
-      }
-      res.status(200).json({ success: true, message: "Follower Added Successfully", result })
-      return;
-    }
-  }
-  catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    console.error(err)
-    res.status(500).json({ success: false, message: "Operation Failed", error: errorMsg })
-  }
-}

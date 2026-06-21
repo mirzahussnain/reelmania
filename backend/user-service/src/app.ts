@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from "express";
 import dotenv from"dotenv";
 import userRouter from "../src/routes/userRoutes";
+import followerRouter from "../src/routes/followerRoutes";
 import { clerkMiddleware } from "@clerk/express";
 import bodyParser from "body-parser";
 import errorRouter from "../src/routes/errorRoute";
@@ -25,6 +26,7 @@ app.use("/api/webhook/*", bodyParser.raw({ type: "application/json" }));
 app.use(express.json())
 app.use(clerkMiddleware());
 app.use("/api/users", userRouter);
+app.use("/api/users", followerRouter);
 app.use("/api/users/errors",errorRouter);
 app.use("/api/webhook/user",hookRouter)
 
