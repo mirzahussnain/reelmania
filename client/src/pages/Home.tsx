@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 import PlayerCard from "../components/PlayerCard";
 import { useAppSelector } from "../utils/hooks/storeHooks";
 import { RootState } from "../utils/store/store";
@@ -14,7 +15,18 @@ const Home = () => {
 
   const videos = useAppSelector((state: RootState) => state.video.forYouVideos);
   const screenWidth = useScreenWidth();
-  const [openVideoIndex, setOpenVideoIndex] = useState<number | null>(null);
+  
+  const [isCommentsOpen, setIsCommentsOpen] = useState<boolean>(false);
+  const [activeVideoIndex, setActiveVideoIndex] = useState<number>(0);
+  const commentsTrayRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLElement>) => {
+    const container = e.currentTarget;
+    const idx = Math.round(container.scrollTop / container.clientHeight);
+    if (idx !== activeVideoIndex && idx >= 0 && idx < (videos?.length || 0)) {
+      setActiveVideoIndex(idx);
+    }
+  };
 
   const scrollFeed = (direction: 'up' | 'down') => {
     const container = document.getElementById('feed-container');
@@ -30,7 +42,7 @@ const Home = () => {
   return  isLoading ? (
     <Loader />
   ) : (
-    <main id="feed-container" className="w-full h-full flex flex-col items-center overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-black relative">
+    <main id="feed-container" onScroll={handleScroll} className="w-full h-full flex flex-col items-center overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-transparent relative">
       {videos?.length === 0 ? (
         <div className="text-xl tracking-wide w-full h-full flex flex-col justify-center items-center text-zinc-300">
           <span className="text-5xl mb-3">🔒</span>
@@ -46,45 +58,42 @@ const Home = () => {
             key={index}
           >
             {/* Video Player */}
-            <div
-              className={`w-full h-full lg:h-auto flex justify-center items-center transform transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-                openVideoIndex === index
-                  ? "lg:-translate-x-[15rem]"
-                  : "lg:translate-x-0"
-              }`}
+            <motion.div
+              initial={false}
+              animate={{
+                x: screenWidth >= 1024 ? (isCommentsOpen ? "-15rem" : 0) : 0
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="w-full h-full lg:h-auto flex justify-center items-center"
             >
               <PlayerCard
                 video={video}
-                setIsModalOpen={({isOpen}:{isOpen:boolean}) =>
-                  isOpen?setOpenVideoIndex(index):setOpenVideoIndex(null)
-                }
+                setIsModalOpen={({isOpen}:{isOpen:boolean}) => setIsCommentsOpen(isOpen)}
               />
-            </div>
-
-            {/* Comments Container (TikTok/Reels Hybrid) */}
-            <div
-              className={`fixed z-[50] w-full lg:w-[28rem] h-[60dvh] lg:h-[90dvh] bottom-0 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2 right-0 
-                bg-surface-container/80 backdrop-blur-3xl lg:border lg:border-white/10 lg:rounded-2xl rounded-t-2xl lg:rounded-t-2xl shadow-2xl
-                transform transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-                openVideoIndex === index
-                  ? screenWidth >= 1024
-                    ? "translate-x-0 lg:-translate-x-[20%]" // Pops out to the side on desktop
-                    : "translate-y-0" // Slides up from bottom on mobile
-                  : screenWidth >= 1024
-                  ? "translate-x-[150%] opacity-0"
-                  : "translate-y-[100%] opacity-0"
-              }`}
-            >
-              <Comments
-                video={video}
-                setIsModalOpen={({isOpen}:{isOpen:boolean}) =>
-                  isOpen?setOpenVideoIndex(index):setOpenVideoIndex(null) 
-                }
-              />
-            </div>
+            </motion.div>
           </div>
         )})
       )}
+
+      {/* Single Global Comments Tray */}
+      <motion.div
+        ref={commentsTrayRef}
+        initial={false}
+        animate={{
+          x: screenWidth >= 1024 ? (isCommentsOpen ? "-20%" : "150%") : 0,
+          y: screenWidth >= 1024 ? "calc(-50% + 40px)" : (isCommentsOpen ? "0%" : "100%"),
+          opacity: isCommentsOpen ? 1 : 0
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className={`fixed z-[50] w-full lg:w-[28rem] h-[60dvh] lg:h-[85dvh] bottom-0 lg:bottom-auto lg:top-1/2 right-0 bg-surface-container/80 backdrop-blur-3xl lg:border lg:border-white/10 lg:rounded-2xl rounded-t-2xl shadow-2xl ${isCommentsOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      >
+        {videos && videos[activeVideoIndex] && (
+          <Comments
+            video={videos[activeVideoIndex]}
+            setIsModalOpen={({isOpen}:{isOpen:boolean}) => setIsCommentsOpen(isOpen)}
+          />
+        )}
+      </motion.div>
 
       {/* Custom Neon Navigation Arrows */}
       <div className="fixed right-6 bottom-24 lg:top-1/2 lg:-translate-y-1/2 lg:bottom-auto hidden lg:flex flex-col gap-4 z-[40]">

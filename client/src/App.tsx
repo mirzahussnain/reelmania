@@ -45,6 +45,7 @@ const App = () => {
   const Explore=routes["Explore"];
   const Welcome=routes["Welcome"];
   const NotFound = routes["NotFound"]; 
+  const ComingSoon = routes["ComingSoon"];
   const {token}=useAppSelector((state:RootState)=>state.auth)
   const { isSignedIn, user } = useUser();
   const dispatch = useAppDispatch();
@@ -103,7 +104,10 @@ const App = () => {
             <Route path="/users/:username" element={<UserProfile/>}/>
             <Route path="/videos/:videoId" element={<VideoInfo />} />
             <Route path="/explore" element={<Explore/>}/>
-
+            <Route path="/studio" element={<ComingSoon />} />
+            <Route path="/vault" element={<ComingSoon />} />
+            <Route path="/history" element={<ComingSoon />} />
+            <Route path="/liked" element={<ComingSoon />} />
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
             <Route path="/admin" element={<Admin/>}/>

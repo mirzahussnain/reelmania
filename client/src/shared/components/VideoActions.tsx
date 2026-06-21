@@ -57,6 +57,7 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
 
       {/* Comment Button */}
       <button
+        data-comment-btn="true"
         className="flex flex-col items-center group transition-transform hover:scale-105"
         onClick={() => token ? setIsModalOpen({ isOpen: true }) : toast.error("Sign In Required")}
       >

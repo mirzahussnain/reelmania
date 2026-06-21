@@ -12,4 +12,5 @@ export const routes = {
   Welcome: lazy(() => import("../../pages/Welcome")),
   NotFound: lazy(() => import("../../pages/NotFound")),
   Admin: lazy(() => import("../../pages/Admin")),
+  ComingSoon: lazy(() => import("../../pages/ComingSoon")),
 };

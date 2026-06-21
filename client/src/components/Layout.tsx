@@ -1,18 +1,55 @@
 import React, { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
+import { Sidebar } from "../shared/components/layout/Sidebar";
+import { Topbar } from "../shared/components/layout/Topbar";
+import useScreenWidth from "../utils/hooks/useScreenWidth";
 
 interface LayoutProps {
-  children: ReactNode; // explicitly typing the children prop
+  children: ReactNode; 
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const screenWidth = useScreenWidth();
+  const location = useLocation();
+  const isMobile = screenWidth <= 1016;
 
- 
+  const isAuthPage = location.pathname.includes("/sign-in") || location.pathname.includes("/sign-up");
+
+  if (isAuthPage) {
+    return (
+      <div className="w-full h-[100dvh] overflow-hidden relative bg-background">
+        {children}
+      </div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div className="w-full h-[100dvh] overflow-hidden relative bg-background flex flex-col">
+        <div className="flex-1 w-full h-full relative overflow-hidden">
+          {children} 
+        </div>
+        <Navbar /> {/* Mobile Navbar at bottom */}
+      </div>
+    );
+  }
+
+  // Desktop Cinematic Layout
   return (
-    <div className="w-full h-[100dvh] overflow-hidden relative bg-background flex flex-col">
-      <Navbar /> {/* Navbar should always be at the top */}
-      <div className="flex-1 w-full h-full relative overflow-hidden">
-        {children} {/* Render children passed to the Layout */}
+    <div className="flex w-full h-[100dvh] bg-background text-on-background overflow-hidden relative">
+      {/* Fixed Left Sidebar */}
+      <Sidebar />
+      
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col relative h-full overflow-hidden">
+        {/* Floating Topbar */}
+        <Topbar />
+
+        {/* Page Content */}
+        <main className="flex-1 w-full h-full relative overflow-hidden">
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -31,7 +31,6 @@ export const useVideoPlayback = (setIsModalOpen: ({ isOpen }: { isOpen: boolean 
             if (videoRef.current) {
               videoRef.current.pause();
               videoRef.current.style.opacity = "0.5";
-              setIsModalOpen({ isOpen: false });
             }
           }
         });
