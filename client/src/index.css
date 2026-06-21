@@ -59,6 +59,18 @@
   --spacing-gutter: 24px;
 }
 
+@utility glow-primary {
+  box-shadow: 0 0 15px color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+
+@utility glow-primary-lg {
+  box-shadow: 0 0 30px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+@utility glow-black {
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+}
+
 body {
   font-family: var(--font-inter);
   background-color: var(--color-background);

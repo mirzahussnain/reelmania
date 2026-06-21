@@ -12,11 +12,11 @@ const ManageProfile = () => {
             },
           },
           variables:{
-            colorBackground:"#343434",
-            "colorText":"white",
-            "colorPrimary":"#F9F6EE",
-            "colorTextSecondary":"#F9F6EE",
-            "colorNeutral":"#F9F6EE"
+            colorBackground:"var(--color-surface-container)",
+            colorText:"var(--color-on-surface)",
+            colorPrimary:"var(--color-primary)",
+            colorTextSecondary:"var(--color-on-surface-variant)",
+            colorNeutral:"var(--color-on-surface)"
           }
         }}
       />

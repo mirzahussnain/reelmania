@@ -40,7 +40,7 @@ const Comments = ({
         <div className="flex items-center gap-4">
           <button
             className={`text-xl flex items-center justify-center transition-colors hover:text-primary ${
-              filter ? "text-primary shadow-[0_0_10px_rgba(208,188,255,0.4)]" : "text-on-surface-variant"
+              filter ? "text-primary glow-primary" : "text-on-surface-variant"
             }`}
             onClick={() => setFilter((prev) => !prev)}
             title="Sort Comments"
@@ -59,7 +59,7 @@ const Comments = ({
       {/* Comment List */}
       <div className="w-full flex-1 overflow-y-auto scrollbar-hide flex flex-col items-center justify-start transition-all">
         {pending && videoComments.length === 0 ? (
-          <div className="mt-10"><ThreeDots color="#d0bcff" /></div>
+          <div className="mt-10"><ThreeDots color="var(--color-primary)" /></div>
         ) : videoComments?.length > 0 ? (
           videoComments.map((comment, index) => (
             <CommentItem key={index} comment={comment} />

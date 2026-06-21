@@ -59,7 +59,7 @@ const VideoInfo = () => {
           <video
             id="video"
             ref={videoRef}
-            className="w-full h-full lg:max-w-[400px] object-cover rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)]"
+            className="w-full h-full lg:max-w-[400px] object-cover rounded-xl glow-black"
             src={videoState.video_url}
             controls
             controlsList="nodownload noplaybackrate"
@@ -96,7 +96,7 @@ const VideoInfo = () => {
                     "px-5 py-1.5 rounded-full text-sm font-bold transition-all",
                     followStatus 
                       ? "bg-white/10 text-on-surface hover:bg-white/20" 
-                      : "bg-primary text-on-primary hover:bg-primary-container hover:shadow-[0_0_15px_rgba(208,188,255,0.3)]"
+                      : "bg-primary text-on-primary hover:bg-primary-container hover:glow-primary"
                   )}
                   onClick={isSignedIn ? handleFollow : () => navigateTo("/sign-in")}
                 >
@@ -132,7 +132,7 @@ const VideoInfo = () => {
               <button
                 className={cn(
                   "text-xl transition-colors",
-                  filter ? "text-primary shadow-[0_0_10px_rgba(208,188,255,0.4)] rounded-full" : "text-on-surface-variant"
+                  filter ? "text-primary glow-primary rounded-full" : "text-on-surface-variant"
                 )}
                 onClick={() => setFilter((prev) => !prev)}
               >

@@ -7,7 +7,7 @@ export const CommentItem = ({ comment }: { comment: CommentType }) => {
     <div className="w-full flex justify-start items-start p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
       <Link
         to={`/users/@${comment?.author?.username}`}
-        className="w-10 h-10 shrink-0 rounded-full bg-surface-container-high p-[2px] hover:shadow-[0_0_10px_rgba(208,188,255,0.4)] transition-shadow"
+        className="w-10 h-10 shrink-0 rounded-full bg-surface-container-high p-[2px] hover:glow-primary transition-shadow"
       >
         <img
           className="w-full h-full object-cover rounded-full"

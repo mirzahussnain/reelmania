@@ -30,7 +30,7 @@ const Home = () => {
   return  isLoading ? (
     <Loader />
   ) : (
-    <main id="feed-container" className="w-full h-dvh flex flex-col items-center overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-black relative">
+    <main id="feed-container" className="w-full h-full flex flex-col items-center overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-black relative">
       {videos?.length === 0 ? (
         <div className="text-xl tracking-wide w-full h-full flex flex-col justify-center items-center text-zinc-300">
           <span className="text-5xl mb-3">🔒</span>
@@ -42,7 +42,7 @@ const Home = () => {
           return (
           <div
             ref={isLastVideo ? ref : null}
-            className="w-full h-dvh flex justify-center items-center snap-start relative lg:py-6"
+            className="w-full h-full flex justify-center items-center snap-start snap-always relative lg:py-6"
             key={index}
           >
             {/* Video Player */}
@@ -90,13 +90,13 @@ const Home = () => {
       <div className="fixed right-6 bottom-24 lg:top-1/2 lg:-translate-y-1/2 lg:bottom-auto hidden lg:flex flex-col gap-4 z-[40]">
         <button 
           onClick={() => scrollFeed('up')}
-          className="p-3 rounded-full bg-surface-container/50 backdrop-blur-md border border-white/10 text-white hover:bg-primary/20 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(208,188,255,0.4)] transition-all duration-300 group"
+          className="p-3 rounded-full bg-surface-container/50 backdrop-blur-md border border-white/10 text-white hover:bg-primary/20 hover:border-primary/50 hover:glow-primary transition-all duration-300 group"
         >
           <svg className="w-6 h-6 group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
         </button>
         <button 
           onClick={() => scrollFeed('down')}
-          className="p-3 rounded-full bg-surface-container/50 backdrop-blur-md border border-white/10 text-white hover:bg-primary/20 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(208,188,255,0.4)] transition-all duration-300 group"
+          className="p-3 rounded-full bg-surface-container/50 backdrop-blur-md border border-white/10 text-white hover:bg-primary/20 hover:border-primary/50 hover:glow-primary transition-all duration-300 group"
         >
           <svg className="w-6 h-6 group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </button>

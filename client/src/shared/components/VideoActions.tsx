@@ -1,6 +1,6 @@
 import React from "react";
-import { FaCommentDots, FaHeart } from "react-icons/fa";
-import { FiShare2 } from "react-icons/fi";
+import { FaHeart } from "react-icons/fa";
+import { BiCommentDetail, BiSolidCommentDetail, BiShareAlt, BiBookmark } from "react-icons/bi";
 import { toast } from "react-toastify";
 import Share from "../../components/Share";
 import { VideoLikes } from "../../types";
@@ -32,58 +32,77 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
   setOpenShareModel,
 }) => {
   return (
-    <div className="absolute right-4 bottom-24 lg:bottom-12 flex flex-col items-center gap-6 z-20">
-      <button 
-        className="flex flex-col items-center group transition-transform hover:scale-110" 
-        onClick={handleLikes} 
+    <div className="absolute right-3 bottom-16 lg:bottom-10 flex flex-col items-center gap-5 z-20">
+
+      {/* Like Button */}
+      <button
+        className="flex flex-col items-center group transition-transform hover:scale-105"
+        onClick={handleLikes}
         type="button"
       >
-        <div className="p-3 bg-black/40 backdrop-blur-md rounded-full border border-white/10 group-hover:bg-black/60 transition-colors">
+        <div className="w-[46px] h-[46px] flex items-center justify-center bg-black/20 backdrop-blur-lg rounded-full group-hover:bg-black/40 transition-colors">
           <FaHeart
             className={cn(
-              "text-2xl transition-colors",
-              likes?.some((like) => like.liked_by.id == user?.id) 
-                ? "text-tertiary-container shadow-[0_0_15px_rgba(255,82,92,0.5)]" 
+              "text-[22px] transition-colors",
+              likes?.some((like) => like.liked_by.id == user?.id)
+                ? "text-tertiary drop-shadow-[0_0_10px_var(--color-tertiary)]"
                 : "text-white"
             )}
           />
         </div>
-        <span className="text-white font-semibold text-sm drop-shadow-md mt-1">
-          {pending ? "..." : likes?.length}
+        <span className="text-white font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
+          {pending ? "..." : likes?.length || 0}
         </span>
       </button>
 
+      {/* Comment Button */}
       <button
-        className="flex flex-col items-center group transition-transform hover:scale-110"
+        className="flex flex-col items-center group transition-transform hover:scale-105"
         onClick={() => token ? setIsModalOpen({ isOpen: true }) : toast.error("Sign In Required")}
       >
-        <div className="p-3 bg-black/40 backdrop-blur-md rounded-full border border-white/10 group-hover:bg-black/60 transition-colors">
-          <FaCommentDots className="text-2xl text-white" />
+        <div className="w-[46px] h-[46px] flex items-center justify-center bg-black/20 backdrop-blur-lg rounded-full group-hover:bg-black/40 transition-colors">
+          {commentsLength >= 1 ? (
+            <BiSolidCommentDetail className="text-[26px] text-white drop-shadow-sm" />
+          ) : (
+            <BiCommentDetail className="text-[26px] text-white drop-shadow-sm" />
+          )}
         </div>
-        <span className="text-white font-semibold text-sm drop-shadow-md mt-1">
+        <span className="text-white font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
           {commentsLength}
         </span>
       </button>
 
+      {/* Share Button */}
       <div className="relative flex flex-col items-center group">
         <button
-          className="flex flex-col items-center transition-transform hover:scale-110"
+          className="flex flex-col items-center transition-transform hover:scale-105"
           onClick={() => setOpenShareModel(!openShareModel)}
         >
-          <div className="p-3 bg-black/40 backdrop-blur-md rounded-full border border-white/10 group-hover:bg-black/60 transition-colors">
-            <FiShare2 className="text-2xl text-white" />
+          <div className="w-[46px] h-[46px] flex items-center justify-center bg-black/20 backdrop-blur-lg rounded-full group-hover:bg-black/40 transition-colors">
+            <BiShareAlt className="text-[26px] text-white drop-shadow-sm" />
           </div>
-          <span className="text-white font-semibold text-sm drop-shadow-md mt-1">
+          <span className="text-white font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
             Share
           </span>
         </button>
-        
+
         {openShareModel && (
           <div className="absolute bottom-16 right-10 z-50">
             <Share videoId={videoId} />
           </div>
         )}
       </div>
+
+      {/* Bookmark Button (Added to match screenshot layout) */}
+      <button
+        className="flex flex-col items-center group transition-transform hover:scale-105"
+        onClick={() => toast.info("Bookmark feature coming soon!")}
+      >
+        <div className="w-[46px] h-[46px] flex items-center justify-center bg-black/50 backdrop-blur-xl rounded-full group-hover:bg-black/60 transition-colors">
+          <BiBookmark className="text-[24px] text-white drop-shadow-sm" />
+        </div>
+      </button>
+
     </div>
   );
 };

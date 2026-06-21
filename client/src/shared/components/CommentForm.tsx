@@ -24,7 +24,7 @@ export const CommentForm = ({
             alt={user?.username}
           />
         </div>
-        <div className="flex-1 bg-surface-container-lowest rounded-xl p-3 border border-white/5 focus-within:border-primary/50 focus-within:shadow-[0_0_10px_rgba(208,188,255,0.2)] transition-all">
+        <div className="flex-1 bg-surface-container-lowest rounded-xl p-3 border border-white/5 focus-within:border-primary/50 focus-within:glow-primary transition-all">
           <textarea
             className="w-full bg-transparent resize-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant/50 min-h-[40px] max-h-[120px]"
             placeholder="Add a glowing comment..."
@@ -44,7 +44,7 @@ export const CommentForm = ({
           Cancel
         </button>
         <button
-          className="py-1.5 px-5 text-sm font-medium bg-primary text-on-primary hover:shadow-[0_0_15px_rgba(208,188,255,0.4)] hover:bg-primary-container transition-all rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+          className="py-1.5 px-5 text-sm font-medium bg-primary text-on-primary hover:glow-primary hover:bg-primary-container transition-all rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
           type="submit"
           disabled={!commentText.trim()}
         >

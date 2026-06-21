@@ -61,7 +61,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
           <div className="w-full lg:w-[45%] h-[300px] lg:h-full bg-black/20 p-6 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/5 relative">
             {isPending ? (
               <div className="w-full h-full flex flex-col justify-center items-center gap-4">
-                <MutatingDots color="#d0bcff" secondaryColor="#a078ff" />
+                <MutatingDots color="var(--color-primary)" secondaryColor="var(--color-primary-container)" />
                 <h2 className="text-primary font-medium tracking-wide">
                   {isUploadingToS3 ? "Uploading to Cloud..." : "Finalizing Database..."}
                 </h2>
@@ -84,7 +84,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
                 />
                 
                 {fileURL ? (
-                  <div className="w-full h-full relative rounded-xl overflow-hidden shadow-[0_0_20px_rgba(208,188,255,0.15)] group">
+                  <div className="w-full h-full relative rounded-xl overflow-hidden glow-primary group">
                     <video className="w-full h-full object-cover" src={fileURL} autoPlay loop muted />
                     <button
                       className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-primary/80 text-white rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all"
@@ -97,7 +97,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
                   </div>
                 ) : (
                   <div className="flex flex-col justify-center items-center text-on-surface-variant group-hover:text-primary transition-colors">
-                    <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center mb-4 group-hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all">
+                    <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center mb-4 group-hover:glow-primary transition-all">
                       <FaPlus className="text-xl" />
                     </div>
                     <h2 className="font-semibold mb-1">Select Video</h2>
@@ -121,7 +121,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-surface-container-lowest border border-white/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:shadow-[0_0_10px_rgba(208,188,255,0.2)] transition-all"
+                  className="w-full bg-surface-container-lowest border border-white/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:glow-primary transition-all"
                   placeholder="Catchy title..."
                   required
                 />
@@ -136,7 +136,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
                   id="hashtags"
                   value={hashtags.join(",")}
                   onChange={(e) => setHashtags(e.target.value.split(","))}
-                  className="w-full bg-surface-container-lowest border border-white/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:shadow-[0_0_10px_rgba(208,188,255,0.2)] transition-all"
+                  className="w-full bg-surface-container-lowest border border-white/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:glow-primary transition-all"
                   placeholder="gaming, lifestyle, comedy"
                 />
               </div>
@@ -154,7 +154,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
               </button>
               <button
                 type="submit"
-                className="px-8 py-2.5 bg-primary text-on-primary font-bold rounded-full hover:bg-primary-container hover:shadow-[0_0_15px_rgba(208,188,255,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-2.5 bg-primary text-on-primary font-bold rounded-full hover:bg-primary-container hover:glow-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isPending || !fileURL || !title.trim()}
               >
                 {isPending ? "Uploading..." : "Publish"}
