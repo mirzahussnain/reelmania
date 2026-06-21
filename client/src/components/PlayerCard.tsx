@@ -17,12 +17,12 @@ const PlayerCard = ({
   const [openShareModel, setOpenShareModel] = useState(false);
 
   return (
-    <div className="lg:static relative w-full lg:h-[88vh] h-[90vh] lg:rounded-l-2xl lg:flex lg:justify-center transition-all ease-in-out duration-200">
-      <div className="relative w-full lg:w-11/12 h-full lg:rounded-2xl">
+    <div className="relative w-full h-full lg:h-[90dvh] lg:rounded-2xl lg:flex lg:justify-center transition-all ease-in-out duration-300">
+      <div className="relative w-full lg:w-auto lg:aspect-[9/16] h-full lg:rounded-2xl bg-black overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
         <video
           ref={videoRef}
-          className="w-full h-full object-fill lg:rounded-2xl video-control-hide peer"
-          autoPlay={false} // Controlled by intersection observer
+          className="w-full h-full object-cover video-control-hide peer"
+          autoPlay={false}
           muted
           loop
           src={video?.video_url}
@@ -33,20 +33,20 @@ const PlayerCard = ({
         />
 
         <VideoInfoOverlay video={video} />
+        
+        <VideoActions
+          videoId={video?.id as string}
+          likes={likes}
+          commentsLength={comments.length}
+          handleLikes={handleLikes}
+          pending={pending}
+          user={user}
+          token={token}
+          setIsModalOpen={setIsModalOpen}
+          openShareModel={openShareModel}
+          setOpenShareModel={setOpenShareModel}
+        />
       </div>
-
-      <VideoActions
-        videoId={video?.id as string}
-        likes={likes}
-        commentsLength={comments.length}
-        handleLikes={handleLikes}
-        pending={pending}
-        user={user}
-        token={token}
-        setIsModalOpen={setIsModalOpen}
-        openShareModel={openShareModel}
-        setOpenShareModel={setOpenShareModel}
-      />
     </div>
   );
 };

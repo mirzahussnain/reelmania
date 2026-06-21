@@ -4,6 +4,7 @@ import { FiShare2 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Share from "../../components/Share";
 import { VideoLikes } from "../../types";
+import { cn } from "../utils/cn";
 
 interface VideoActionsProps {
   videoId: string;
@@ -31,38 +32,54 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
   setOpenShareModel,
 }) => {
   return (
-    <div className="w-[4rem] lg:w-[3rem] lg:h-full flex flex-col items-center justify-center lg:static absolute right-0 bottom-24 text-white font-semibold lg:px-2">
-      <button className="flex flex-col items-center justify-center" onClick={handleLikes} type="button">
-        <FaHeart
-          className={`text-3xl ${
-            likes?.some((like) => like.liked_by.id == user?.id) ? "text-red-600" : "text-white"
-          }`}
-        />
-        <span className="text-center text-sm text-white">
+    <div className="absolute right-4 bottom-24 lg:bottom-12 flex flex-col items-center gap-6 z-20">
+      <button 
+        className="flex flex-col items-center group transition-transform hover:scale-110" 
+        onClick={handleLikes} 
+        type="button"
+      >
+        <div className="p-3 bg-black/40 backdrop-blur-md rounded-full border border-white/10 group-hover:bg-black/60 transition-colors">
+          <FaHeart
+            className={cn(
+              "text-2xl transition-colors",
+              likes?.some((like) => like.liked_by.id == user?.id) 
+                ? "text-tertiary-container shadow-[0_0_15px_rgba(255,82,92,0.5)]" 
+                : "text-white"
+            )}
+          />
+        </div>
+        <span className="text-white font-semibold text-sm drop-shadow-md mt-1">
           {pending ? "..." : likes?.length}
         </span>
       </button>
+
       <button
-        className="flex flex-col items-center justify-center mt-5"
-        onClick={() => {
-          return token ? setIsModalOpen({ isOpen: true }) : toast.error("Sign In Required");
-        }}
+        className="flex flex-col items-center group transition-transform hover:scale-110"
+        onClick={() => token ? setIsModalOpen({ isOpen: true }) : toast.error("Sign In Required")}
       >
-        <FaCommentDots className="text-3xl" />
-        <span className="text-center text-sm">{commentsLength}</span>
+        <div className="p-3 bg-black/40 backdrop-blur-md rounded-full border border-white/10 group-hover:bg-black/60 transition-colors">
+          <FaCommentDots className="text-2xl text-white" />
+        </div>
+        <span className="text-white font-semibold text-sm drop-shadow-md mt-1">
+          {commentsLength}
+        </span>
       </button>
-      <div className="relative">
+
+      <div className="relative flex flex-col items-center group">
         <button
-          className="flex flex-col items-center justify-center mt-5"
-          onClick={() => {
-            return openShareModel ? setOpenShareModel(false) : setOpenShareModel(true);
-          }}
+          className="flex flex-col items-center transition-transform hover:scale-110"
+          onClick={() => setOpenShareModel(!openShareModel)}
         >
-          <FiShare2 className="text-3xl" />
-          <span className="text-center text-sm">Share</span>
+          <div className="p-3 bg-black/40 backdrop-blur-md rounded-full border border-white/10 group-hover:bg-black/60 transition-colors">
+            <FiShare2 className="text-2xl text-white" />
+          </div>
+          <span className="text-white font-semibold text-sm drop-shadow-md mt-1">
+            Share
+          </span>
         </button>
+        
         {openShareModel && (
-          <div className="absolute bottom-7 right-10">
+          <div className="absolute bottom-16 right-10 z-50">
             <Share videoId={videoId} />
           </div>
         )}

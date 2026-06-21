@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+
 import { FaExchangeAlt, FaPlus } from "react-icons/fa";
 import Modal from "react-modal";
-import { useUploadVideoMutation, useGenerateUploadUrlMutation } from "../utils/store/features/video/videoApi";
-import { useAppSelector } from "../utils/hooks/storeHooks";
-import { RootState } from "../utils/store/store";
-import { toast } from "react-toastify";
 import { MutatingDots } from "react-loader-spinner";
+import { useVideoUpload } from "../shared/hooks/useVideoUpload";
+import { cn } from "../shared/utils/cn";
 
 type Props = {
   isOpen: boolean;
@@ -13,257 +11,157 @@ type Props = {
 };
 
 const UploadVideoModal = ({ isOpen, onClose }: Props) => {
-  const [title, setTitle] = useState("");
-  const [hashtags, setHashtags] = useState([""]);
-  const [cachedFile, setCachedFile] = useState<File | null>(null);
-  const [fileURL, setFileURL] = useState<string | null>(null);
-  const { token } = useAppSelector((state: RootState) => state.auth);
-  const user = useAppSelector((state: RootState) => state.user);
-  const [postToMongo, response] = useUploadVideoMutation();
-  const [generateUploadUrl] = useGenerateUploadUrlMutation();
-  const cacheTimerRef = useRef<(ReturnType<typeof setTimeout>) | null>(null);
-  const [timeLeft, setTimeLeft] = useState(40);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [isUploaded, setIsUploaded] = useState(false); 
+  const {
+    title,
+    setTitle,
+    hashtags,
+    setHashtags,
+    fileURL,
+    timeLeft,
+    isPending,
+    isUploadingToS3,
+    handleFileChange,
+    triggerFileInput,
+    handleSubmit,
+    resetForm
+  } = useVideoUpload(onClose);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      toast.info("Storing Video In Database...");
-      const metaData = {
-        Likes: [],
-        comments: [],
-        uploaded_by: {
-          id: user?.id,
-          username: user?.username,
-        },
-        title,
-        hashtags,
-        uploaded_at: new Date(),
-      };
-      if (!cachedFile) {
-        throw new Error("File is not selected.");
-      }
-      if (!token) {
-        throw new Error("User is not signed in.");
-      }
-
-      // Step 1: Generate Pre-Signed URL
-      const { signedUrl, fileName } = await generateUploadUrl({ 
-        fileName: cachedFile.name, 
-        contentType: cachedFile.type, 
-        token 
-      }).unwrap();
-
-      // Step 2: Upload directly to S3 / Cloudflare R2 / MinIO
-      const uploadRes = await fetch(signedUrl, {
-        method: "PUT",
-        body: cachedFile,
-        headers: { "Content-Type": cachedFile.type },
-      });
-
-      if (!uploadRes.ok) throw new Error("Direct upload failed.");
-
-      // Step 3: Save metadata to MongoDB
-      await postToMongo({ metadata: metaData, fileName, token }).unwrap();
-      
-      setCachedFile(null);
-      setFileURL(null);
-      setTitle("");
-      setHashtags([]);
-    } catch (err: any) {
-      toast.error(err.toString());
-    }
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.size > 50 * 1024 * 1024) { // Example: 50MB limit
-        toast.error("File size exceeds the maximum allowed limit (50MB).");
-        return;
-      }
-
-      setCachedFile(selectedFile);
-      const previewURL = URL.createObjectURL(selectedFile);
-      setFileURL(previewURL);
-      toast.warn("File will be removed after 40 seconds");
-
-      setTimeLeft(40); // Reset countdown
-      if (cacheTimerRef.current) {
-        clearTimeout(cacheTimerRef.current);
-      }
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current as NodeJS.Timeout);
-      }
-  
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(intervalRef.current as NodeJS.Timeout);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-  
-      cacheTimerRef.current = setTimeout(() => {
-        setFileURL(null);
-        if(!isUploaded){
-
-          toast.info("File Removed from cache.");
-        }
-      }, 40 * 1000);
-    }
-  };
-
-  const triggerFileInput = () => {
-    const fileInput = document.getElementById("fileInput") as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = ''; // Reset input so the same file can be selected again
-      fileInput.click();
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (cacheTimerRef.current) clearTimeout(cacheTimerRef.current);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (cachedFile) {
-      const newFileURL = URL.createObjectURL(cachedFile);
-      setFileURL(newFileURL);
-    } else {
-      setFileURL(null);
-    }
-  }, [cachedFile]);
-
-  useEffect(() => {
-
-      if (response?.isSuccess) {
-        setIsUploaded(true);
-        toast.success(`${response?.data?.message}`);
-      } else if (response.isError && response?.data && response?.data?.message) {
-        toast.error(JSON.stringify(response?.data?.message));
-        setIsUploaded(false);
-      }
-  }, [response]);
 
   return (
     <Modal
       isOpen={isOpen}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
       contentLabel="Upload Video Modal"
-      className="modal w-full h-full flex flex-col justify-center items-center bg-gray-300 lg:p-4 lg:pt-9 overflow-hidden relative"
+      className="outline-none w-full h-full lg:w-[800px] lg:h-[600px] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center overflow-hidden z-50"
+      overlayClassName="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
     >
-      {fileURL && (<p className="absolute text-lg text-red-700/40 top-3 right-2 font-medium">{`File Rest in:${timeLeft} sec`}</p>)}
-      <div className="w-full lg:w-[75%] h-full lg:h-[80%] flex flex-col justify-center items-center text-white lg:shadow-lg lg:shadow-black-">
-        <h2 className="bg-gradient-to-r from-red-500 to-red-700 w-full text-center lg:rounded-t-2xl text-lg p-2 h-10">
+      <div className="w-full h-full bg-surface-container/80 backdrop-blur-xl border border-white/10 lg:rounded-2xl shadow-2xl flex flex-col relative overflow-hidden">
+        
+        {/* Header */}
+        <h2 className="w-full bg-surface-container-highest/80 border-b border-white/5 text-center text-on-surface font-semibold text-lg py-4 shrink-0">
           Upload New Video
         </h2>
+
+        {fileURL && !isPending && (
+          <div className="absolute top-4 right-4 text-xs font-mono px-3 py-1 bg-error/20 text-error border border-error/50 rounded-full animate-pulse">
+            Cache expires: {timeLeft}s
+          </div>
+        )}
+
         <form
           onSubmit={handleSubmit}
-          className="w-full h-full bg-white rounded-b-2xl flex flex-col lg:flex-row justify-evenly items-center p-3"
+          className="w-full h-full flex flex-col lg:flex-row overflow-hidden"
           encType="multipart/form-data"
         >
-          <div className="bg-gray-200/30 w-[15rem] lg:w-[26rem] h-[30rem] lg:h-full flex flex-col items-center justify-center border-2 border-dotted border-red-400 rounded-2xl">
-            {response?.isLoading? 
-            (<div className="w-full h-full flex flex-col justify-center items-center">
-              <MutatingDots/>
-              <h2 className="text-lg text-zinc-400">Uploading...</h2>
-            </div>) : (
-              <>
+          {/* Left Side: Dropzone / Preview */}
+          <div className="w-full lg:w-[45%] h-[300px] lg:h-full bg-black/20 p-6 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/5 relative">
+            {isPending ? (
+              <div className="w-full h-full flex flex-col justify-center items-center gap-4">
+                <MutatingDots color="#d0bcff" secondaryColor="#a078ff" />
+                <h2 className="text-primary font-medium tracking-wide">
+                  {isUploadingToS3 ? "Uploading to Cloud..." : "Finalizing Database..."}
+                </h2>
+              </div>
+            ) : (
+              <div 
+                className={cn(
+                  "w-full h-full flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all cursor-pointer group",
+                  fileURL ? "border-transparent" : "border-primary/30 hover:border-primary hover:bg-primary/5"
+                )}
+                onClick={!fileURL ? triggerFileInput : undefined}
+              >
                 <input
                   type="file"
                   id="fileInput"
                   accept="video/*"
                   onChange={handleFileChange}
                   className="hidden"
-                  required
+                  required={!fileURL}
                 />
+                
                 {fileURL ? (
-                  <div className="w-full h-[20rem] lg:h-full rounded-2xl relative">
-                    <video
-                      className="w-full h-full object-cover rounded-2xl"
-                      src={fileURL}
-                      autoPlay
-                      loop
-                      muted
-                    />
+                  <div className="w-full h-full relative rounded-xl overflow-hidden shadow-[0_0_20px_rgba(208,188,255,0.15)] group">
+                    <video className="w-full h-full object-cover" src={fileURL} autoPlay loop muted />
                     <button
-                      className="p-2 text-white text-lg top-0 right-0 absolute"
+                      className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-primary/80 text-white rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all"
                       title="Change Video"
-                      onClick={triggerFileInput}
+                      onClick={(e) => { e.stopPropagation(); triggerFileInput(); }}
                       type="button"
                     >
                       <FaExchangeAlt />
                     </button>
                   </div>
                 ) : (
-                  <div className="w-full h-full flex flex-col justify-center items-center text-gray-400">
-                    <button
-                      type="button"
-                      onClick={triggerFileInput}
-                      className="p-2 bg-red-600 text-white rounded-full"
-                    >
-                      <FaPlus />
-                    </button>
-                    <h2>Upload Video</h2>
-                    <span>(MP4, 1080p, 720p, 360p, etc.)</span>
+                  <div className="flex flex-col justify-center items-center text-on-surface-variant group-hover:text-primary transition-colors">
+                    <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center mb-4 group-hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all">
+                      <FaPlus className="text-xl" />
+                    </div>
+                    <h2 className="font-semibold mb-1">Select Video</h2>
+                    <span className="text-xs opacity-60">(MP4, 1080p, 720p, etc.)</span>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
-          <div className="w-full flex flex-col items-start justify-start ml-4 h-full p-3">
-            <div className="w-full flex flex-col items-start justify-start">
-              <label
-                className="block text-gray-700 text-sm font-bold mb-2"
-                htmlFor="title"
-              >
-                Title
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-red-500 focus:shadow-outline"
-                required
-              />
-              <label
-                className="block text-gray-700 text-sm font-bold mb-2 mt-4"
-                htmlFor="hashtags"
-              >
-                Hashtags
-              </label>
-              <input
-                type="text"
-                id="hashtags"
-                value={hashtags}
-                onChange={(e) => setHashtags(e.target.value.toString().split(","))}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-red-500 focus:shadow-outline"
-              />
+
+          {/* Right Side: Metadata Form */}
+          <div className="flex-1 p-6 flex flex-col justify-between overflow-y-auto">
+            <div className="w-full flex flex-col gap-5">
+              
+              <div className="w-full">
+                <label className="block text-on-surface font-semibold text-sm mb-2" htmlFor="title">
+                  Video Title
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full bg-surface-container-lowest border border-white/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:shadow-[0_0_10px_rgba(208,188,255,0.2)] transition-all"
+                  placeholder="Catchy title..."
+                  required
+                />
+              </div>
+
+              <div className="w-full">
+                <label className="block text-on-surface font-semibold text-sm mb-2" htmlFor="hashtags">
+                  Hashtags <span className="text-on-surface-variant font-normal text-xs">(comma separated)</span>
+                </label>
+                <input
+                  type="text"
+                  id="hashtags"
+                  value={hashtags.join(",")}
+                  onChange={(e) => setHashtags(e.target.value.split(","))}
+                  className="w-full bg-surface-container-lowest border border-white/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:shadow-[0_0_10px_rgba(208,188,255,0.2)] transition-all"
+                  placeholder="gaming, lifestyle, comedy"
+                />
+              </div>
+
             </div>
-            <div className="w-full p-3 flex justify-center items-center mt-4">
-              <button
-                type="submit"
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              >
-                Upload
-              </button>
+
+            <div className="w-full flex justify-end gap-3 pt-6 mt-4 border-t border-white/5">
               <button
                 type="button"
-                onClick={onClose}
-                className="ml-3 bg-red-500 hover:bg-red-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                onClick={handleClose}
+                className="px-6 py-2.5 rounded-full text-on-surface-variant font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+                disabled={isPending}
               >
                 Cancel
               </button>
+              <button
+                type="submit"
+                className="px-8 py-2.5 bg-primary text-on-primary font-bold rounded-full hover:bg-primary-container hover:shadow-[0_0_15px_rgba(208,188,255,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isPending || !fileURL || !title.trim()}
+              >
+                {isPending ? "Uploading..." : "Publish"}
+              </button>
             </div>
           </div>
+
         </form>
       </div>
     </Modal>

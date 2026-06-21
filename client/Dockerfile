@@ -1,4 +1,4 @@
-FROM node:18-alpine as builder
+FROM node:20-alpine as builder
 
 ARG VITE_CLERK_PUBLISHABLE_KEY
 ARG VITE_AZURE_STORAGE_CONNECTION_STRING
@@ -10,7 +10,7 @@ ARG VITE_VIDEO_SHARE_BASE_URL
 
 WORKDIR /src
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 
 # Pass build arguments to Vite

@@ -8,8 +8,8 @@ const Explore = () => {
   const [videos, setVideos] = useState<VideoType[]>([]);
   const navigateTo=useNavigate();
   return (
-    <div className="h-screen w-screen lg:py-16 pt-20 flex flex-col items-center justify-center overflow-y-auto scrollbar-custom
-    bg-gradient-to-br from-zinc-800/80 to-white/20 backdrop-filter backdrop-blur-2xl">
+    <div className="min-h-dvh w-full pt-20 pb-24 flex flex-col items-center justify-start overflow-y-auto scrollbar-custom
+    bg-gradient-to-br from-surface to-surface-container backdrop-filter backdrop-blur-2xl">
       <div className="w-full h-full flex justify-center items-start">
         <SearchBar setVideos={setVideos} />
       </div>
@@ -19,14 +19,14 @@ const Explore = () => {
             No videos to display
           </p>
         ) : (
-          <div className="w-full h-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4 px-2 md:px-6">
             {videos?.map((video, index) => (
               <div
               onClick={()=>navigateTo(`/videos/${video?.id}`,{
                 state:video
               })}
                 key={index}
-                className="w-26 h-52 rounded-xl duration-700 transition-all last:mb-20 cursor-pointer relative group overflow-hidden hover:scale-105 bg-slate-400"
+                className="w-full aspect-[9/16] rounded-xl duration-700 transition-all cursor-pointer relative group overflow-hidden hover:scale-[1.02] bg-surface-container ring-1 ring-white/5 shadow-lg"
               >
                 <video
                   className="w-full h-full object-cover"

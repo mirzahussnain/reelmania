@@ -9,7 +9,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
  
   return (
-    <div className="w-screen h-screen  overflow-hidden relative bg-black/90">
+    <div className="w-full h-[100dvh] overflow-hidden relative bg-black/90">
       <Navbar /> {/* Navbar should always be at the top */}
       <div className="h-full w-full">
         {children} {/* Render children passed to the Layout */}
