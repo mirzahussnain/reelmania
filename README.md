@@ -10,6 +10,21 @@ ReelMania is a TikTok-inspired video platform where users can upload, stream, li
 
 ---
 
+## 🎨 UI/UX Architecture Redesign (`feature/ui-redesign`)
+
+This branch introduces a massive overhaul of the frontend component architecture, specifically targeting the video player UI, reducing technical debt, and implementing strict modern Glassmorphism aesthetics:
+
+- **Component Decoupling**: Massive React components (like `VideoInfo.tsx` and `UploadVideo.tsx`) were refactored from 500+ lines down to ~150 lines. Business logic (data fetching, intersection observers, state management) was decoupled into isolated custom hooks (e.g., `useVideoInfo`, `useVideoUpload`, `useComments`).
+- **Global Tailwind Utilities**: Introduced `cn()` utility via `clsx` and `tailwind-merge` to clean up heavily repeated Tailwind patterns and allow dynamic class injection without style conflicts.
+- **Glassmorphism Theme**: Standardized the UI with a premium dark-mode Glassmorphism aesthetic, utilizing `backdrop-blur`, semi-transparent `bg-surface-container` overlays, and smooth micro-animations.
+- **TikTok-Style Overlay**: Completely redesigned the `PlayerCard`, `VideoActions`, and `VideoInfoOverlay` to match modern short-form UX:
+  - Responsive `100dvh` layout tracking to fix mobile address bar clipping.
+  - Transparent video captions with clean drop-shadow text.
+  - Expandable `line-clamp-1` captions with smooth `more/less` toggles.
+  - Animated, floating action buttons pinned perfectly to the `aspect-[9/16]` video edge.
+
+---
+
 ## 🏗️ Architecture
 
 ```
