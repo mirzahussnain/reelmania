@@ -6,7 +6,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, lazy } from "react";
 import Layout from "./components/Layout";
 import Loader from "./components/Loader";
 import {useGetMyProfileQuery} from "./utils/store/features/user/userApi";
@@ -46,6 +46,7 @@ const App = () => {
   const Welcome=routes["Welcome"];
   const NotFound = routes["NotFound"]; 
   const ComingSoon = routes["ComingSoon"];
+  const Vault = lazy(() => import("./pages/Vault"));
   const {token}=useAppSelector((state:RootState)=>state.auth)
   const { isSignedIn, user } = useUser();
   const dispatch = useAppDispatch();
@@ -105,7 +106,7 @@ const App = () => {
             <Route path="/videos/:videoId" element={<VideoInfo />} />
             <Route path="/explore" element={<Explore/>}/>
             <Route path="/studio" element={<ComingSoon />} />
-            <Route path="/vault" element={<ComingSoon />} />
+            <Route path="/vault" element={<Vault />} />
             <Route path="/history" element={<ComingSoon />} />
             <Route path="/liked" element={<ComingSoon />} />
             {/* Protected Routes */}
