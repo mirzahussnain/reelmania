@@ -102,3 +102,29 @@ export const updateFollower = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: "Operation Failed", error: errorMsg });
   }
 };
+
+export const checkFollower = async (req: Request, res: Response) => {
+  try {
+    const following_id = req.params.userId;
+    const follower_id = req.query.followerId as string;
+
+    if (!following_id || !follower_id) {
+      res.status(400).json({ success: false, message: "Follower or Following Id is missing" });
+      return;
+    }
+
+    const connection = await prisma.followers.findUnique({
+      where: {
+        follower_id_following_id: {
+          follower_id,
+          following_id,
+        },
+      },
+    });
+
+    res.status(200).json({ success: true, isFollowing: !!connection });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ success: false, message: "Operation Failed", error: errorMsg });
+  }
+};

@@ -38,6 +38,13 @@ export const userApi = createApi({
       }),
       providesTags: ["Users"],
     }),
+    checkUserFollower: builder.query({
+      query: ({ followingId, followerId }: { followingId: string, followerId: string }) => ({
+        url: `/${followingId}/check-follower?followerId=${followerId}`,
+        method: "GET",
+      }),
+      providesTags: ["Users"],
+    }),
     updateUserRole:builder.query({
       query:({username,newRole,token}:{username:string,newRole:string,token:string})=>({
         url:`/${username}/role`,
@@ -80,6 +87,7 @@ export const {
   useUpdateUserFollowerMutation,
   useGetUserFollowersQuery,
   useLazyGetUserFollowersQuery,
+  useCheckUserFollowerQuery,
   useLazyGetUsersQuery,
   useLazyUpdateUserRoleQuery
 } = userApi;

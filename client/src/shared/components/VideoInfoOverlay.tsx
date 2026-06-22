@@ -5,7 +5,7 @@ import { VideoType } from "../../types";
 import { cn } from "../utils/cn";
 import { FiShoppingBag } from "react-icons/fi";
 import { AvatarConnectBadge } from "./AvatarConnectBadge";
-import { useGetUserProfileQuery, useUpdateUserFollowerMutation, useGetUserFollowersQuery } from "../../utils/store/features/user/userApi";
+import { useGetUserProfileQuery, useUpdateUserFollowerMutation, useCheckUserFollowerQuery } from "../../utils/store/features/user/userApi";
 import { useAppSelector } from "../../utils/hooks/storeHooks";
 import { RootState } from "../../utils/store/store";
 import { toast } from "react-toastify";
@@ -25,15 +25,16 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
     skip: !video?.uploaded_by?.id
   });
 
-  // Fetch the followers of the uploader to check if the current user is already following
-  const { data: followersData } = useGetUserFollowersQuery(video?.uploaded_by?.id, {
-    skip: !video?.uploaded_by?.id
-  });
+  // Efficient O(1) lookup to check if current user follows the uploader
+  const { data: checkFollowerData } = useCheckUserFollowerQuery(
+    { followingId: video?.uploaded_by?.id, followerId: user?.id },
+    { skip: !video?.uploaded_by?.id || !user?.id }
+  );
 
   const [followUser] = useUpdateUserFollowerMutation();
 
   const isOwnProfile = Boolean(user?.id && video?.uploaded_by?.id && user.id === video.uploaded_by.id);
-  const isFollowing = Boolean(followersData?.result?.some((f: any) => f?.follower_id === user?.id));
+  const isFollowing = Boolean(checkFollowerData?.isFollowing);
 
   const handleConnect = async () => {
     try {

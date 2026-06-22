@@ -14,9 +14,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const isMobile = screenWidth <= 1016;
 
-  const isAuthPage = location.pathname.includes("/sign-in") || location.pathname.includes("/sign-up");
+  const isStandalonePage = 
+    location.pathname.includes("/sign-in") || 
+    location.pathname.includes("/sign-up") || 
+    location.pathname.includes("/share/profile");
 
-  if (isAuthPage) {
+  if (isStandalonePage) {
     return (
       <div className="w-full h-[100dvh] overflow-hidden relative bg-background">
         {children}
@@ -43,8 +46,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col relative h-full overflow-hidden">
-        {/* Floating Topbar */}
-        <Topbar />
+        {/* Floating Topbar only on Home pages */}
+        {(location.pathname === '/' || location.pathname === '/foryou') && <Topbar />}
 
         {/* Page Content */}
         <main className="flex-1 w-full h-full relative overflow-hidden">

@@ -47,6 +47,8 @@ const App = () => {
   const NotFound = routes["NotFound"]; 
   const ComingSoon = routes["ComingSoon"];
   const Vault = lazy(() => import("./pages/Vault"));
+  const NetworkRelations = lazy(() => import("./pages/NetworkRelations"));
+  const PublicProfile = lazy(() => import("./pages/PublicProfile"));
   const {token}=useAppSelector((state:RootState)=>state.auth)
   const { isSignedIn, user } = useUser();
   const dispatch = useAppDispatch();
@@ -103,6 +105,7 @@ const App = () => {
             <Route path="/" element={<Welcome/>} />
             <Route path="/foryou" element={<Home />} />
             <Route path="/users/:username" element={<UserProfile/>}/>
+            <Route path="/share/profile/:username" element={<PublicProfile />} />
             <Route path="/videos/:videoId" element={<VideoInfo />} />
             <Route path="/explore" element={<Explore/>}/>
             <Route path="/studio" element={<ComingSoon />} />
@@ -111,7 +114,8 @@ const App = () => {
             <Route path="/liked" element={<ComingSoon />} />
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
-            <Route path="/admin" element={<Admin/>}/>
+              <Route path="/admin" element={<Admin/>}/>
+              <Route path="/vault/network" element={<NetworkRelations />} />
               <Route
                 path="/users/:userId/profile/manage"
                 element={<ManageProfile />}

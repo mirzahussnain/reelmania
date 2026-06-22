@@ -9,6 +9,8 @@ import { BiArrowBack } from "react-icons/bi";
 import { FaBell } from "react-icons/fa";
 import { MdVerified } from "react-icons/md";
 import Loader from "../components/Loader";
+import { CopyToClipboard } from "react-copy-to-clipboard";
+import { toast } from "react-toastify";
 
 const Vault: React.FC = () => {
   const navigate = useNavigate();
@@ -76,12 +78,24 @@ const Vault: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <button className="px-5 py-2 rounded-full bg-black/40 backdrop-blur-md text-sm font-semibold hover:bg-black/60 transition border border-white/10">
-              Share Profile
-            </button>
-            <button className="px-5 py-2 rounded-full bg-black/40 backdrop-blur-md text-sm font-semibold hover:bg-black/60 transition border border-white/10">
-              Share Network
-            </button>
+            <CopyToClipboard 
+              text={`${window.location.origin}/share/profile/${userProfile?.username}`}
+              onCopy={() => toast.success("Public Profile link copied to clipboard!")}
+            >
+              <button className="px-5 py-2 rounded-full bg-black/40 backdrop-blur-md text-sm font-semibold hover:bg-black/60 transition border border-white/10">
+                Share Profile
+              </button>
+            </CopyToClipboard>
+
+            <CopyToClipboard 
+              text={`${window.location.origin}/share/network/${userProfile?.username}`}
+              onCopy={() => toast.success("Network Relations link copied to clipboard!")}
+            >
+              <button className="px-5 py-2 rounded-full bg-black/40 backdrop-blur-md text-sm font-semibold hover:bg-black/60 transition border border-white/10">
+                Share Network
+              </button>
+            </CopyToClipboard>
+
             <button className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition border border-white/10">
               <FaBell className="text-white" />
             </button>
@@ -124,8 +138,11 @@ const Vault: React.FC = () => {
 
             {/* Stats Block */}
             <div className="flex items-center justify-center lg:justify-start gap-8 lg:gap-12">
-              <div className="flex flex-col items-start cursor-pointer hover:text-primary transition-colors">
-                <span className="text-2xl lg:text-3xl font-syne font-bold">
+              <div 
+                className="flex flex-col items-start cursor-pointer hover:text-primary transition-colors group"
+                onClick={() => navigate('/vault/network')}
+              >
+                <span className="text-2xl lg:text-3xl font-syne font-bold group-hover:scale-105 transition-transform origin-left">
                   {userProfile?._count?.followers_followers_following_idTousers || 0}
                 </span>
                 <span className="text-[10px] lg:text-xs text-on-surface-variant uppercase tracking-widest font-semibold mt-1">Network</span>
@@ -143,8 +160,11 @@ const Vault: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="shrink-0 mt-6 lg:mt-0 flex flex-col sm:flex-row gap-4">
-            <button className="px-8 py-3 rounded-xl bg-surface-variant border border-white/10 text-on-surface font-bold hover:bg-white/5 transition-colors">
-              Connect
+            <button 
+              onClick={() => navigate(`/share/profile/${userProfile?.username}`)}
+              className="px-8 py-3 rounded-xl bg-surface-variant border border-white/10 text-on-surface font-bold hover:bg-white/5 transition-colors"
+            >
+              View Public Profile
             </button>
             <button className="px-8 py-3 rounded-xl bg-primary text-on-primary font-bold shadow-[0_0_20px_var(--color-primary)] hover:scale-105 transition-transform">
               Edit Vault
@@ -211,7 +231,6 @@ const Vault: React.FC = () => {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
