@@ -49,6 +49,7 @@ const App = () => {
   const Vault = lazy(() => import("./pages/Vault"));
   const NetworkRelations = lazy(() => import("./pages/NetworkRelations"));
   const PublicProfile = lazy(() => import("./pages/PublicProfile"));
+  const PublicNetwork = lazy(() => import("./pages/PublicNetwork"));
   const {token}=useAppSelector((state:RootState)=>state.auth)
   const { isSignedIn, user } = useUser();
   const dispatch = useAppDispatch();
@@ -106,6 +107,7 @@ const App = () => {
             <Route path="/foryou" element={<Home />} />
             <Route path="/users/:username" element={<UserProfile/>}/>
             <Route path="/share/profile/:username" element={<PublicProfile />} />
+            <Route path="/share/network/:username" element={<PublicNetwork />} />
             <Route path="/videos/:videoId" element={<VideoInfo />} />
             <Route path="/explore" element={<Explore/>}/>
             <Route path="/studio" element={<ComingSoon />} />

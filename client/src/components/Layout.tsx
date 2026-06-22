@@ -17,7 +17,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isStandalonePage = 
     location.pathname.includes("/sign-in") || 
     location.pathname.includes("/sign-up") || 
-    location.pathname.includes("/share/profile");
+    location.pathname.includes("/share/profile") ||
+    location.pathname.includes("/share/network");
 
   if (isStandalonePage) {
     return (
