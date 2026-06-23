@@ -1,81 +1,41 @@
 import { FaSearch, FaUndo } from "react-icons/fa";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 
-import { useAppDispatch, useAppSelector } from "../utils/hooks/storeHooks.tsx";
-import { RootState } from "../utils/store/store.ts";
-import {
-  clearFilteredVideos,
-  setFilteredVideos,
-} from "../utils/store/features/video/FilteredVideoSlice.ts";
-import { VideoType } from "../types.ts";
-import { useLazyFetchAllVideosQuery } from "../utils/store/features/video/videoApi.ts";
-import { setExploreVideos } from "../utils/store/features/video/videoSlice.ts";
 import { FiFilter } from "react-icons/fi";
 
+// Presentational search control. It owns only its own input state and reports
+// the active query up via `onSearch` / `onClear`. The video data itself is
+// fetched by the parent through RTK Query (cached per query args), so there is
+// no separate `filteredVideo` / `exploreVideos` slice to keep in sync.
 export const SearchBar = ({
-  setVideos,
+  onSearch,
+  onClear,
 }: {
-  setVideos: React.Dispatch<React.SetStateAction<VideoType[]>>;
+  onSearch: (q: string, type: string) => void;
+  onClear: () => void;
 }) => {
-  const allVideos = useAppSelector((state: RootState) => state?.video?.exploreVideos);
-  const [getVideos, response] = useLazyFetchAllVideosQuery();
   const [filter, setFilter] = useState<string>("hashtag");
   const [filterMode, setFilterMode] = useState<boolean>(false);
-  const [searchText, setSearchText] = useState<string | null>(null);
-  const filteredVideos = useAppSelector(
-    (state: RootState) => state.filteredVideo
-  );
+  const [searchText, setSearchText] = useState<string>("");
 
-  const dispatch = useAppDispatch();
-
-  useEffect(() => {
-    if (allVideos.length === 0) {
-      getVideos({}).unwrap();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (response.isSuccess && !filterMode) {
-      dispatch(setExploreVideos(response?.data?.videos || []));
-    }
-  }, [response]);
-
-  useEffect(() => {
-    if (!filterMode) {
-      setVideos(allVideos);
-    } else {
-      setVideos(filteredVideos);
-    }
-  }, [dispatch, filteredVideos, allVideos, filterMode]);
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (searchText) {
-      try {
-        const query = await getVideos({ q: searchText, type: filter }).unwrap();
-        if (query?.videos?.length > 0) {
-          dispatch(setFilteredVideos(query.videos));
-          setFilterMode(true);
-        } else {
-          alert("Videos not found for this search");
-        }
-      } catch (err) {
-        console.error(err);
-        alert("Search failed");
-      }
-    }
+    const q = searchText.trim();
+    if (!q) return;
+    onSearch(q, filter);
+    setFilterMode(true);
   };
 
   const handleClearFilter = () => {
-    dispatch(clearFilteredVideos(allVideos));
     setSearchText("");
     setFilterMode(false);
+    onClear();
   };
 
   return (
     <form
       className="w-[90%] lg:w-[45rem] flex flex-col gap-4 mt-12 mb-8 z-10 animate-fade-in"
-      onSubmit={(e) => handleSubmit(e)}
+      onSubmit={handleSubmit}
     >
       <div className="card-glass w-full flex items-center h-14 md:h-16 rounded-full overflow-hidden p-1 shadow-lg">
         {/* Desktop Filter Select */}
@@ -96,7 +56,7 @@ export const SearchBar = ({
           type="text"
           className="flex-1 h-full bg-transparent outline-none text-on-surface px-6 placeholder:text-on-surface-variant/50 text-sm md:text-base font-medium"
           placeholder={`Search immersive content by ${filter}...`}
-          value={searchText || ""}
+          value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
         />
 

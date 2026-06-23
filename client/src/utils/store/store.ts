@@ -5,7 +5,6 @@ import userSlice from "./features/user/userSlice";
 import { videoApi } from "./features/video/videoApi";
 import authSlice from "./features/user/authSlice";
 import videoSlice from "./features/video/videoSlice";
-import filteredVideoSlice from "./features/video/FilteredVideoSlice.ts";
 import storage from "redux-persist/lib/storage";
 import {
   FLUSH,
@@ -35,7 +34,6 @@ export const store = configureStore({
     user: persistedUser,
     auth: authSlice,
     video: videoSlice,
-    filteredVideo: filteredVideoSlice,
     [userApi.reducerPath]: userApi.reducer,
     [videoApi.reducerPath]: videoApi.reducer,
   },
