@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { CommentType, VideoLikes } from "../../types";
 import { useLazyGetCommentsByVideoIdQuery, useLazyGetLikesByVideoIdQuery, useUpdateLikesMutation } from "../../utils/store/features/video/videoApi";
-import { connectSocket } from "../../utils/functions/socket";
+import { useSocket } from "../providers/SocketProvider";
+import { SOCKET_EVENTS } from "../constants/socketEvents";
 import { useAppSelector } from "../../utils/hooks/storeHooks";
 import { RootState } from "../../utils/store/store";
 
@@ -16,7 +17,7 @@ export const useVideoRealtime = (videoId: string | undefined) => {
   const [pending, setPending] = useState(false);
   const [likes, setLikes] = useState<VideoLikes[]>();
   const [comments, setComments] = useState<CommentType[]>([]);
-  const socket = token ? connectSocket(token) : null;
+  const { socket, joinVideo, leaveVideo } = useSocket();
 
   const handleLikes = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -75,36 +76,30 @@ export const useVideoRealtime = (videoId: string | undefined) => {
   }, [videoId, getVideoLikes, getComments]);
 
   useEffect(() => {
-    try {
-      if (socket) {
-        if (!socket.connected) {
-          socket.connect();
-        }
-        socket.on("likesChange", ({ updatedLikes, videoId: returnedVideoId }) => {
-          if (returnedVideoId == videoId && updatedLikes) {
-            setLikes(updatedLikes);
-          }
-        });
-        socket.on("newCommentAdded", ({ newComment, videoId: returnedVideoId }) => {
-          if (returnedVideoId === videoId) {
-            setComments((prevComments) => [newComment, ...prevComments]);
-          }
-        });
+    if (!socket || !videoId) return;
+
+    joinVideo(videoId);
+
+    const handleLikesChange = ({ updatedLikes, videoId: incomingId }: any) => {
+      if (incomingId == videoId && updatedLikes) {
+        setLikes(updatedLikes);
       }
-      return () => {
-        if (socket) {
-          socket.off("likesChange");
-          socket.off("newCommentAdded");
-          socket.disconnect();
-        }
-      };
-    } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message || "Socket Error");
-      } else {
-        toast.error("Socket Error");
+    };
+    const handleCommentAdded = ({ newComment, videoId: incomingId }: any) => {
+      if (incomingId === videoId) {
+        setComments((prevComments) => [newComment, ...prevComments]);
       }
-    }
+    };
+
+    socket.on(SOCKET_EVENTS.LIKES_CHANGED, handleLikesChange);
+    socket.on(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
+
+    return () => {
+      socket.off(SOCKET_EVENTS.LIKES_CHANGED, handleLikesChange);
+      socket.off(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
+      leaveVideo(videoId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, videoId]);
 
   return { handleLikes, likes, comments, pending, token, user };

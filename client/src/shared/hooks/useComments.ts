@@ -2,7 +2,8 @@ import { useState, useEffect, ChangeEvent } from "react";
 import { useAppSelector } from "../../utils/hooks/storeHooks";
 import { RootState } from "../../utils/store/store";
 import { useAddNewCommentMutation, useLazyGetCommentsByVideoIdQuery } from "../../utils/store/features/video/videoApi";
-import { connectSocket } from "../../utils/functions/socket";
+import { useSocket } from "../providers/SocketProvider";
+import { SOCKET_EVENTS } from "../constants/socketEvents";
 import { toast } from "react-toastify";
 import { CommentType, VideoType } from "../../types";
 
@@ -17,8 +18,8 @@ export const useComments = (video: VideoType) => {
 
   const [postComment] = useAddNewCommentMutation();
   const [getComments, { isFetching: isCommentsLoading }] = useLazyGetCommentsByVideoIdQuery();
-  
-  const socket = token ? connectSocket(token) : null;
+
+  const { socket, joinVideo, leaveVideo } = useSocket();
 
   // Handle Submit
   const handleSumbit = async (e: ChangeEvent<HTMLFormElement>) => {
@@ -87,25 +88,26 @@ export const useComments = (video: VideoType) => {
     });
   }, [filter]);
 
-  // Socket listener for live comments
+  // Socket listener for live comments. Joins the per-video room and removes
+  // only its own listener on cleanup — it must not disconnect the shared socket.
   useEffect(() => {
-    if (!socket) return;
-    try {
-      if (!socket.connected) socket.connect();
-      
-      socket.on("newCommentAdded", ({ newComment, videoId }) => {
-        if (newComment && video?.id === videoId) {
-          setVideoComments((prev) => [newComment, ...prev]);
-        }
-      });
-    } catch (err: any) {
-      toast.error(err.message || "Failed to connect to socket.");
-    }
+    if (!socket || !video?.id) return;
+
+    const videoId = video.id;
+    joinVideo(videoId);
+
+    const handleCommentAdded = ({ newComment, videoId: incomingId }: any) => {
+      if (newComment && videoId === incomingId) {
+        setVideoComments((prev) => [newComment, ...prev]);
+      }
+    };
+    socket.on(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
 
     return () => {
-      socket.off("newCommentAdded");
-      socket.disconnect();
+      socket.off(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
+      leaveVideo(videoId);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, video?.id]);
 
   return {

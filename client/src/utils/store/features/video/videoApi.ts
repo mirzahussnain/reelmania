@@ -2,6 +2,7 @@ import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 
 import {CommentType} from "../../../../types";
 import { connectSocket } from "../../../functions/socket";
+import { SOCKET_EVENTS } from "../../../../shared/constants/socketEvents";
 
 const BASE_URL=import.meta.env.VITE_VIDEO_SERVICE_URL as string;
 export const videoApi = createApi({
@@ -115,7 +116,7 @@ export const videoApi = createApi({
                   socket.connect();
                   if (socket) {
                    
-                    socket.emit("newComment", { videoId: data?.videoId,newComment:data?.newComments,newVideo:data?.newVideos,commentCount:data?.commentsCount });
+                    socket.emit(SOCKET_EVENTS.NEW_COMMENT, { videoId: data?.videoId,newComment:data?.newComments,newVideo:data?.newVideos,commentCount:data?.commentsCount });
                   }
                 } catch(err) {
                     console.log(err)
@@ -139,7 +140,7 @@ export const videoApi = createApi({
                   const socket = connectSocket("");
                   socket.connect();
                   if (socket) {
-                    socket.emit("likeUpdated", { videoId: data?.videoId, updatedLikes: data?.updatedLikes });
+                    socket.emit(SOCKET_EVENTS.LIKE_UPDATED, { videoId: data?.videoId, updatedLikes: data?.updatedLikes });
                   }
                 } catch(err) {
                     console.log(err)

@@ -8,6 +8,7 @@ import { store } from "./utils/store/store.ts";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import {ToastContainer} from "react-toastify";
+import { SocketProvider } from "./shared/providers/SocketProvider";
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 let persisttor = persistStore(store);
 
@@ -20,9 +21,10 @@ createRoot(document.getElementById("root")!).render(
     <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/foryou">
       <Provider store={store}>
         <PersistGate persistor={persisttor}>
-          
-          <App />
-          <ToastContainer/>
+          <SocketProvider>
+            <App />
+            <ToastContainer/>
+          </SocketProvider>
         </PersistGate>
       </Provider>
     </ClerkProvider>

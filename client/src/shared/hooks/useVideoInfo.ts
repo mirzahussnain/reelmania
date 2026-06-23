@@ -4,7 +4,8 @@ import { useAppSelector } from "../../utils/hooks/storeHooks";
 import { RootState } from "../../utils/store/store";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
-import { connectSocket } from "../../utils/functions/socket";
+import { useSocket } from "../providers/SocketProvider";
+import { SOCKET_EVENTS } from "../constants/socketEvents";
 import {
   useGetUserProfileQuery,
   useLazyGetUserFollowersQuery,
@@ -28,7 +29,7 @@ export const useVideoInfo = () => {
 
   const { token } = useAppSelector((state: RootState) => state.auth);
   const { isSignedIn } = useAuth();
-  const socket = token ? connectSocket(token) : null;
+  const { socket, joinVideo, leaveVideo } = useSocket();
 
   const { data: videoUser } = useGetUserProfileQuery(videoState?.uploaded_by?.id, {
     skip: !videoState?.uploaded_by?.id
@@ -93,21 +94,23 @@ export const useVideoInfo = () => {
   }, [videoState?.video_url]);
 
   useEffect(() => {
-    if (!socket) return;
-    try {
-      if (!socket.connected) socket.connect();
-      socket.on("likesChange", ({ updatedLikes, videoId: retVideoId }) => {
-        if (retVideoId === videoState?.id && updatedLikes) {
-          setLikes(updatedLikes);
-        }
-      });
-    } catch (err: any) {
-      toast.error(err.message || "Socket Error");
-    }
-    return () => {
-      socket.off("likesChange");
-      socket.disconnect();
+    if (!socket || !videoState?.id) return;
+
+    const videoId = videoState.id;
+    joinVideo(videoId);
+
+    const handleLikesChange = ({ updatedLikes, videoId: incomingId }: any) => {
+      if (incomingId === videoId && updatedLikes) {
+        setLikes(updatedLikes);
+      }
     };
+    socket.on(SOCKET_EVENTS.LIKES_CHANGED, handleLikesChange);
+
+    return () => {
+      socket.off(SOCKET_EVENTS.LIKES_CHANGED, handleLikesChange);
+      leaveVideo(videoId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, videoState?.id]);
 
   useEffect(() => {
