@@ -7,24 +7,34 @@ import authSlice from "./features/user/authSlice";
 import videoSlice from "./features/video/videoSlice";
 import filteredVideoSlice from "./features/video/FilteredVideoSlice.ts";
 import storage from "redux-persist/lib/storage";
+import {
+  FLUSH,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+  REHYDRATE,
+} from "redux-persist";
 
 import persistReducer from "redux-persist/es/persistReducer";
 
-const persistConfig = {
-  key: "root",
+// Only the user profile is persisted, under its own unique key. Previously
+// three reducers shared key "root" and clobbered each other in localStorage.
+// The auth token is intentionally NOT persisted (it is re-issued by Clerk on
+// load) and the video feed is server data that should always be re-fetched.
+const userPersistConfig = {
+  key: "user",
   version: 1,
   storage,
 };
 
-const persistedVideo = persistReducer(persistConfig, videoSlice);
-const persistedUser = persistReducer(persistConfig, userSlice);
-const persistedAuth = persistReducer(persistConfig, authSlice);
+const persistedUser = persistReducer(userPersistConfig, userSlice);
 
 export const store = configureStore({
   reducer: {
     user: persistedUser,
-    auth: persistedAuth,
-    video: persistedVideo,
+    auth: authSlice,
+    video: videoSlice,
     filteredVideo: filteredVideoSlice,
     [userApi.reducerPath]: userApi.reducer,
     [videoApi.reducerPath]: videoApi.reducer,
@@ -32,10 +42,8 @@ export const store = configureStore({
   middleware(getDefaultMiddleware) {
     return getDefaultMiddleware({
       serializableCheck: {
-        // Ignore these action types
-        ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
-        // Ignore paths in the state
-        ignoredPaths: ["register"],
+        // redux-persist dispatches these non-serializable actions.
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     })
       .concat(userApi.middleware)

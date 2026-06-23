@@ -24,6 +24,13 @@ export const userApi = createApi({
       }),
       providesTags:["Profile","Users"]
     }),
+    getUserByUsername: builder.query({
+      query: (username: string) => ({
+        url: `/by-username/${username}`,
+        method: "GET",
+      }),
+      providesTags:["Profile","Users"]
+    }),
     getUsers: builder.query({
       query: () => ({
         url: `/`,
@@ -82,6 +89,7 @@ export const userApi = createApi({
 export const {
   useGetMyProfileQuery,
   useGetUserProfileQuery,
+  useGetUserByUsernameQuery,
   useGetUsersQuery,
   useLazyGetUserProfileQuery,
   useUpdateUserFollowerMutation,

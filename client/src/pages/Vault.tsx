@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useAppSelector } from "../utils/hooks/storeHooks";
 import { RootState } from "../utils/store/store";
 import { useGetMyProfileQuery } from "../utils/store/features/user/userApi";
-import { useLazyFetchAllVideosQuery } from "../utils/store/features/video/videoApi";
+import { useFetchUserVideosQuery } from "../utils/store/features/video/videoApi";
 import { VideoType } from "../types";
 import { useNavigate } from "react-router-dom";
 import { BiArrowBack } from "react-icons/bi";
@@ -24,30 +24,13 @@ const Vault: React.FC = () => {
 
   const userProfile = profileData?.body;
 
-  const [getVideos] = useLazyFetchAllVideosQuery();
-  const [userVideos, setUserVideos] = useState<VideoType[]>([]);
-  const [isLoadingVideos, setIsLoadingVideos] = useState(true);
+  // Per-user videos endpoint (replaces fetching ALL videos and filtering).
+  const { data: videosData, isLoading: isLoadingVideos } = useFetchUserVideosQuery(
+    userProfile?.id,
+    { skip: !userProfile?.id }
+  );
+  const userVideos: VideoType[] = videosData?.videos ?? [];
   const [activeTab, setActiveTab] = useState("My Uploads");
-
-  useEffect(() => {
-    const fetchVideos = async () => {
-      if (userProfile) {
-        try {
-          setIsLoadingVideos(true);
-          const result = await getVideos({}).unwrap();
-          const fetchedVideos = result?.videos?.filter(
-            (video: VideoType) => video?.uploaded_by?.username === userProfile.username
-          ) || [];
-          setUserVideos(fetchedVideos);
-        } catch (error) {
-          console.error("Error fetching vault videos:", error);
-        } finally {
-          setIsLoadingVideos(false);
-        }
-      }
-    };
-    fetchVideos();
-  }, [userProfile, getVideos]);
 
   if (profileLoading) return <Loader />;
 

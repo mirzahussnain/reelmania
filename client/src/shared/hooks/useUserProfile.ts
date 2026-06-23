@@ -3,108 +3,90 @@ import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAppSelector } from "../../utils/hooks/storeHooks";
 import { RootState } from "../../utils/store/store";
-import { 
-  useGetUsersQuery, 
-  useGetUserFollowersQuery, 
-  useUpdateUserFollowerMutation 
+import {
+  useGetUserByUsernameQuery,
+  useCheckUserFollowerQuery,
+  useUpdateUserFollowerMutation,
 } from "../../utils/store/features/user/userApi";
-import { useLazyFetchAllVideosQuery } from "../../utils/store/features/video/videoApi";
-import { FollowerType, userType, VideoType } from "../../types";
+import { useFetchUserVideosQuery } from "../../utils/store/features/video/videoApi";
+import { userType, VideoType } from "../../types";
 
 export const useUserProfile = () => {
   const { username } = useParams<{ username: string }>();
   const currentUser = useAppSelector((state: RootState) => state.user);
   const { token } = useAppSelector((state: RootState) => state.auth);
 
-  const { data, isError, error, isLoading: isUsersLoading } = useGetUsersQuery({});
-  const [getVideos] = useLazyFetchAllVideosQuery();
-  const [followUser, response] = useUpdateUserFollowerMutation();
+  const cleanUsername = username?.replace("@", "");
 
-  const [userProfile, setUserProfile] = useState<userType | null>(null);
-  const [userVideos, setUserVideos] = useState<VideoType[] | null>(null);
+  // O(1) profile lookup by username (replaces downloading all users + find).
+  const {
+    data: profileData,
+    isLoading: isProfileLoading,
+    isError,
+  } = useGetUserByUsernameQuery(cleanUsername as string, { skip: !cleanUsername });
+  const userProfile: (userType & { _count?: any }) | null = profileData?.body ?? null;
+
+  // Per-user videos endpoint (replaces fetching ALL videos and filtering).
+  const { data: videosData, isLoading: isVideosLoading } = useFetchUserVideosQuery(
+    userProfile?.id,
+    { skip: !userProfile?.id }
+  );
+  const userVideos: VideoType[] = videosData?.videos ?? [];
+
+  // O(1) follow-status check (replaces pulling the full follower list).
+  const { data: followCheck } = useCheckUserFollowerQuery(
+    { followingId: userProfile?.id ?? "", followerId: currentUser?.id ?? "" },
+    { skip: !userProfile?.id || !currentUser?.id }
+  );
+
+  const [followUser] = useUpdateUserFollowerMutation();
   const [followerCount, setFollowerCount] = useState<number>(0);
   const [followStatus, setFollowStatus] = useState<boolean>(false);
 
-  const { data: followersData, isLoading: isFollowersLoading } = useGetUserFollowersQuery(userProfile?.id ?? '', {
-    skip: !userProfile
-  });
-
-  // Load User Profile
+  // Seed follower count from the profile's denormalized _count.
   useEffect(() => {
-    if (data) {
-      const users: userType[] = data?.users;
-      const foundUser = users?.find(
-        (u) => u?.username === username?.replace("@", "")
-      );
+    const count = userProfile?._count?.followers_followers_following_idTousers;
+    if (typeof count === "number") setFollowerCount(count);
+  }, [userProfile]);
 
-      if (!foundUser) {
-        toast.error("User account not found");
-        return;
-      }
-      setUserProfile(foundUser);
-    } else if (isError) {
-      toast.error(JSON.stringify(error));
-    }
-  }, [data, error, isError, username]);
-
-  // Load User Videos
+  // Seed follow status from the O(1) check.
   useEffect(() => {
-    const fetchVideos = async () => {
-      if (userProfile) {
-        try {
-          const result = await getVideos({}).unwrap();
-          const fetchedVideos = result?.videos?.filter(
-            (video: VideoType) => video?.uploaded_by?.username === userProfile.username
-          );
-          setUserVideos(fetchedVideos);
-        } catch (err) {
-          console.error("Failed to fetch videos", err);
-        }
-      }
-    };
-    fetchVideos();
-  }, [userProfile, getVideos]);
+    if (followCheck) setFollowStatus(!!followCheck.isFollowing);
+  }, [followCheck]);
 
-  // Load Follower Data
   useEffect(() => {
-    if (followersData?.result) {
-      setFollowerCount(followersData.result.length);
-      setFollowStatus(followersData.result.some((f: FollowerType) => f.follower_id === currentUser?.id));
-    }
-  }, [followersData, currentUser?.id]);
-
-  // Handle Follow Mutation Response
-  useEffect(() => {
-    if (response?.data) {
-      if (response.data.data) {
-        setFollowerCount((prev) => prev + 1);
-        setFollowStatus(true);
-      } else {
-        if (followerCount !== 0) {
-          setFollowerCount((prev) => prev - 1);
-        }
-        setFollowStatus(false);
-      }
-    }
-  }, [response, followerCount]);
+    if (isError) toast.error("User account not found");
+  }, [isError]);
 
   const handleFollow = async () => {
+    if (!token) {
+      window.location.href = "/sign-up";
+      return;
+    }
+    if (!currentUser?.id || !userProfile?.id) {
+      toast.error("Follower id or Following Id is missing");
+      return;
+    }
+
+    // Optimistic toggle; revert if the mutation fails.
+    const next = !followStatus;
+    setFollowStatus(next);
+    setFollowerCount((c) => (next ? c + 1 : Math.max(0, c - 1)));
+
     try {
-      if (!token) {
-        window.location.href = "/sign-up";
-        return;
-      }
-      if (!currentUser?.id || !userProfile?.id) {
-        toast.error("Follower id or Following Id is missing");
-        return;
-      }
-      await followUser({ followerId: currentUser.id, followingId: userProfile.id, token }).unwrap();
+      await followUser({
+        followerId: currentUser.id,
+        followingId: userProfile.id,
+        token,
+      }).unwrap();
     } catch (err) {
+      setFollowStatus(!next);
+      setFollowerCount((c) => (next ? Math.max(0, c - 1) : c + 1));
       toast.error(String(err));
     }
   };
 
-  const isLoading = isUsersLoading || (userProfile && isFollowersLoading);
+  const isLoading = isProfileLoading || (!!userProfile && isVideosLoading);
 
   return {
     currentUser,
@@ -113,6 +95,6 @@ export const useUserProfile = () => {
     followerCount,
     followStatus,
     handleFollow,
-    isLoading
+    isLoading,
   };
 };
