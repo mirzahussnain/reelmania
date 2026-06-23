@@ -2,11 +2,6 @@ import { Webhook } from "svix";
 import { Request, Response } from "express";
 import dotenv from "dotenv";
 import { userType } from "@/utils/types";
-import {
-  createUser,
-  deleteUser,
-  updateUser,
-} from "../controllers/userController";
 import { rabbitMQService } from "../utils/rabbitmq";
 
 dotenv.config();
@@ -71,15 +66,15 @@ export const userManagement = async (req: Request, res: Response) => {
       role: process.env.DEFAULT_USER_ROLE || "Consumer",
     };
 
-    await rabbitMQService.sendToQueue("user_webhook_queue", {
+    await rabbitMQService.publishToExchange("user_events", {
       eventType,
       data: userInfo,
     });
-    
+
   } else if (eventType === "user.deleted") {
     const { id } = evt?.data;
-    
-    await rabbitMQService.sendToQueue("user_webhook_queue", {
+
+    await rabbitMQService.publishToExchange("user_events", {
       eventType,
       data: { id },
     });

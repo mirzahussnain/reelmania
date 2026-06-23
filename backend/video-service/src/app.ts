@@ -8,6 +8,7 @@ import { createServer } from "http"
 import { initializeSocketServer } from "../src/utils/socketServer"
 import { setSocketInstance } from "./controllers/socketController"
 import { connectRedis } from "../src/utils/redis";
+import { startUserEventsWorker } from "./workers/userEventsWorker";
 
 dotenv.config()
 const origin_url=process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')
@@ -36,5 +37,6 @@ setSocketInstance(io);
 
 httpServer.listen(PORT,()=>{
     console.log(`Server is running at PORT:${PORT}`)
+    startUserEventsWorker().catch(err => console.error("UserEventsWorker failed to start", err));
 })
 

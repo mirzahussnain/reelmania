@@ -40,6 +40,24 @@ class RabbitMQService {
     }
   }
 
+  /**
+   * Publish to a durable fanout exchange so every bound service receives its
+   * own copy of the event (pub/sub), unlike sendToQueue which delivers each
+   * message to a single consumer.
+   */
+  async publishToExchange(exchange: string, data: any) {
+    if (!this.channel) {
+      await this.connect();
+    }
+
+    if (this.channel) {
+      await this.channel.assertExchange(exchange, "fanout", { durable: true });
+      const messageBuffer = Buffer.from(JSON.stringify(data));
+      this.channel.publish(exchange, "", messageBuffer, { persistent: true });
+      console.log(`[RabbitMQ] Published message to exchange ${exchange}`);
+    }
+  }
+
   getChannel() {
     return this.channel;
   }

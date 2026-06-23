@@ -11,11 +11,16 @@ export const startUserWorker = async () => {
     return;
   }
 
+  const exchange = "user_events";
   const queue = "user_webhook_queue";
   const deadLetterQueue = "user_webhook_dlq";
   const MAX_RETRIES = 5;
 
+  // Bind this service's queue to the shared fanout exchange so it receives a
+  // copy of every user event (the video-service binds its own queue too).
+  await channel.assertExchange(exchange, "fanout", { durable: true });
   await channel.assertQueue(queue, { durable: true });
+  await channel.bindQueue(queue, exchange, "");
   // Dead-letter queue for messages that exhaust their retries, so a single
   // poison message can be inspected instead of looping forever (the old
   // `nack(requeue=true)` requeued bad messages indefinitely).
