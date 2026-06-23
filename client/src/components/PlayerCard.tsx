@@ -21,7 +21,7 @@ const PlayerCard = ({
 
   return (
     <div className="relative w-full h-full lg:h-[85dvh] lg:rounded-2xl lg:flex lg:justify-center transition-all ease-in-out duration-300">
-      <div className="relative w-full lg:w-auto lg:aspect-[9/16] h-full lg:rounded-2xl bg-black overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] group">
+      <div className="relative w-full lg:w-auto lg:aspect-[9/16] h-full lg:rounded-2xl bg-black overflow-hidden glow-black group">
         <video
           ref={videoRef}
           className="w-full h-full object-cover video-control-hide peer"

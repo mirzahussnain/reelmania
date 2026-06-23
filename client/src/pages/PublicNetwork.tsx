@@ -4,153 +4,95 @@ import { useUserProfile } from "../shared/hooks/useUserProfile";
 import Loader from "../components/Loader";
 import { TbNetwork } from "react-icons/tb";
 
+/* ─── C-Score Ring ─────────────────────────────────── */
 const CScoreRing = ({ score }: { score: number }) => {
-  const radius = 120;
-  const stroke = 24;
-  const normalizedRadius = radius - stroke * 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  
-  // Calculate offset based on score (0-100)
-  const strokeDashoffset = circumference - (score / 100) * circumference;
-
   return (
-    <div className="relative flex flex-col items-center justify-center w-full max-w-lg">
-      {/* SVG Ring Container */}
-      <div className="relative w-64 h-64 md:w-80 md:h-80 drop-shadow-[0_0_30px_rgba(202,154,255,0.15)] mt-4">
-        
-        {/* Top Right Live Sync Indicator */}
-        <div className="absolute -top-4 -right-4 flex items-center gap-2 text-[10px] font-jetbrains font-bold tracking-[0.2em] text-primary drop-shadow-[0_0_8px_rgba(202,154,255,0.8)] z-10">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-          </span>
-          <div className="flex flex-col leading-tight">
-            <span>LIVE</span>
-            <span>SYNC</span>
-          </div>
-        </div>
-        <svg
-          height="100%"
-          width="100%"
-          viewBox="0 0 240 240"
-          className="transform -rotate-90"
-        >
-          {/* Background Track */}
-          <circle
-            stroke="rgba(255,255,255,0.03)"
-            fill="transparent"
-            strokeWidth={stroke}
-            r={normalizedRadius}
-            cx="120"
-            cy="120"
-          />
-          
-          {/* Outer Purple Ring (The "Max" ring representation) */}
-          <circle
-            stroke="#CA9AFF"
-            fill="transparent"
-            strokeWidth={stroke}
-            strokeDasharray={`${circumference} ${circumference}`}
-            style={{ strokeDashoffset: circumference * 0.1 }} // Leaves a small gap
-            strokeLinecap="round"
-            r={normalizedRadius}
-            cx="120"
-            cy="120"
-            className="opacity-70"
-          />
+    <div className="card-glass-panel rounded-2xl p-10 border-glow-primary min-h-[500px] flex flex-col items-center justify-center relative lg:col-span-6 w-full">
+      <div className="absolute top-4 left-4 flex space-x-2">
+        <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+        <span className="label-meta text-primary text-[10px]">LIVE SYNC</span>
+      </div>
 
-          {/* Inner Cyan Score Ring */}
-          <circle
-            stroke="#00E5FF"
-            fill="transparent"
-            strokeWidth={stroke - 6}
-            strokeDasharray={`${circumference} ${circumference}`}
-            style={{ strokeDashoffset }}
-            strokeLinecap="round"
-            r={normalizedRadius - 4} // Slightly inset
-            cx="120"
-            cy="120"
-            className="drop-shadow-[0_0_15px_rgba(0,229,255,0.8)] transition-all duration-1000 ease-out"
-          />
+      {/* Central C-Score */}
+      <div className="relative w-[300px] h-[300px] flex items-center justify-center">
+        {/* Outer Ring */}
+        <div className="absolute inset-0 border border-primary/20 rounded-full animate-[spin_60s_linear_infinite]"></div>
+        {/* Middle Ring */}
+        <div className="absolute inset-4 border border-secondary/20 border-dashed rounded-full animate-[spin_40s_linear_infinite_reverse]"></div>
+        
+        {/* SVG Radial */}
+        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" fill="none" r="45" stroke="rgba(255,255,255,0.05)" strokeWidth="10"></circle>
+          <circle className="transition-all duration-1000" cx="50" cy="50" fill="none" r="45" stroke="var(--color-ring-1)" strokeDasharray="282" strokeDashoffset={282 - (282 * score / 100)} strokeLinecap="round" strokeWidth="10"></circle>
+          <circle className="transition-all duration-1000 opacity-80" cx="50" cy="50" fill="none" r="35" stroke="var(--color-ring-2)" strokeDasharray="219" strokeDashoffset={219 - (219 * (score + 5) / 100)} strokeLinecap="round" strokeWidth="4"></circle>
         </svg>
 
-        {/* Center Text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[10px] text-on-surface-variant font-jetbrains font-bold tracking-[0.2em] uppercase mb-1">
-            C-Score
-          </span>
-          <span className="text-6xl md:text-8xl font-syne font-bold text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] italic pr-4">
-            {score}
-          </span>
+        {/* Core Value */}
+        <div className="z-10 flex flex-col items-center">
+          <div className="label-meta text-on-surface-variant mb-1 tracking-widest">C-SCORE</div>
+          <div className="text-6xl md:text-[80px] font-syne font-bold text-white text-glow-primary leading-none">{score}</div>
         </div>
       </div>
 
-      <p className="mt-8 text-on-surface-variant text-sm w-[280px] md:w-[320px] text-center leading-relaxed">
-        Your influence map within the Komorebi ecosystem. Higher scores indicate deeper aesthetic resonance with connected nodes.
-      </p>
+      <div className="mt-10 text-center max-w-[380px] w-full">
+        <p className="text-base text-on-surface-variant leading-relaxed">
+          Your influence map within the Komorebi ecosystem. Higher scores indicate deeper aesthetic resonance with connected nodes.
+        </p>
+      </div>
     </div>
   );
 };
 
-const MetricCard = ({ title, value, unit, progress, colorClass }: any) => (
-  <div className="bg-surface-container/30 border border-white/5 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between h-40">
-    <div className="text-xs text-on-surface-variant font-jetbrains font-semibold tracking-widest uppercase mb-4">
-      {title}
+/* ─── Metric Card ─────────────────────────────────── */
+const MetricCard = ({ title, value, unit, progress, borderColor, bgBarColor }: {
+  title: string; value: string; unit: string; progress: number; borderColor: string; bgBarColor: string;
+}) => (
+  <div className={`card-glass-panel p-6 flex flex-col justify-between h-full hover:scale-[1.02] transition-transform duration-300 border-l-2 ${borderColor}`}>
+    <div>
+      <h3 className="label-meta text-on-surface-variant mb-2">{title}</h3>
+      <div className="text-3xl font-syne font-bold text-on-surface">
+        {value} <span className={`text-sm ${bgBarColor.replace('bg-', 'text-')}`}>{unit}</span>
+      </div>
     </div>
-    <div className="flex items-baseline gap-2">
-      <span className="text-4xl font-syne font-bold text-white tracking-wide">{value}</span>
-      <span className="text-xs text-on-surface-variant font-jetbrains">{unit}</span>
-    </div>
-    {/* Progress Bar */}
-    <div className="w-full h-1 bg-white/5 mt-auto rounded-full overflow-hidden">
-      <div 
-        className={`h-full ${colorClass} rounded-full shadow-[0_0_10px_currentColor]`} 
-        style={{ width: `${progress}%` }}
-      />
+    <div className="w-full bg-surface-container-high h-1 rounded-full mt-4 overflow-hidden">
+      <div className={`h-full ${bgBarColor}`} style={{ width: `${progress}%` }} />
     </div>
   </div>
 );
 
-const NodeCard = ({ user, match }: any) => (
-  <div className="bg-surface-container/30 border border-white/5 rounded-2xl p-4 backdrop-blur-md flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group">
-    <div className="flex items-center gap-4">
-      {/* Avatar with Online Indicator */}
-      <div className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/10 group-hover:ring-primary/50 transition-all">
-        <img src={user.avatar} alt={user.handle} className="w-full h-full object-cover" />
-        <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#00E5FF] rounded-full border-2 border-surface-container shadow-[0_0_8px_#00E5FF]" />
+/* ─── Resonant Node Card ─────────────────────────── */
+const NodeCard = ({ user, match, borderColors }: { user: { avatar: string; handle: string }; match: number, borderColors: string }) => (
+  <div className="card-glass-panel p-4 rounded-xl flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors border-l border-transparent hover:border-primary">
+    <div className="flex items-center space-x-4">
+      <div className="relative">
+        <img src={user.avatar} alt={user.handle} className={`w-10 h-10 rounded-full object-cover border ${borderColors}`} />
+        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background ${borderColors.replace('border-', 'bg-')}`} />
       </div>
-      <div className="flex flex-col">
-        <span className="text-sm font-syne font-bold text-white group-hover:text-primary transition-colors">
-          @{user.handle}
-        </span>
-        <span className="text-xs font-jetbrains text-on-surface-variant">
-          Match: {match}%
-        </span>
+      <div>
+        <div className="text-sm font-semibold text-on-background">@{user.handle}</div>
+        <div className="label-meta text-[10px] text-on-surface-variant mt-1">Match: {match}%</div>
       </div>
     </div>
-    <div className="text-on-surface-variant group-hover:text-white transition-colors">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 18l6-6-6-6" />
-      </svg>
-    </div>
+    <span className="text-on-surface-variant text-[18px]">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+    </span>
   </div>
 );
 
+/* ─── Page ─────────────────────────────────────────── */
 const PublicNetwork: React.FC = () => {
   const navigate = useNavigate();
-
   const { userProfile, isLoading } = useUserProfile();
 
-  // Mock Resonant Nodes for Figma Parity
   const mockNodes = [
-    { handle: "neon_drifter", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=neon_drifter&backgroundColor=111317", match: 98 },
-    { handle: "crimson_void", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=crimson_void&backgroundColor=111317", match: 94 },
-    { handle: "kage_arts", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=kage_arts&backgroundColor=111317", match: 88 },
+    { handle: "neon_drifter", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=neon_drifter&backgroundColor=111317", match: 98, borderColors: "border-secondary/50" },
+    { handle: "crimson_void", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=crimson_void&backgroundColor=111317", match: 94, borderColors: "border-primary/50" },
+    { handle: "kage_arts",   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=kage_arts&backgroundColor=111317",   match: 88, borderColors: "border-outline/50" },
   ];
 
   if (isLoading) {
     return (
-      <div className="w-full h-screen bg-[#111317] flex justify-center items-center">
+      <div className="w-full h-screen bg-surface flex justify-center items-center">
         <Loader />
       </div>
     );
@@ -158,92 +100,72 @@ const PublicNetwork: React.FC = () => {
 
   if (!userProfile) {
     return (
-      <div className="w-full h-screen bg-[#111317] flex justify-center items-center text-white">
+      <div className="w-full h-screen bg-surface flex justify-center items-center text-on-surface">
         <h2 className="text-2xl font-syne font-bold">Network Node Not Found</h2>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full bg-[#111317] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[length:24px_24px] text-white overflow-y-auto scrollbar-hide px-4 md:px-12 py-10 relative">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide bg-surface text-on-surface relative">
       
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-white/10 pb-6 mb-10 gap-6">
-        <div className="flex flex-col">
-          <h1 className="text-4xl md:text-5xl font-syne font-bold drop-shadow-lg tracking-wide">
-            Share Network
-          </h1>
-          <p className="text-primary font-jetbrains text-xs md:text-sm tracking-widest uppercase mt-2 font-semibold">
-            C-Score / Aesthetic Resonance Mapping
-          </p>
-        </div>
-        
-        <div className="bg-surface-container/60 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
-          <span className="text-xs font-jetbrains text-on-surface-variant uppercase tracking-widest mr-2">Global Rank:</span>
-          <span className="text-sm font-jetbrains font-bold text-white">#1,024</span>
-        </div>
+      {/* Ambient Background */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute inset-0 bg-grid-panel opacity-50"></div>
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[100px]"></div>
       </div>
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 pb-20">
-        
-        {/* Left Column: Metrics */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
-          <MetricCard 
-            title="Curation Velocity" 
-            value="84.2" 
-            unit="v/h" 
-            progress={84} 
-            colorClass="bg-[#CA9AFF]" 
-          />
-          <MetricCard 
-            title="Aesthetic Consistency" 
-            value="92.0" 
-            unit="%" 
-            progress={92} 
-            colorClass="bg-[#00E5FF]" 
-          />
-          <MetricCard 
-            title="Original Creation" 
-            value="41.5" 
-            unit="idx" 
-            progress={41} 
-            colorClass="bg-white/40" 
-          />
-        </div>
+      <main className="relative z-10 pt-[100px] pb-[100px] px-4 md:px-[100px] max-w-[1440px] mx-auto min-h-screen flex flex-col">
+        {/* Top Header */}
+        <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/10 pb-6 relative z-10">
+          <div>
+            <h1 className="heading-page text-glow-primary mb-2">Share Network</h1>
+            <p className="label-meta text-primary/80">C-Score / Aesthetic Resonance Mapping</p>
+          </div>
+          <div className="mt-4 md:mt-0 flex items-center gap-4 card-glass-panel px-4 py-2">
+            <span className="label-meta text-on-surface-variant">Global Rank:</span>
+            <span className="text-sm font-semibold text-secondary">#1,024</span>
+          </div>
+        </header>
 
-        {/* Center Column: C-Score Ring */}
-        <div className="lg:col-span-6 bg-surface-container/20 border border-white/5 rounded-[2rem] p-8 backdrop-blur-xl flex justify-center items-center min-h-[400px] shadow-[inset_0_0_100px_rgba(0,0,0,0.5)] relative overflow-hidden">
-          {/* Subtle background glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-[radial-gradient(circle,rgba(202,154,255,0.05)_0%,transparent_50%)] pointer-events-none" />
+        {/* Main Grid Layout */}
+        <div className="flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-20">
+
+          {/* Left: Metrics */}
+          <div className="lg:col-span-3 flex flex-col gap-6">
+            <MetricCard title="Curation Velocity"    value="84.2" unit="v/h" progress={84} borderColor="border-primary/50"   bgBarColor="bg-primary" />
+            <MetricCard title="Aesthetic Consistency" value="92.0" unit="%"   progress={92} borderColor="border-secondary/50" bgBarColor="bg-secondary" />
+            <MetricCard title="Original Creation"     value="41.5" unit="idx" progress={41} borderColor="border-transparent"  bgBarColor="bg-outline" />
+          </div>
+
+          {/* Center: C-Score Ring */}
           <CScoreRing score={87} />
-        </div>
 
-        {/* Right Column: Resonant Nodes */}
-        <div className="lg:col-span-3 flex flex-col gap-4">
-          <div className="flex items-center gap-2 mb-2">
-            <TbNetwork className="text-primary text-xl" />
-            <span className="text-xs font-jetbrains font-bold tracking-widest text-primary uppercase">
+          {/* Right: Resonant Nodes */}
+          <div className="lg:col-span-3 flex flex-col gap-4">
+            <h3 className="label-meta text-primary mb-2 flex items-center">
+              <TbNetwork className="mr-2 text-base" />
               Resonant Nodes
-            </span>
-          </div>
-          
-          {mockNodes.map((node) => (
-            <NodeCard key={node.handle} user={node} match={node.match} />
-          ))}
+            </h3>
 
-          {/* Connect CTA for external viewers */}
-          <div className="mt-auto pt-8">
-            <button 
-              onClick={() => navigate('/sign-up')}
-              className="w-full py-4 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-sm font-syne font-bold transition-colors backdrop-blur-md"
-            >
-              Join the Network
-            </button>
+            {mockNodes.map((node) => (
+              <NodeCard key={node.handle} user={node} match={node.match} borderColors={node.borderColors} />
+            ))}
+
+            {/* Join CTA */}
+            <div className="mt-auto pt-8">
+              <button
+                onClick={() => navigate('/sign-up')}
+                className="w-full py-4 rounded-xl border border-outline-variant/20 bg-surface-container hover:bg-surface-container-high text-sm font-syne font-bold transition-colors"
+              >
+                Join the Network
+              </button>
+            </div>
           </div>
+
         </div>
-
-      </div>
+      </main>
     </div>
   );
 };

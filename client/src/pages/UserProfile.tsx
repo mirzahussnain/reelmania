@@ -21,7 +21,7 @@ const UserProfile: React.FC = () => {
 
   if (!userProfile) {
     return (
-      <div className="w-full h-full bg-[#111317] flex justify-center items-center text-on-surface-variant font-mono">
+      <div className="w-full h-full bg-surface flex justify-center items-center text-on-surface-variant font-jetbrains">
         User not found.
       </div>
     );
@@ -30,7 +30,7 @@ const UserProfile: React.FC = () => {
   const isCurrentUser = currentUser?.id === userProfile.id;
 
   return (
-    <div className="w-full h-full bg-[#111317] overflow-y-auto scrollbar-hide pb-24">
+    <div className="page-shell pb-24">
       <UserProfileHeader
         userProfile={userProfile}
         followerCount={followerCount}

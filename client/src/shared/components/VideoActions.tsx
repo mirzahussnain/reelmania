@@ -20,16 +20,8 @@ interface VideoActionsProps {
 }
 
 export const VideoActions: React.FC<VideoActionsProps> = ({
-  videoId,
-  likes,
-  commentsLength,
-  handleLikes,
-  pending,
-  user,
-  token,
-  setIsModalOpen,
-  openShareModel,
-  setOpenShareModel,
+  videoId, likes, commentsLength, handleLikes,
+  pending, user, token, setIsModalOpen, openShareModel, setOpenShareModel,
 }) => {
   return (
     <div className="absolute right-3 bottom-16 lg:bottom-10 flex flex-col items-center gap-5 z-20">
@@ -40,17 +32,17 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
         onClick={handleLikes}
         type="button"
       >
-        <div className="w-[46px] h-[46px] flex items-center justify-center bg-black/20 backdrop-blur-lg rounded-full group-hover:bg-black/40 transition-colors">
+        <div className="action-circle group-hover:scale-110">
           <FaHeart
             className={cn(
               "text-[22px] transition-colors",
               likes?.some((like) => like.liked_by.id == user?.id)
                 ? "text-tertiary drop-shadow-[0_0_10px_var(--color-tertiary)]"
-                : "text-white"
+                : "text-on-media"
             )}
           />
         </div>
-        <span className="text-white font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
+        <span className="text-on-media font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
           {pending ? "..." : likes?.length || 0}
         </span>
       </button>
@@ -61,14 +53,14 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
         className="flex flex-col items-center group transition-transform hover:scale-105"
         onClick={() => token ? setIsModalOpen({ isOpen: true }) : toast.error("Sign In Required")}
       >
-        <div className="w-[46px] h-[46px] flex items-center justify-center bg-black/20 backdrop-blur-lg rounded-full group-hover:bg-black/40 transition-colors">
+        <div className="action-circle group-hover:scale-110">
           {commentsLength >= 1 ? (
-            <BiSolidCommentDetail className="text-[26px] text-white drop-shadow-sm" />
+            <BiSolidCommentDetail className="text-[26px] text-on-media drop-shadow-sm" />
           ) : (
-            <BiCommentDetail className="text-[26px] text-white drop-shadow-sm" />
+            <BiCommentDetail className="text-[26px] text-on-media drop-shadow-sm" />
           )}
         </div>
-        <span className="text-white font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
+        <span className="text-on-media font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
           {commentsLength}
         </span>
       </button>
@@ -79,10 +71,10 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
           className="flex flex-col items-center transition-transform hover:scale-105"
           onClick={() => setOpenShareModel(!openShareModel)}
         >
-          <div className="w-[46px] h-[46px] flex items-center justify-center bg-black/20 backdrop-blur-lg rounded-full group-hover:bg-black/40 transition-colors">
-            <BiShareAlt className="text-[26px] text-white drop-shadow-sm" />
+          <div className="action-circle group-hover:scale-110">
+            <BiShareAlt className="text-[26px] text-on-media drop-shadow-sm" />
           </div>
-          <span className="text-white font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
+          <span className="text-on-media font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
             Share
           </span>
         </button>
@@ -94,13 +86,13 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
         )}
       </div>
 
-      {/* Bookmark Button (Added to match screenshot layout) */}
+      {/* Bookmark Button */}
       <button
         className="flex flex-col items-center group transition-transform hover:scale-105"
         onClick={() => toast.info("Bookmark feature coming soon!")}
       >
-        <div className="w-[46px] h-[46px] flex items-center justify-center bg-black/50 backdrop-blur-xl rounded-full group-hover:bg-black/60 transition-colors">
-          <BiBookmark className="text-[24px] text-white drop-shadow-sm" />
+        <div className="action-circle bg-media-scrim-lg group-hover:scale-110">
+          <BiBookmark className="text-[24px] text-on-media drop-shadow-sm" />
         </div>
       </button>
 

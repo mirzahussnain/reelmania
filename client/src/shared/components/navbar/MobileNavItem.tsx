@@ -17,11 +17,11 @@ export const MobileNavItem: React.FC<MobileNavItemProps> = ({ to, icon: Icon }) 
         {isActive && (
           <motion.div
             layoutId="mobile-nav-indicator"
-            className="absolute inset-0 bg-primary rounded-full shadow-[0_0_15px_var(--color-primary)] opacity-90"
+            className="absolute inset-0 bg-primary rounded-full glow-primary opacity-90"
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           />
         )}
-        <Icon className={`text-[26px] relative z-10 transition-colors duration-300 ${isActive ? 'text-white drop-shadow-md scale-110' : 'text-on-surface-variant hover:text-white'}`} />
+        <Icon className={`text-[26px] relative z-10 transition-colors duration-300 ${isActive ? 'text-on-primary drop-shadow-md scale-110' : 'text-on-surface-variant hover:text-on-surface'}`} />
       </>
     )}
   </NavLink>

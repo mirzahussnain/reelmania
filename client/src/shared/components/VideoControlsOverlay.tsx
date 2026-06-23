@@ -51,9 +51,10 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div 
           className={cn(
-            "flex items-center justify-center w-20 h-20 bg-black/40 backdrop-blur-md rounded-full text-white transition-all duration-500",
+            "flex items-center justify-center w-20 h-20 backdrop-blur-md rounded-full text-on-media transition-all duration-500",
             showPlayAnimation ? "opacity-100 scale-100" : "opacity-0 scale-150"
           )}
+          style={{ background: 'var(--color-media-scrim)' }}
         >
           {isPlaying ? <FaPlay className="text-3xl ml-1" /> : <FaPause className="text-3xl" />}
         </div>
@@ -65,7 +66,7 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
         {/* Top Left: Settings / Speed Control */}
         <div className="relative">
           <button 
-            className="p-2 text-white drop-shadow-md hover:scale-110 transition-transform"
+            className="p-2 text-on-media drop-shadow-md hover:scale-110 transition-transform"
             onClick={(e) => {
               e.stopPropagation();
               setShowSettings(!showSettings);
@@ -77,16 +78,16 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
           
           {/* Settings Menu Dropdown */}
           {showSettings && (
-            <div className="absolute top-12 left-0 w-32 bg-black/60 backdrop-blur-xl rounded-xl border border-white/10 overflow-hidden flex flex-col">
-              <div className="px-3 py-2 text-xs font-semibold text-white/50 border-b border-white/10 uppercase tracking-wider">
+            <div className="absolute top-12 left-0 w-32 backdrop-blur-xl rounded-xl border border-outline-variant/20 overflow-hidden flex flex-col" style={{ background: 'var(--color-media-scrim-lg)' }}>
+              <div className="px-3 py-2 text-xs font-semibold text-on-media-dim border-b border-outline-variant/20 uppercase tracking-wider">
                 Speed
               </div>
               {[0.5, 1, 1.5, 2].map((rate) => (
                 <button
                   key={rate}
                   className={cn(
-                    "px-4 py-2 text-sm text-left transition-colors hover:bg-white/10",
-                    playbackRate === rate ? "text-tertiary font-bold" : "text-white font-medium"
+                    "px-4 py-2 text-sm text-left transition-colors hover:bg-surface-container-high",
+                    playbackRate === rate ? "text-tertiary font-bold" : "text-on-media font-medium"
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -105,8 +106,9 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
         <div 
           className={cn(
             "relative flex items-center group/volume transition-all duration-300 ease-in-out",
-            isVolumeOpen ? "bg-black/40 backdrop-blur-md rounded-full shadow-lg pr-1" : ""
+            isVolumeOpen ? "backdrop-blur-md rounded-full shadow-lg pr-1" : ""
           )}
+          style={isVolumeOpen ? { background: 'var(--color-media-scrim)' } : undefined}
           onMouseEnter={() => setIsVolumeOpen(true)}
           onMouseLeave={() => setIsVolumeOpen(false)}
         >
@@ -122,13 +124,13 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
               step="0.01"
               value={isMuted ? 0 : volume}
               onChange={changeVolume}
-              className="w-full h-1 bg-white/30 appearance-none rounded cursor-pointer accent-tertiary"
+              className="w-full h-1 bg-on-media/30 appearance-none rounded cursor-pointer accent-tertiary"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
           
           <button 
-            className="p-2 text-white drop-shadow-md hover:scale-110 transition z-10 rounded-full"
+            className="p-2 text-on-media drop-shadow-md hover:scale-110 transition z-10 rounded-full"
             onClick={(e) => {
               e.stopPropagation();
               toggleMute();
@@ -144,7 +146,7 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
       {/* Bottom Progress Bar */}
       <div className="relative w-full h-1 group pointer-events-auto z-30">
         {/* The thin custom track */}
-        <div className="absolute bottom-0 w-full h-[3px] bg-white/20 group-hover:h-1.5 transition-all">
+        <div className="absolute bottom-0 w-full h-[3px] bg-on-media/20 group-hover:h-1.5 transition-all">
           <div 
             className="h-full bg-tertiary transition-all relative"
             style={{ width: `${progress}%` }}

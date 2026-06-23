@@ -22,7 +22,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   if (isStandalonePage) {
     return (
-      <div className="w-full h-[100dvh] overflow-hidden relative bg-background">
+      <div className="w-full min-h-screen relative bg-background font-inter">
         {children}
       </div>
     );

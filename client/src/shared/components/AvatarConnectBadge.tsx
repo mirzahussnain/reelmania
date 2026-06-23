@@ -82,8 +82,8 @@ export const AvatarConnectBadge: React.FC<AvatarConnectBadgeProps> = ({
         {avatarUrl ? (
           <img src={avatarUrl} alt={username} className="w-full h-full object-cover scale-105" />
         ) : (
-          <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-            <span className="font-bold text-zinc-300 uppercase select-none">
+          <div className="w-full h-full bg-surface-container-low flex items-center justify-center">
+            <span className="font-bold text-on-surface-variant uppercase select-none">
               {username?.charAt(0) || "U"}
             </span>
           </div>
@@ -96,7 +96,7 @@ export const AvatarConnectBadge: React.FC<AvatarConnectBadgeProps> = ({
           {status === "idle" && (
             <button
               onClick={handleConnect}
-              className="bg-primary text-white rounded-full p-[3px] shadow-[0_0_8px_rgba(208,188,255,0.8)] hover:scale-110 hover:bg-white hover:text-primary transition-transform duration-200"
+              className="bg-primary text-on-primary rounded-full p-[3px] glow-primary-sm hover:scale-110 hover:bg-on-surface hover:text-primary transition-transform duration-200"
               title="Connect"
             >
               <FiPlus className="w-3 h-3" strokeWidth={3.5} />
@@ -109,7 +109,7 @@ export const AvatarConnectBadge: React.FC<AvatarConnectBadgeProps> = ({
 
           {status === "success" && (
             <div
-              className="bg-primary text-white rounded-full p-[3px] shadow-[0_0_8px_rgba(208,188,255,0.8)] animate-in zoom-in duration-300"
+              className="bg-primary text-on-primary rounded-full p-[3px] glow-primary-sm animate-in zoom-in duration-300"
               title="Connected"
             >
               <FiCheck className="w-3 h-3" strokeWidth={3.5} />

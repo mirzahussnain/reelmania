@@ -4,7 +4,7 @@ import { CommentType } from "../../types";
 
 export const CommentItem = ({ comment }: { comment: CommentType }) => {
   return (
-    <div className="w-full flex justify-start items-start p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+    <div className="w-full flex justify-start items-start p-4 border-b border-outline-variant/20 hover:bg-surface-container-high transition-colors">
       <Link
         to={`/users/@${comment?.author?.username}`}
         className="w-10 h-10 shrink-0 rounded-full bg-surface-container-high p-[2px] hover:glow-primary transition-shadow"

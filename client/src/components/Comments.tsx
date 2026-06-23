@@ -30,10 +30,10 @@ const Comments = ({
   return (
     <div className="w-full h-full flex flex-col justify-between overflow-hidden pointer-events-auto">
       {/* Header */}
-      <div className="w-full shrink-0 h-14 px-5 flex justify-between items-center text-on-surface border-b border-white/10 bg-surface-container/50">
+      <div className="w-full shrink-0 h-14 px-5 flex justify-between items-center text-on-surface border-b border-outline-variant/20 bg-surface-container/50">
         <h2 className="text-lg font-semibold tracking-wide flex items-center gap-2">
           Comments
-          <span className="text-sm font-normal text-on-surface-variant bg-white/5 px-2 py-0.5 rounded-full">
+          <span className="text-sm font-normal text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-full">
             {formatNumber(videoComments?.length || 0)}
           </span>
         </h2>

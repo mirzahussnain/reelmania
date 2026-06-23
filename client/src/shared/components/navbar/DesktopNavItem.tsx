@@ -13,8 +13,8 @@ export const DesktopNavItem: React.FC<DesktopNavItemProps> = ({ to, icon: Icon, 
     className={({ isActive }) => `
       flex items-center gap-2 px-4 py-2 rounded-full justify-center transition-all duration-300
       ${isActive 
-        ? "text-primary bg-primary/10 shadow-[0_0_15px_var(--color-primary)] opacity-80" 
-        : "text-on-surface-variant hover:text-white hover:bg-white/5"}
+        ? "text-primary bg-primary/10 glow-primary opacity-80" 
+        : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"}
     `}
   >
     <Icon className="text-2xl" />

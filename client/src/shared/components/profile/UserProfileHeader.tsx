@@ -26,10 +26,13 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
   const bio = "Curating the finest cuts of neo-tokyo drift and digital melancholy. Syncing timelines since 2024.";
 
   return (
+
     <div className={`flex flex-col items-center w-full max-w-4xl mx-auto animate-fade-in ${className}`}>
-      
+
+
+
       {/* Avatar */}
-      <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full p-1 ring-2 ring-primary shadow-[0_0_40px_rgba(208,188,255,0.3)]">
+      <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full p-1 ring-2 ring-primary glow-primary-lg hover:scale-105">
         <img
           className="w-full h-full rounded-full object-cover"
           src={userProfile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile.username}`}
@@ -38,7 +41,7 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
       </div>
 
       {/* Identity */}
-      <h1 className="text-4xl md:text-6xl lg:text-7xl font-syne font-black uppercase tracking-wider text-white mt-8 text-center">
+      <h1 className="text-2xl md:text-6xl lg:text-7xl font-syne font-black uppercase tracking-wider text-on-surface mt-8 text-center">
         {userProfile.first_name}_{userProfile.last_name}
       </h1>
       <div className="w-full flex justify-center px-4 mt-4">
@@ -48,20 +51,20 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
       </div>
 
       {/* Stats Block */}
-      <div className="flex items-center gap-8 md:gap-16 bg-surface-container/30 border border-white/5 rounded-3xl px-8 md:px-16 py-6 mt-10 backdrop-blur-md">
+      <div className="card-glass flex items-center gap-8 md:gap-16 px-8 md:px-16 py-6 mt-10">
         <div className="flex flex-col items-center">
           <span className="text-2xl md:text-3xl font-syne font-bold text-primary">{followerCount.toLocaleString()}</span>
-          <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mt-1">Network</span>
+          <span className="label-meta mt-1">Network</span>
         </div>
-        <div className="w-px h-12 bg-white/10" />
+        <div className="divider-v"></div>
         <div className="flex flex-col items-center">
-          <span className="text-2xl md:text-3xl font-syne font-bold text-white">{videoCount}</span>
-          <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mt-1">Archives</span>
+          <span className="text-2xl md:text-3xl font-syne font-bold text-on-surface">{videoCount}</span>
+          <span className="label-meta mt-1">Archives</span>
         </div>
-        <div className="w-px h-12 bg-white/10" />
+        <div className="divider-v"></div>
         <div className="flex flex-col items-center">
           <span className="text-2xl md:text-3xl font-syne font-bold text-secondary">{cScore}</span>
-          <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mt-1">C-Score</span>
+          <span className="label-meta mt-1">C-Score</span>
         </div>
       </div>
 
@@ -69,11 +72,10 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
       {!isCurrentUser && (
         <button
           onClick={handleFollow}
-          className={`mt-10 px-8 py-3 rounded-full flex items-center gap-2 font-bold transition-all duration-300 hover:scale-105 ${
-            followStatus
-              ? "bg-surface-variant text-on-surface hover:bg-surface-variant/80 border border-white/10"
-              : "bg-primary text-background shadow-[0_0_20px_rgba(208,188,255,0.4)] hover:shadow-[0_0_30px_rgba(208,188,255,0.6)]"
-          }`}
+          className={`mt-10 px-8 py-3 rounded-full flex items-center gap-2 font-bold transition-all duration-300 hover:scale-105 ${followStatus
+            ? "bg-surface-variant text-on-surface hover:bg-surface-variant/80 border border-outline-variant/20"
+            : "bg-primary text-on-primary glow-primary hover:glow-primary-lg"
+            }`}
         >
           {followStatus ? (
             <>

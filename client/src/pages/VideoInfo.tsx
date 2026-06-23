@@ -1,4 +1,3 @@
-
 import { FaCommentDots, FaHeart } from "react-icons/fa";
 import { FaX } from "react-icons/fa6";
 import { Link, useNavigate } from "react-router-dom";
@@ -39,7 +38,7 @@ const VideoInfo = () => {
   if (!videoState) return null;
 
   return (
-    <div className="w-screen h-[100dvh] flex justify-center bg-background overflow-hidden relative pt-[60px] lg:pt-0">
+    <div className="w-screen h-[100dvh] flex justify-center bg-surface overflow-hidden relative pt-[60px] lg:pt-0">
       
       {/* Background Canvas Blur Effect */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover opacity-30 blur-3xl scale-110 -z-10" />
@@ -48,14 +47,14 @@ const VideoInfo = () => {
         
         {/* Close Button */}
         <button
-          className="absolute top-4 left-4 z-50 p-3 rounded-full bg-surface-container/50 backdrop-blur-md text-on-surface hover:text-white hover:bg-white/10 transition-colors border border-white/10"
+          className="absolute top-4 left-4 z-50 p-3 rounded-full bg-surface-container/50 backdrop-blur-md text-on-surface hover:text-primary hover:bg-surface-container transition-colors border border-outline-variant/30"
           onClick={() => window.history.back()}
         >
           <FaX />
         </button>
 
         {/* Video Player Section */}
-        <div className="flex-1 h-[40vh] lg:h-full bg-black/40 flex items-center justify-center relative border-r border-white/5 shadow-inner">
+        <div className="flex-1 h-[40vh] lg:h-full bg-surface-container-lowest/80 flex items-center justify-center relative border-r border-outline-variant/20 shadow-inner">
           <video
             id="video"
             ref={videoRef}
@@ -69,16 +68,16 @@ const VideoInfo = () => {
         </div>
 
         {/* Sidebar Info & Comments Section */}
-        <div className="w-full lg:w-[450px] h-[60vh] lg:h-full flex flex-col bg-surface-container/80 backdrop-blur-xl border-l border-white/10 relative">
+        <div className="w-full lg:w-[450px] h-[60vh] lg:h-full flex flex-col bg-surface-container/80 backdrop-blur-xl border-l border-outline-variant/20 relative">
           
           {/* Metadata Block */}
-          <div className="w-full p-5 border-b border-white/10 bg-surface-container-highest/30 shrink-0">
+          <div className="w-full p-5 border-b border-outline-variant/20 bg-surface-container-highest/30 shrink-0">
             <div className="flex justify-between items-center mb-4">
               <Link to={`/users/@${videoState.uploaded_by?.username}`} className="flex items-center gap-3 group">
                 <img
                   src={videoUser?.body?.avatar_url || "/default-avatar.png"}
                   alt="user"
-                  className="w-12 h-12 rounded-full object-cover border border-white/10 group-hover:border-primary transition-colors"
+                  className="w-12 h-12 rounded-full object-cover border border-outline-variant/30 group-hover:border-primary transition-colors"
                 />
                 <div className="flex flex-col">
                   <h2 className="text-on-surface font-semibold text-lg group-hover:underline">
@@ -95,7 +94,7 @@ const VideoInfo = () => {
                   className={cn(
                     "px-5 py-1.5 rounded-full text-sm font-bold transition-all",
                     followStatus 
-                      ? "bg-white/10 text-on-surface hover:bg-white/20" 
+                      ? "bg-surface-container text-on-surface hover:bg-surface-container-high border border-outline-variant/20" 
                       : "bg-primary text-on-primary hover:bg-primary-container hover:glow-primary"
                   )}
                   onClick={isSignedIn ? handleFollow : () => navigateTo("/sign-in")}
@@ -126,8 +125,8 @@ const VideoInfo = () => {
           </div>
 
           {/* Comments List */}
-          <div className="w-full flex-1 overflow-y-auto scrollbar-hide flex flex-col bg-black/20">
-            <div className="sticky top-0 w-full flex justify-between items-center p-4 bg-surface-container/90 backdrop-blur-md border-b border-white/5 z-10">
+          <div className="w-full flex-1 overflow-y-auto scrollbar-hide flex flex-col bg-surface-container-lowest/50">
+            <div className="sticky top-0 w-full flex justify-between items-center p-4 bg-surface-container/90 backdrop-blur-md border-b border-outline-variant/20 z-10">
               <h3 className="text-on-surface font-semibold">Comments</h3>
               <button
                 className={cn(
@@ -163,7 +162,7 @@ const VideoInfo = () => {
               />
             )
           ) : (
-            <div className="w-full p-4 border-t border-white/5 bg-surface-container/50 backdrop-blur-md">
+            <div className="w-full p-4 border-t border-outline-variant/20 bg-surface-container/50 backdrop-blur-md">
               <button
                 className="w-full py-3 bg-primary/20 text-primary font-semibold rounded-xl hover:bg-primary hover:text-on-primary transition-colors"
                 onClick={() => navigateTo("/sign-in")}

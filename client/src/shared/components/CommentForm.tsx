@@ -13,7 +13,7 @@ export const CommentForm = ({
 }) => {
   return (
     <form
-      className="w-full shrink-0 p-4 rounded-b-2xl border-t border-white/10 bg-surface-container/50 backdrop-blur-md"
+      className="w-full shrink-0 p-4 rounded-b-2xl border-t border-outline-variant/20 bg-surface-container/50 backdrop-blur-md"
       onSubmit={handleSumbit}
     >
       <div className="w-full flex justify-start items-start gap-3">
@@ -24,7 +24,7 @@ export const CommentForm = ({
             alt={user?.username}
           />
         </div>
-        <div className="flex-1 bg-surface-container-lowest rounded-xl p-3 border border-white/5 focus-within:border-primary/50 focus-within:glow-primary transition-all">
+        <div className="flex-1 bg-surface-container-lowest rounded-xl p-3 border border-outline-variant/20 focus-within:border-primary/50 focus-within:glow-primary transition-all">
           <textarea
             className="w-full bg-transparent resize-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant/50 min-h-[40px] max-h-[120px]"
             placeholder="Add a glowing comment..."
@@ -37,7 +37,7 @@ export const CommentForm = ({
 
       <div className="w-full flex justify-end items-center gap-2 mt-3">
         <button
-          className="py-1.5 px-4 text-sm font-medium text-on-surface-variant hover:text-white hover:bg-white/5 rounded-full transition-colors"
+          className="py-1.5 px-4 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors"
           type="button"
           onClick={() => setCommentText("")}
         >

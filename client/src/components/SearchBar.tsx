@@ -10,8 +10,9 @@ import {
 import { VideoType } from "../types.ts";
 import { useLazyFetchAllVideosQuery } from "../utils/store/features/video/videoApi.ts";
 import { setExploreVideos } from "../utils/store/features/video/videoSlice.ts";
+import { FiFilter } from "react-icons/fi";
 
-export const SearcBar = ({
+export const SearchBar = ({
   setVideos,
 }: {
   setVideos: React.Dispatch<React.SetStateAction<VideoType[]>>;
@@ -24,22 +25,21 @@ export const SearcBar = ({
   const filteredVideos = useAppSelector(
     (state: RootState) => state.filteredVideo
   );
-  
-  
+
   const dispatch = useAppDispatch();
-  
+
   useEffect(() => {
-      if (allVideos.length === 0) {
+    if (allVideos.length === 0) {
       getVideos({}).unwrap();
-      }
+    }
   }, []);
 
-  useEffect(()=>{
-    if(response.isSuccess && !filterMode){
-       dispatch(setExploreVideos(response?.data?.videos || []))
+  useEffect(() => {
+    if (response.isSuccess && !filterMode) {
+      dispatch(setExploreVideos(response?.data?.videos || []));
     }
-  },[response])
-  
+  }, [response]);
+
   useEffect(() => {
     if (!filterMode) {
       setVideos(allVideos);
@@ -55,7 +55,6 @@ export const SearcBar = ({
         const query = await getVideos({ q: searchText, type: filter }).unwrap();
         if (query?.videos?.length > 0) {
           dispatch(setFilteredVideos(query.videos));
-          alert("Videos Found");
           setFilterMode(true);
         } else {
           alert("Videos not found for this search");
@@ -70,75 +69,86 @@ export const SearcBar = ({
   const handleClearFilter = () => {
     dispatch(clearFilteredVideos(allVideos));
     setSearchText("");
-    alert(`Filter Cleared`);
     setFilterMode(false);
   };
+
   return (
     <form
-      className={`lg:w-[40rem] h-[8rem] lg:h-[3rem]  text-white flex flex-col lg:flex-row justify-center items-center mt-20 `}
+      className="w-[90%] lg:w-[45rem] flex flex-col gap-4 mt-12 mb-8 z-10 animate-fade-in"
       onSubmit={(e) => handleSubmit(e)}
     >
-      <div className="w-full h-full bg-white  flex justify-end item-center mt-5 lg:my-0 rounded-full">
-        <select
-          className={`w-32 rounded-l-full bg-red-600 text-white outline-0 px-1 font-medium hidden lg:block  tracking-wide text-xl text-center`}
-          onChange={(e) => setFilter(e.target.value)}
-          value={filter}
-        >
-          <option value={`hashtag`}>Hashtag</option>
-          <option value={`title`}>Title</option>
-        </select>
+      <div className="card-glass w-full flex items-center h-14 md:h-16 rounded-full overflow-hidden p-1 shadow-lg">
+        {/* Desktop Filter Select */}
+        <div className="hidden lg:flex items-center h-full px-4 border-r border-outline-variant/20">
+          <FiFilter className="text-on-surface-variant mr-2" />
+          <select
+            className="bg-transparent text-on-surface outline-none font-medium text-sm cursor-pointer appearance-none uppercase tracking-widest"
+            onChange={(e) => setFilter(e.target.value)}
+            value={filter}
+          >
+            <option value="hashtag" className="bg-surface">Hashtag</option>
+            <option value="title" className="bg-surface">Title</option>
+          </select>
+        </div>
+
+        {/* Search Input */}
         <input
-          type={`text`}
-          className={`w-full bg-transparent outline-none text-zinc-600 px-2 placeholder:text-center text-lg
-                font-medium`}
-          placeholder={`Search videos by ${filter}`}
+          type="text"
+          className="flex-1 h-full bg-transparent outline-none text-on-surface px-6 placeholder:text-on-surface-variant/50 text-sm md:text-base font-medium"
+          placeholder={`Search immersive content by ${filter}...`}
           value={searchText || ""}
           onChange={(e) => setSearchText(e.target.value)}
         />
+
+        {/* Action Button */}
         {filterMode ? (
           <button
-            className={`p-6 py-1 bg-red-600 w-10 h-full rounded-r-full text-white text-xl`}
-            type={"button"}
+            className="h-full aspect-square flex items-center justify-center bg-surface-container-high rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors"
+            type="button"
             onClick={handleClearFilter}
+            title="Clear Search"
           >
-            <FaUndo />
+            <FaUndo className="text-xl" />
           </button>
         ) : (
           <button
-            className={`px-6 bg-red-600  h-full rounded-r-full text-white text-xl`}
+            className="h-full px-6 flex items-center justify-center bg-primary text-on-primary rounded-full hover:glow-primary transition-all font-bold tracking-wide"
             type="submit"
           >
-            <FaSearch />
+            <FaSearch className="text-lg md:mr-2" />
+            <span className="hidden md:inline">Search</span>
           </button>
         )}
       </div>
-      <div
-        className={`w-full flex flex-col justify-center items-center px-3 lg:hidden`}
-      >
-        <h2 className={`text-center w-full text-sm`}>Filter By:</h2>
-        <div className={`w-full flex justify-center items-center text-sm my-4`}>
-          <label htmlFor="Hashtag" className={`mr-2`}>
-            Hashtag
-          </label>
+
+      {/* Mobile Filter Options */}
+      <div className="lg:hidden flex justify-center items-center gap-4 text-sm mt-2">
+        <span className="text-on-surface-variant uppercase tracking-widest text-xs font-bold mr-2">Filter:</span>
+        <label className={`flex items-center gap-2 cursor-pointer ${filter === 'hashtag' ? 'text-primary' : 'text-on-surface-variant'}`}>
           <input
-            type={`radio`}
-            name={`filter`}
-            value={`hashtag`}
+            type="radio"
+            name="filter"
+            value="hashtag"
+            checked={filter === 'hashtag'}
             onChange={(e) => setFilter(e.target.value)}
+            className="accent-primary"
           />
-          <label htmlFor="Title" className={`mx-2`}>
-            Title
-          </label>
+          Hashtag
+        </label>
+        <label className={`flex items-center gap-2 cursor-pointer ${filter === 'title' ? 'text-primary' : 'text-on-surface-variant'}`}>
           <input
-            type={`radio`}
-            name={`filter`}
-            value={`title`}
+            type="radio"
+            name="filter"
+            value="title"
+            checked={filter === 'title'}
             onChange={(e) => setFilter(e.target.value)}
+            className="accent-primary"
           />
-        </div>
+          Title
+        </label>
       </div>
     </form>
   );
 };
 
-export default SearcBar;
+export default SearchBar;
