@@ -6,13 +6,13 @@ import {
   Outlet,
 } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Suspense, useEffect, lazy } from "react";
+import { Suspense, useEffect } from "react";
 import Layout from "./components/Layout";
 import Loader from "./components/Loader";
 import {useGetMyProfileQuery} from "./utils/store/features/user/userApi";
 import { useAppDispatch, useAppSelector } from "./utils/hooks/storeHooks";
 import { userSignedIn, userSignedOut } from "./utils/store/features/user/userSlice";
-import { routes } from "./utils/functions/routeLoader";
+import { APP_ROUTES } from "./app/routes.config";
 import { RootState } from "./utils/store/store";
 import { setToken } from "./utils/store/features/user/authSlice";
 
@@ -32,24 +32,14 @@ const ProtectedRoute = () => {
   return <Outlet />;
 };
 
+// Routes that need no authentication (incl. the "*" catch-all) vs. routes
+// gated behind sign-in. Admin ("role:admin") is sign-in gated today and will
+// be split out behind a RoleProtectedRoute in Phase 7.
+const publicRoutes = APP_ROUTES.filter((r) => r.access === "public");
+const protectedRoutes = APP_ROUTES.filter((r) => r.access !== "public");
+
 // Main App Component
 const App = () => {
-  const Home = routes["Home"]
-  const ManageProfile = routes["ManageProfile"];
-  const ManageVideos = routes["ManageVideos"];
-  const VideoInfo =routes["VideoInfo"];
-  const Login = routes["SignIn"];
-  const Register =routes["SignUp"];
-  const UserProfile=routes["UserProfile"];
-  const Admin=routes["Admin"];
-  const Explore=routes["Explore"];
-  const Welcome=routes["Welcome"];
-  const NotFound = routes["NotFound"]; 
-  const ComingSoon = routes["ComingSoon"];
-  const Vault = lazy(() => import("./pages/Vault"));
-  const NetworkRelations = lazy(() => import("./pages/NetworkRelations"));
-  const PublicProfile = lazy(() => import("./pages/PublicProfile"));
-  const PublicNetwork = lazy(() => import("./pages/PublicNetwork"));
   const {token}=useAppSelector((state:RootState)=>state.auth)
   const { isSignedIn, user } = useUser();
   const dispatch = useAppDispatch();
@@ -100,37 +90,17 @@ const App = () => {
       <Suspense fallback={<Loader />}>
         <Layout>
           <Routes>
-            {/* Public Routes */}
-            <Route path="/sign-in" element={<Login />} />
-            <Route path="/sign-up" element={<Register />} />
-            <Route path="/" element={<Welcome/>} />
-            <Route path="/foryou" element={<Home />} />
-            <Route path="/users/:username" element={<UserProfile/>}/>
-            <Route path="/share/profile/:username" element={<PublicProfile />} />
-            <Route path="/share/network/:username" element={<PublicNetwork />} />
-            <Route path="/videos/:videoId" element={<VideoInfo />} />
-            <Route path="/explore" element={<Explore/>}/>
-            <Route path="/studio" element={<ComingSoon />} />
-            <Route path="/vault" element={<Vault />} />
-            <Route path="/history" element={<ComingSoon />} />
-            <Route path="/liked" element={<ComingSoon />} />
-            {/* Protected Routes */}
+            {/* Public routes (generated from routes.config.ts) */}
+            {publicRoutes.map(({ path, component: Component }) => (
+              <Route key={path} path={path} element={<Component />} />
+            ))}
+
+            {/* Protected routes — require sign-in */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/admin" element={<Admin/>}/>
-              <Route path="/vault/network" element={<NetworkRelations />} />
-              <Route
-                path="/users/:userId/profile/manage"
-                element={<ManageProfile />}
-              />
-              <Route
-                path="/users/:username/videos/manage"
-                element={<ManageVideos />}
-              />
+              {protectedRoutes.map(({ path, component: Component }) => (
+                <Route key={path} path={path} element={<Component />} />
+              ))}
             </Route>
-
-            {/* Other Routes */}
-            <Route path="*" element={<NotFound/>} />
-
           </Routes>
         </Layout>
       </Suspense>

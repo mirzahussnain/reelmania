@@ -4,9 +4,10 @@ import Navbar from "./Navbar";
 import { Sidebar } from "../shared/components/layout/Sidebar";
 import { Topbar } from "../shared/components/layout/Topbar";
 import useScreenWidth from "../utils/hooks/useScreenWidth";
+import { isStandaloneRoute, routeHasTopbar } from "../app/routes.config";
 
 interface LayoutProps {
-  children: ReactNode; 
+  children: ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
@@ -14,11 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const isMobile = screenWidth <= 1016;
 
-  const isStandalonePage = 
-    location.pathname.includes("/sign-in") || 
-    location.pathname.includes("/sign-up") || 
-    location.pathname.includes("/share/profile") ||
-    location.pathname.includes("/share/network");
+  const isStandalonePage = isStandaloneRoute(location.pathname);
 
   if (isStandalonePage) {
     return (
@@ -47,8 +44,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col relative h-full overflow-hidden">
-        {/* Floating Topbar only on Home pages */}
-        {(location.pathname === '/' || location.pathname === '/foryou') && <Topbar />}
+        {/* Floating Topbar only on routes that opt in (see routes.config.ts) */}
+        {routeHasTopbar(location.pathname) && <Topbar />}
 
         {/* Page Content */}
         <main className="flex-1 w-full h-full relative overflow-hidden">

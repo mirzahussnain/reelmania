@@ -1,16 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Link, NavLink } from "react-router-dom";
-import {
-  BiHomeAlt, BiSolidHome,
-  BiCompass, BiSolidCompass,
-  BiMoviePlay, BiSolidMoviePlay,
-  BiCollection, BiSolidCollection,
-  BiHistory, BiHeart, BiSolidHeart
-} from "react-icons/bi";
 import { cn } from "../../utils/cn";
 import { useState } from "react";
 import { BRAND } from "../../constants/brand";
+import { getNavItems } from "../../../app/routes.config";
 
 interface SidebarItemProps {
   to: string;
@@ -52,6 +46,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ to, icon: Icon, activeIcon: A
 
 export const Sidebar: React.FC = () => {
   const [isHovered, setIsHovered] = useState(false);
+  const primaryNav = getNavItems("primary");
+  const libraryNav = getNavItems("library");
 
   return (
     <div
@@ -77,15 +73,15 @@ export const Sidebar: React.FC = () => {
           </Link>
         </div>
 
-        {/* Navigation Links */}
+        {/* Navigation Links — derived from routes.config.ts */}
         <nav className="flex-1 flex flex-col gap-2 py-6 px-3">
-          <SidebarItem to="/foryou"  icon={BiHomeAlt}    activeIcon={BiSolidHome}       label="Home" />
-          <SidebarItem to="/explore" icon={BiCompass}    activeIcon={BiSolidCompass}    label="Explore" />
+          {primaryNav.map(({ path, nav }) => (
+            <SidebarItem key={path} to={path} icon={nav!.icon} activeIcon={nav!.activeIcon} label={nav!.label} />
+          ))}
           <div className="h-4" />
-          <SidebarItem to="/studio"  icon={BiMoviePlay}  activeIcon={BiSolidMoviePlay}  label="Studio" />
-          <SidebarItem to="/vault"   icon={BiCollection} activeIcon={BiSolidCollection} label="Vault" />
-          <SidebarItem to="/history" icon={BiHistory}    activeIcon={BiHistory}         label="History" />
-          <SidebarItem to="/liked"   icon={BiHeart}      activeIcon={BiSolidHeart}      label="Liked" />
+          {libraryNav.map(({ path, nav }) => (
+            <SidebarItem key={path} to={path} icon={nav!.icon} activeIcon={nav!.activeIcon} label={nav!.label} />
+          ))}
         </nav>
       </motion.aside>
     </div>

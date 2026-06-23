@@ -9,6 +9,7 @@ import { RootState } from "../utils/store/store";
 
 import { MobileNavItem } from "../shared/components/navbar/MobileNavItem";
 import { MobileUserItem } from "../shared/components/navbar/MobileUserItem";
+import { isStandaloneRoute } from "../app/routes.config";
 
 const Navbar: React.FC = () => {
   const screenWidth = useScreenWidth();
@@ -17,7 +18,8 @@ const Navbar: React.FC = () => {
   const navigateTo = useNavigate();
   const currentLocation = useLocation();
 
-  if (currentLocation.pathname.includes("/sign-in") || currentLocation.pathname.includes("/sign-up")) {
+  // Standalone routes (auth, share pages) render without the app shell.
+  if (isStandaloneRoute(currentLocation.pathname)) {
     return null;
   }
 
