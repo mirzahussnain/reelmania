@@ -16,23 +16,20 @@ const VideoCard = ({ videoInfo }: { videoInfo: VideoType }) => {
   const handleDeleteVideo=async(e: React.MouseEvent<HTMLButtonElement>)=>{
     e.stopPropagation();
     try{
-
-  
       if(!token){
         toast.error("User not authenticated")
+        return;
       }
       if(!videoInfo?.id){
         toast.error("Video Id is missing")
+        return;
       }
       toast.info("Deleting Video...")
-      const response=await deleteVideo({id:videoInfo?.id,token}).unwrap();
-     if(!isLoading && response?.status==200){
-      toast.success(response?.data?.message)
-     }
-      
+      const response=await deleteVideo({id:videoInfo.id,token}).unwrap();
+      toast.success(response?.message)
     }catch(err){
 
-      console.log(err)
+      console.error(err)
     }
   }
 

@@ -10,7 +10,7 @@ import { persistStore } from "redux-persist";
 import {ToastContainer} from "react-toastify";
 import { SocketProvider } from "./shared/providers/SocketProvider";
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-let persisttor = persistStore(store);
+const persisttor = persistStore(store);
 
 if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Publishable Key");

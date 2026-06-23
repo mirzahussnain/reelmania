@@ -11,8 +11,9 @@ export const connectBlobStorage = () => {
     const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
     const containerClient = blobServiceClient.getContainerClient(containerName);
     return containerClient;
-  } catch (err: any) {
-    console.log(`VIDEO SERVICE STOPPED:${err?.message}`);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error(`VIDEO SERVICE STOPPED:${errorMsg}`);
     exit();
   }
 };

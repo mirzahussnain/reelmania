@@ -1,9 +1,10 @@
 import React from "react";
 import { UserButton } from "@clerk/clerk-react";
 import { motion } from "framer-motion";
+import { userType } from "../../../types";
 
 interface MobileUserItemProps {
-  user: any;
+  user: userType;
   pathname: string;
 }
 

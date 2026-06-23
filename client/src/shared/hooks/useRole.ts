@@ -6,6 +6,9 @@ import { ADMIN_ROLE, type Role } from "../constants/roles";
 // inside a plain async function and returned a Promise for a sync value.
 export const useRole = (): { role: Role | undefined; isAdmin: boolean; isLoaded: boolean } => {
   const { user, isLoaded } = useUser();
-  const role = user?.publicMetadata?.role as Role | undefined;
-  return { role, isAdmin: role === ADMIN_ROLE, isLoaded };
+  // Clerk stores the role as a free string; it may be a product Role or the
+  // reserved admin sentinel, so compare against the raw value.
+  const rawRole = user?.publicMetadata?.role as string | undefined;
+  const role = rawRole as Role | undefined;
+  return { role, isAdmin: rawRole === ADMIN_ROLE, isLoaded };
 };

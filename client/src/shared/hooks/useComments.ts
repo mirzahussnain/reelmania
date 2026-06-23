@@ -3,11 +3,11 @@ import { useAppSelector } from "../../utils/hooks/storeHooks";
 import { RootState } from "../../utils/store/store";
 import { useAddNewCommentMutation, useLazyGetCommentsByVideoIdQuery } from "../../utils/store/features/video/videoApi";
 import { useSocket } from "../providers/SocketProvider";
-import { SOCKET_EVENTS } from "../constants/socketEvents";
+import { SOCKET_EVENTS, CommentAddedPayload } from "../constants/socketEvents";
 import { toast } from "react-toastify";
 import { CommentType, VideoType } from "../../types";
 
-export const useComments = (video: VideoType) => {
+export const useComments = (video: VideoType | null | undefined) => {
   const user = useAppSelector((state: RootState) => state.user);
   const token = useAppSelector((state: RootState) => state.auth.token);
   
@@ -52,8 +52,8 @@ export const useComments = (video: VideoType) => {
         toast.success(query?.message);
         setVideoComments((prev) => [query?.newComments, ...prev]);
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to post comment.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to post comment.");
     } finally {
       setPending(false);
     }
@@ -96,7 +96,7 @@ export const useComments = (video: VideoType) => {
     const videoId = video.id;
     joinVideo(videoId);
 
-    const handleCommentAdded = ({ newComment, videoId: incomingId }: any) => {
+    const handleCommentAdded = ({ newComment, videoId: incomingId }: CommentAddedPayload) => {
       if (newComment && videoId === incomingId) {
         setVideoComments((prev) => [newComment, ...prev]);
       }

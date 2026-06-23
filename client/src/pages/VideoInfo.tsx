@@ -35,7 +35,7 @@ const VideoInfo = () => {
     filter,
     setFilter,
     handleSumbit
-  } = useComments(videoState as any);
+  } = useComments(videoState);
 
   if (!videoState) return null;
 

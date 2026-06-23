@@ -3,6 +3,19 @@ import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {CommentType} from "../../../../types";
 import { connectSocket } from "../../../functions/socket";
 import { SOCKET_EVENTS } from "../../../../shared/constants/socketEvents";
+import type {
+    FeedQueryArgs,
+    VideoListResponse,
+    VideoByIdResponse,
+    CommentListResponse,
+    LikeListResponse,
+    AddCommentResponse,
+    UpdateLikesResponse,
+    GenerateUploadUrlResponse,
+    CreateVideoResponse,
+    MessageResponse,
+    UploadVideoMetadata,
+} from "../../../../shared/contracts/api";
 
 const BASE_URL=import.meta.env.VITE_VIDEO_SERVICE_URL as string;
 export const videoApi = createApi({
@@ -13,8 +26,8 @@ export const videoApi = createApi({
     }),
     tagTypes: ["Videos", "SAS","Comments","Likes"],
     endpoints: (builder) => ({
-        fetchAllVideos: builder.query({
-            query: (args: any = {}) => {
+        fetchAllVideos: builder.query<VideoListResponse, FeedQueryArgs>({
+            query: (args = {}) => {
                 const params = new URLSearchParams();
                 if (args.cursor) params.append("cursor", args.cursor);
                 if (args.q) params.append("q", args.q);
@@ -25,8 +38,8 @@ export const videoApi = createApi({
             },
             providesTags: ["Videos"]
         }),
-        fetchForYouVideos: builder.query({
-            query: ({ token }: { token: string | null }) => ({
+        fetchForYouVideos: builder.query<VideoListResponse, { token: string | null }>({
+            query: ({ token }) => ({
                 url: "/foryou",
                 method: "GET",
                 headers: {
@@ -35,17 +48,17 @@ export const videoApi = createApi({
             }),
             providesTags: ["Videos"]
         }),
-        fetchVideoById:builder.query({
+        fetchVideoById:builder.query<VideoByIdResponse, string>({
             query:(videoId)=>`/${videoId}`,
         }),
-        fetchUserVideos: builder.query({
+        fetchUserVideos: builder.query<VideoListResponse, string | undefined>({
             query: (id) => ({
                 url: `/user/${id}`,
                 method: "GET"
             }),
             providesTags:["Videos"]
         }),
-        deleteUserVideo:builder.mutation({
+        deleteUserVideo:builder.mutation<MessageResponse, { id: string; token: string | null }>({
             query:({id,token})=>({
                 url:`/${id}`,
                 method:"DELETE",
@@ -57,8 +70,8 @@ export const videoApi = createApi({
             invalidatesTags:["Videos"]
         }),
 
-        generateUploadUrl: builder.mutation({
-            query: ({ fileName, contentType, token }: { fileName: string, contentType: string, token: string | null }) => ({
+        generateUploadUrl: builder.mutation<GenerateUploadUrlResponse, { fileName: string, contentType: string, token: string | null }>({
+            query: ({ fileName, contentType, token }) => ({
                 url: "/generate-upload-url",
                 method: "POST",
                 headers: {
@@ -67,8 +80,8 @@ export const videoApi = createApi({
                 body: { fileName, contentType }
             })
         }),
-        uploadVideo: builder.mutation({
-            query: ({ metadata, fileName, token }: { metadata: any, fileName: string, token: string | null }) => ({
+        uploadVideo: builder.mutation<CreateVideoResponse, { metadata: UploadVideoMetadata, fileName: string, token: string | null }>({
+            query: ({ metadata, fileName, token }) => ({
                 url: "/video",
                 method: "POST",
                 headers: {
@@ -79,9 +92,10 @@ export const videoApi = createApi({
             }),
             invalidatesTags: ["Videos"]
         }),
-        getCommentsByVideoId: builder.query({
-            query: (args: any) => {
-                let videoId, params = new URLSearchParams();
+        getCommentsByVideoId: builder.query<CommentListResponse, string | { videoId: string; cursor?: string; limit?: number }>({
+            query: (args) => {
+                let videoId: string;
+                const params = new URLSearchParams();
                 if (typeof args === 'string') {
                     videoId = args;
                 } else {
@@ -94,13 +108,13 @@ export const videoApi = createApi({
             },
             providesTags: ["Comments"]
         }),
-        getLikesByVideoId: builder.query({
+        getLikesByVideoId: builder.query<LikeListResponse, string>({
             query: (videoId) => `/${videoId}/likes`,
             providesTags: ["Likes"]
         }),
        
-        addNewComment: builder.mutation({
-            query: ({comment, videoId, token}: { comment: CommentType, videoId: string, token: string | null }) => ({
+        addNewComment: builder.mutation<AddCommentResponse, { comment: CommentType, videoId: string, token: string | null }>({
+            query: ({comment, videoId, token}) => ({
                 url: `/${videoId}/comments`,
                 method: "POST",
                 body: comment,
@@ -119,13 +133,13 @@ export const videoApi = createApi({
                     socket.emit(SOCKET_EVENTS.NEW_COMMENT, { videoId: data?.videoId,newComment:data?.newComments,newVideo:data?.newVideos,commentCount:data?.commentsCount });
                   }
                 } catch(err) {
-                    console.log(err)
+                    console.error(err)
                 }
               },
               invalidatesTags: ['Comments']
             }),
-        updateLikes: builder.mutation({
-            query: ({videoId, userData, token}: { videoId: string, userData: {userId:string,userName:string}, token: string }) => ({
+        updateLikes: builder.mutation<UpdateLikesResponse, { videoId: string, userData: {userId:string,userName:string}, token: string }>({
+            query: ({videoId, userData, token}) => ({
                 url: `/${videoId}/likes`,
                 method: "PUT",
                 body: {userData},
@@ -143,12 +157,12 @@ export const videoApi = createApi({
                     socket.emit(SOCKET_EVENTS.LIKE_UPDATED, { videoId: data?.videoId, updatedLikes: data?.updatedLikes });
                   }
                 } catch(err) {
-                    console.log(err)
+                    console.error(err)
                 }
               },
               invalidatesTags: ['Likes']
             }),
-        fetchSasToken: builder.query({
+        fetchSasToken: builder.query<MessageResponse, string | null>({
             query: (token) => ({
                 url: "/generate/sas",
                 method: "GET",

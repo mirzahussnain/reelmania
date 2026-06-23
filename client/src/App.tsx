@@ -71,7 +71,7 @@ const App = () => {
     }
   
     // Handle user state updates if signed in
-    if (isSignedIn && data) {
+    if (isSignedIn && data?.body) {
       dispatch(userSignedIn(data.body));
     }
   

@@ -118,9 +118,9 @@ export const useVideoUpload = (onSuccess?: () => void) => {
       resetForm();
       if (onSuccess) onSuccess();
 
-    } catch (err: any) {
+    } catch (err) {
       setIsUploadingToS3(false);
-      toast.error(err.message || err.toString());
+      toast.error(err instanceof Error ? err.message : String(err));
     }
   };
 

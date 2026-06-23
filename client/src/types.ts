@@ -21,14 +21,17 @@ export type userType = {
   last_name: string,
   role: string;
   username: string;
-  followers:FollowerType[],
+  // The API returns denormalized follower/following counts under `_count`
+  // (Prisma relation aggregate), not an inlined follower array. Align the type
+  // with the actual payload (IMPLEMENTATION_PLAN 8.3).
+  _count?: UserCount,
 };
 
-export type FollowerType={
-  follower_id:string,
-  following_id:string,
-  created_at:Date
-}
+// Prisma `_count` aggregate for the two self-referential follower relations.
+export type UserCount = {
+  followers_followers_following_idTousers?: number,
+  followers_followers_follower_idTousers?: number,
+};
 
 export type LoaderType = {
   isLoading: boolean;

@@ -6,6 +6,7 @@ import { RootState } from "../utils/store/store";
 import { FiArrowLeft, FiDownload, FiEye, FiBarChart2 } from "react-icons/fi";
 import Loader from "../components/Loader";
 import { Button } from "../shared/components/ui/Button";
+import type { FollowerEdge } from "../shared/contracts/api";
 
 const NetworkRelations: React.FC = () => {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ const NetworkRelations: React.FC = () => {
 
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-        {followers.map((f: any) => {
+        {followers.map((f: FollowerEdge) => {
           const node = f.users_followers_follower_idTousers;
           if (!node) return null;
 

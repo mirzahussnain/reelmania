@@ -6,7 +6,7 @@ import {
   useUpdateLikesMutation,
 } from "../../utils/store/features/video/videoApi";
 import { useSocket } from "../providers/SocketProvider";
-import { SOCKET_EVENTS } from "../constants/socketEvents";
+import { SOCKET_EVENTS, LikesChangedPayload } from "../constants/socketEvents";
 import { useAppSelector } from "../../utils/hooks/storeHooks";
 import { RootState } from "../../utils/store/store";
 
@@ -67,7 +67,7 @@ export const useVideoLikes = (videoId: string | undefined) => {
     if (!socket || !videoId) return;
     joinVideo(videoId);
 
-    const handleLikesChange = ({ updatedLikes, videoId: incomingId }: any) => {
+    const handleLikesChange = ({ updatedLikes, videoId: incomingId }: LikesChangedPayload) => {
       if (incomingId == videoId && updatedLikes) {
         setLikes(updatedLikes);
       }

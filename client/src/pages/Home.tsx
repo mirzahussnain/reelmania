@@ -49,7 +49,7 @@ const Home = () => {
           <span className="font-semibold text-center">Please sign in to build your customized Algorithm!<br/>Click "Explore" to view trending videos.</span>
         </div>
       ) : (
-        videos.map((video: any, index) => {
+        videos.map((video, index) => {
           const isLastVideo = index === videos.length - 1;
           return (
             <div

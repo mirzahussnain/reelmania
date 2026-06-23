@@ -1,5 +1,6 @@
 import { ChangeEvent } from "react";
 import { Button } from "./ui/Button";
+import { userType } from "../../types";
 
 export const CommentForm = ({
   user,
@@ -7,7 +8,7 @@ export const CommentForm = ({
   setCommentText,
   handleSumbit,
 }: {
-  user: any;
+  user: userType;
   commentText: string;
   setCommentText: (val: string) => void;
   handleSumbit: (e: ChangeEvent<HTMLFormElement>) => void;

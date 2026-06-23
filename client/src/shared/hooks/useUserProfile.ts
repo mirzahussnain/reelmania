@@ -24,7 +24,7 @@ export const useUserProfile = () => {
     isLoading: isProfileLoading,
     isError,
   } = useGetUserByUsernameQuery(cleanUsername as string, { skip: !cleanUsername });
-  const userProfile: (userType & { _count?: any }) | null = profileData?.body ?? null;
+  const userProfile: userType | null = profileData?.body ?? null;
 
   // Per-user videos endpoint (replaces fetching ALL videos and filtering).
   const { data: videosData, isLoading: isVideosLoading } = useFetchUserVideosQuery(

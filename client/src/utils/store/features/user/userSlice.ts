@@ -11,7 +11,6 @@ const initialState:userType={
     last_name: "",
     role: "",
     username: "",
-    followers:[]
 }
 
 const userSlice=createSlice({

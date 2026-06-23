@@ -56,7 +56,7 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
         token,
       }).unwrap();
       
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to connect. Please try again.");
     }
   };

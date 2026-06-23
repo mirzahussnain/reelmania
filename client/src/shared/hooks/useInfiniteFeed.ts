@@ -21,7 +21,7 @@ export const useInfiniteFeed = (inView: boolean) => {
   useEffect(() => {
     const loadInitial = async () => {
       if (!isSignedIn) {
-        fetchAll({}).unwrap().then((res: any) => {
+        fetchAll({}).unwrap().then((res) => {
           if (res?.videos) {
             dispatch(setForYouVideos(res.videos));
             setHasMore(res.videos.length > 0);
@@ -33,7 +33,7 @@ export const useInfiniteFeed = (inView: boolean) => {
       const token = await getToken();
       if (!token) return; 
 
-      fetchForYou({ token }).unwrap().then((res: any) => {
+      fetchForYou({ token }).unwrap().then((res) => {
         if (res?.videos) {
           dispatch(setForYouVideos(res.videos));
           setHasMore(res.videos.length > 0);
@@ -55,7 +55,7 @@ export const useInfiniteFeed = (inView: boolean) => {
         const token = await getToken();
         if (!token) return;
 
-        fetchForYou({ token }).unwrap().then((res: any) => {
+        fetchForYou({ token }).unwrap().then((res) => {
           if (res?.videos?.length > 0) {
             dispatch(appendForYouVideos(res.videos));
             setHasMore(true);

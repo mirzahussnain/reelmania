@@ -77,9 +77,9 @@ export const updateFollower = async (req: Request, res: Response) => {
       });
       res.status(200).json({ success: true, message: "Follower Added Successfully", result });
       return;
-    } catch (createErr: any) {
+    } catch (createErr: unknown) {
       // P2002 means Unique Constraint Failed (They are already following)
-      if (createErr.code === "P2002") {
+      if (createErr instanceof Prisma.PrismaClientKnownRequestError && createErr.code === "P2002") {
         // Safe to Unfollow (Delete)
         const result = await prisma.followers.delete({
           where: {

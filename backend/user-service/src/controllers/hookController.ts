@@ -43,11 +43,12 @@ export const userManagement = async (req: Request, res: Response) => {
       "svix-timestamp": svix_timestamp as string,
       "svix-signature": svix_signature as string,
     });
-  } catch (err: any) {
-    console.log("Error: Could not verify webhook:", err.message);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error("Error: Could not verify webhook:", errorMsg);
     return void res.status(400).json({
       success: false,
-      message: err.message,
+      message: errorMsg,
     });
   }
 

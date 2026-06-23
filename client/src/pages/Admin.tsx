@@ -38,8 +38,7 @@ const Admin = () => {
     const query=await updateRole({username,newRole:role,token}).unwrap()
         toast.success(query?.message);
     
-   }catch(err){
-   
+   }catch{
     toast.error("Operation Failed")
    }finally{
     setRole("")
@@ -65,7 +64,7 @@ const Admin = () => {
    useEffect(()=>{
     const fetchUsers=async()=>{
         if(queryRan) return;
-        const query=await getUsers({}).unwrap();
+        const query=await getUsers().unwrap();
         if(query){
             setUsers(query?.users)
             setQueryRan(true);

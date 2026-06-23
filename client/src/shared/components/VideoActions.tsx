@@ -3,7 +3,7 @@ import { FaHeart } from "react-icons/fa";
 import { BiCommentDetail, BiSolidCommentDetail, BiShareAlt, BiBookmark } from "react-icons/bi";
 import { toast } from "react-toastify";
 import Share from "../../components/Share";
-import { VideoLikes } from "../../types";
+import { VideoLikes, userType } from "../../types";
 import { cn } from "../utils/cn";
 import { Button } from "./ui/Button";
 
@@ -13,7 +13,7 @@ interface VideoActionsProps {
   commentsLength: number;
   handleLikes: (e: React.MouseEvent<HTMLButtonElement>) => Promise<void>;
   pending: boolean;
-  user: any;
+  user: userType;
   token: string | null;
   setIsModalOpen: ({ isOpen }: { isOpen: boolean }) => void;
   openShareModel: boolean;

@@ -158,10 +158,10 @@ export const getUserVideos = async (req: Request, res: Response) => {
             nextCursor,
         });
         return;
-    } catch (err: any) {
+    } catch (err: unknown) {
         res
             .status(500)
-            .send(`Operation Failed:${err}`);
+            .send(`Operation Failed:${String(err)}`);
         return;
     }
 };
@@ -200,9 +200,9 @@ export const getLikesByVideoId = async (req: Request, res: Response) => {
 
         res.status(200).send({ message: "Likes Fetched Successfully", likes: mappedLikes, nextCursor });
         return;
-    } catch (err: any) {
-        res.status(500).send(`Operation Failed:${err}`);
-        console.log(err);
+    } catch (err: unknown) {
+        res.status(500).send(`Operation Failed:${String(err)}`);
+        console.error(err);
         return;
     }
 }
@@ -242,9 +242,9 @@ export const getCommentsByVideoId = async (req: Request, res: Response) => {
 
         res.status(200).send({ message: "Comments Fetched Successfully", comments: mappedComments, nextCursor });
         return;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
-        res.status(500).send(`Operation Failed:${err}`);
+        res.status(500).send(`Operation Failed:${String(err)}`);
         return;
     }
 }
@@ -390,9 +390,9 @@ export const addNewComment = async (req: Request, res: Response) => {
             commentsCount: updatedVideo.commentCount 
         });
         return;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
-        res.status(500).send(`Operation Failed:${err}`);
+        res.status(500).send(`Operation Failed:${String(err)}`);
         return;
     }
 };
@@ -443,11 +443,12 @@ export const updateLikes = async (req: Request, res: Response) => {
                     })
                 ]);
             }
-        } catch (txErr: any) {
+        } catch (txErr: unknown) {
             // A concurrent request already applied the same toggle (duplicate
             // like P2002 / already-deleted P2025). The winning request kept the
             // count correct, so treat this as a no-op and return current state.
-            if (txErr?.code !== "P2002" && txErr?.code !== "P2025") {
+            const code = (txErr as { code?: string })?.code;
+            if (code !== "P2002" && code !== "P2025") {
                 throw txErr;
             }
         }
@@ -465,9 +466,9 @@ export const updateLikes = async (req: Request, res: Response) => {
 
         res.status(200).send({ message: "Likes Updated", videoId, updatedLikes: mappedLikes });
         return;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
-        res.status(500).send(`Operation Failed:${err}`);
+        res.status(500).send(`Operation Failed:${String(err)}`);
         return;
     }
 };

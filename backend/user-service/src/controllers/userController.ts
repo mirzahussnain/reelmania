@@ -108,8 +108,8 @@ export const createUser = async (req: Request, res: Response) => {
     const user = await UserService.createUser(req.body);
     res.status(200).json({ success: true, message: "User Created Successfully", body: user });
     return;
-  } catch (err: any) {
-    if (err.message === "User already exists") {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message === "User already exists") {
       res.status(400).json({ success: false, message: "User already exists" });
       return;
     }
