@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { VideoType } from "../types";
 import { useVideoPlayback } from "../shared/hooks/useVideoPlayback";
 import { useCustomPlayer } from "../shared/hooks/useCustomPlayer";
-import { useVideoRealtime } from "../shared/hooks/useVideoRealtime";
+import { useVideoLikes } from "../shared/hooks/useVideoLikes";
+import { useComments } from "../shared/hooks/useComments";
 import { VideoActions } from "../shared/components/VideoActions";
 import { VideoInfoOverlay } from "../shared/components/VideoInfoOverlay";
 import { VideoControlsOverlay } from "../shared/components/VideoControlsOverlay";
@@ -16,7 +17,8 @@ const PlayerCard = ({
 }) => {
   const videoRef = useVideoPlayback(setIsModalOpen);
   const playerControls = useCustomPlayer(videoRef as React.RefObject<HTMLVideoElement>);
-  const { handleLikes, likes, comments, pending, token, user } = useVideoRealtime(video?.id);
+  const { handleLikes, likes, pending, token, user } = useVideoLikes(video?.id);
+  const { videoComments } = useComments(video);
   const [openShareModel, setOpenShareModel] = useState(false);
 
   return (
@@ -40,7 +42,7 @@ const PlayerCard = ({
         <VideoActions
           videoId={video?.id as string}
           likes={likes}
-          commentsLength={comments.length}
+          commentsLength={videoComments.length}
           handleLikes={handleLikes}
           pending={pending}
           user={user}

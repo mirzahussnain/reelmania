@@ -4,7 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { IoFilter } from "react-icons/io5";
 import { IoIosArrowRoundDown, IoIosArrowRoundUp } from "react-icons/io";
 import { dateFormatter, formatNumber } from "../utils/functions/formatter";
-import { useVideoInfo } from "../shared/hooks/useVideoInfo";
+import { useVideoDetails } from "../shared/hooks/useVideoDetails";
+import { useVideoLikes } from "../shared/hooks/useVideoLikes";
+import { useFollow } from "../shared/hooks/useFollow";
 import { useComments } from "../shared/hooks/useComments";
 import { CommentItem } from "../shared/components/CommentItem";
 import { CommentForm } from "../shared/components/CommentForm";
@@ -16,15 +18,14 @@ const VideoInfo = () => {
     videoState,
     videoUser,
     user: currentUser,
-    likes,
-    followStatus,
     isSignedIn,
     videoRef,
     canvasRef,
-    handleFollow
-  } = useVideoInfo();
+  } = useVideoDetails();
 
-  // Re-use the extremely clean hook we built for Phase 3!
+  const { likes } = useVideoLikes(videoState?.id);
+  const { followStatus, handleFollow } = useFollow(videoState?.uploaded_by?.id);
+
   const {
     user: commentUser,
     commentText,
