@@ -26,6 +26,7 @@ model videos {
 
   @@index([uploaded_at(sort: Desc), id])
   @@index([hashtags])
+  @@index([uploaded_by.id, uploaded_at(sort: Desc)])
 }
 
 model Comment {

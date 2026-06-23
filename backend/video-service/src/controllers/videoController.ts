@@ -116,6 +116,14 @@ export const getVideoById=async(req:Request,res:Response)=>{
 export const getUserVideos = async (req: Request, res: Response) => {
     try {
         const uploaderId = req.params.userId;
+
+        // Pagination is opt-in: callers that pass `limit` get a cursor-paginated
+        // page (backed by the @@index on uploaded_by.id + uploaded_at); callers
+        // that omit it keep the previous "return everything" behavior.
+        const paginated = req.query.limit !== undefined;
+        const limit = parseInt(req.query.limit as string) || 12;
+        const cursor = req.query.cursor as string | undefined;
+
         const videos = await prisma.videos.findMany({
             where: {
                 uploaded_by: {
@@ -124,23 +132,31 @@ export const getUserVideos = async (req: Request, res: Response) => {
                     },
                 },
             },
+            orderBy: { uploaded_at: "desc" },
+            ...(paginated
+                ? {
+                      take: limit,
+                      skip: cursor ? 1 : 0,
+                      cursor: cursor ? { id: cursor } : undefined,
+                  }
+                : {}),
         });
-
-        if (videos.length === 0) {
-            res
-                .status(200)
-                .send({ message: "User Hasn't Uploaded Any Video Yet", videos: null });
-            return;
-        }
 
         const formattedDateVideos = videos.map((video) => ({
             ...video,
             uploaded_at: video.uploaded_at.toISOString(),
         }));
 
-        res
-            .status(200)
-            .send({ message: `${videos.length} videos found`, videos: formattedDateVideos });
+        const nextCursor =
+            paginated && videos.length === limit ? videos[videos.length - 1].id : null;
+
+        res.status(200).send({
+            message: videos.length
+                ? `${videos.length} videos found`
+                : "User Hasn't Uploaded Any Video Yet",
+            videos: formattedDateVideos,
+            nextCursor,
+        });
         return;
     } catch (err: any) {
         res
@@ -335,24 +351,26 @@ export const addNewComment = async (req: Request, res: Response) => {
             throw new Error("Video Id or Comment is missing");
         }
 
-        const createdComment = await prisma.comment.create({
-            data: {
-                videoId: videoId,
-                userId: newComment.author.id,
-                username: newComment.author.username,
-                avatar_url: newComment.author.avatar_url,
-                posted_at: new Date(),
-                text: newComment.text
-            }
-        });
-
-        // Atomically increment commentCount
-        const updatedVideo = await prisma.videos.update({
-            where: { id: videoId },
-            data: {
-                commentCount: { increment: 1 }
-            }
-        });
+        // Create the comment and bump the denormalized counter atomically so
+        // they can never drift if one of the writes fails.
+        const [createdComment, updatedVideo] = await prisma.$transaction([
+            prisma.comment.create({
+                data: {
+                    videoId: videoId,
+                    userId: newComment.author.id,
+                    username: newComment.author.username,
+                    avatar_url: newComment.author.avatar_url,
+                    posted_at: new Date(),
+                    text: newComment.text
+                }
+            }),
+            prisma.videos.update({
+                where: { id: videoId },
+                data: {
+                    commentCount: { increment: 1 }
+                }
+            })
+        ]);
 
         const mappedComment = {
             author: {
@@ -397,33 +415,41 @@ export const updateLikes = async (req: Request, res: Response) => {
             }
         });
 
-        let updatedLikesCount = 0;
-
-        if (existingLike) {
-            // User already liked it, so UNLIKE
-            await prisma.like.delete({
-                where: { id: existingLike.id }
-            });
-
-            const updatedVideo = await prisma.videos.update({
-                where: { id: videoId },
-                data: { likeCount: { decrement: 1 } }
-            });
-            updatedLikesCount = updatedVideo.likeCount;
-        } else {
-            // User hasn't liked it, so LIKE
-            await prisma.like.create({
-                data: {
-                    videoId: videoId,
-                    userId: userData.userId,
-                    username: userData.userName
-                }
-            });
-
-            const updatedVideo = await prisma.videos.update({
-                where: { id: videoId },
-                data: { likeCount: { increment: 1 } }
-            });
+        try {
+            if (existingLike) {
+                // User already liked it, so UNLIKE. Delete + decrement run in one
+                // transaction; the @@unique constraint plus the all-or-nothing
+                // transaction prevent the counter from drifting under concurrency.
+                await prisma.$transaction([
+                    prisma.like.delete({ where: { id: existingLike.id } }),
+                    prisma.videos.update({
+                        where: { id: videoId },
+                        data: { likeCount: { decrement: 1 } }
+                    })
+                ]);
+            } else {
+                // User hasn't liked it, so LIKE.
+                await prisma.$transaction([
+                    prisma.like.create({
+                        data: {
+                            videoId: videoId,
+                            userId: userData.userId,
+                            username: userData.userName
+                        }
+                    }),
+                    prisma.videos.update({
+                        where: { id: videoId },
+                        data: { likeCount: { increment: 1 } }
+                    })
+                ]);
+            }
+        } catch (txErr: any) {
+            // A concurrent request already applied the same toggle (duplicate
+            // like P2002 / already-deleted P2025). The winning request kept the
+            // count correct, so treat this as a no-op and return current state.
+            if (txErr?.code !== "P2002" && txErr?.code !== "P2025") {
+                throw txErr;
+            }
         }
 
         const allLikes = await prisma.like.findMany({

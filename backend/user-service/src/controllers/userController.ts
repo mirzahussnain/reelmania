@@ -67,6 +67,42 @@ export const getUser = async (req: Request, res: Response) => {
 };
 
 
+export const getUserByUsername = async (req: Request, res: Response) => {
+  try {
+    const username = req?.params?.username;
+    if (!username) {
+      res.status(400).json({ success: false, message: "Username is missing" });
+      return;
+    }
+
+    // `username` is @unique (indexed) → O(1) lookup. Replaces the client
+    // anti-pattern of downloading all users and filtering by username.
+    const user = await prisma.users.findUnique({
+      where: { username },
+      include: {
+        _count: {
+          select: {
+            followers_followers_following_idTousers: true, // Number of followers
+            followers_followers_follower_idTousers: true,  // Number of people they follow
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({ success: false, message: "User not found" });
+      return;
+    }
+
+    res.status(200).json({ success: true, message: "User Found Successfully", body: user });
+    return;
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error(err);
+    res.status(500).json({ success: false, message: "User not Found", error: errorMsg });
+  }
+};
+
 export const createUser = async (req: Request, res: Response) => {
   try {
     const user = await UserService.createUser(req.body);

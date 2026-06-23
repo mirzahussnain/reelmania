@@ -4,6 +4,7 @@ import express from 'express';
 import {
     createUser,
     getUser,
+    getUserByUsername,
     updateUser,
     deleteUser,
     getUsers,
@@ -17,6 +18,7 @@ const userRouter = express.Router();
 // Public Routes
 userRouter.get("/", getUsers);
 userRouter.post("/create", createUser); // Create a new user
+userRouter.get("/by-username/:username", getUserByUsername) // Get profile by username (O(1))
 userRouter.get("/profile/:userId",getUser) //Get other user profile
 
 // Protected Routes
