@@ -274,6 +274,31 @@ Same hex today, but semantically ambiguous across pages.
 
 ---
 
+## Phase 6.5 — Feed scalability  (½–1 day, backend-only)
+
+**Goal:** keep the Redis-backed feed scalable under many concurrent users. The
+two feed paths (Redis-cached guest `getVideos`, per-user Redis queue
+`getForYouFeed`) are sound, but `generateFeedForUser` has hot-path waste.
+
+### 6.5.1 🟠 Trending recomputed per-user with an unindexed scan
+`feedController.ts:70` runs `videos.findMany({ orderBy: { likeCount: 'desc' }, take: 50 })` on every replenishment fallback, and `likeCount` had no index.
+- Add `@@index([likeCount(sort: Desc)])` (done).
+- Compute trending **once** into a shared Redis list (`trending:videoIds`, ~5min TTL) and have every user's fallback read that instead of scanning the collection.
+
+### 6.5.2 🟠 No concurrency guard on generation
+`feedController.ts:109` fires `generateFeedForUser` un-awaited; rapid requests spawn overlapping generations.
+- Guard with a per-user Redis lock (`SET <feedKey>:lock NX EX 30`); skip if already running.
+
+### 6.5.3 🟡 No cross-run dedup → repeats in feed
+Replenishment excludes recently-interacted videos but not ids already queued.
+- Before `rPush`, filter out ids already present in the queue (`lRange`).
+
+**Acceptance:** trending is a single cached computation shared across users;
+concurrent replenishments don't duplicate work; the feed queue has no repeats.
+NOTE: needs Redis running; verify against the broker/cache.
+
+---
+
 ## Phase 7 — Auth, roles & security  (1 day)
 
 **Goal:** real authorization. Depends on: P4.

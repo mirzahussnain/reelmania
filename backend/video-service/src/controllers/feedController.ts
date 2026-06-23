@@ -3,7 +3,53 @@ import { getRedisClient } from "../utils/redis";
 import prisma from "../utils/dbconnection.config";
 import { getAuth } from "@clerk/express";
 
+const TRENDING_KEY = "trending:videoIds";
+const TRENDING_TTL = 300; // 5 minutes
+
+/**
+ * Trending is global, so compute it once and share it across all users via a
+ * short-lived Redis list instead of running an (indexed) likeCount scan on
+ * every per-user feed replenishment.
+ */
+const getTrendingVideoIds = async (redisClient: any): Promise<string[]> => {
+    try {
+        const cached = await redisClient.lRange(TRENDING_KEY, 0, -1);
+        if (cached && cached.length > 0) return cached;
+    } catch (err) {
+        console.error("Trending cache read error:", err);
+    }
+
+    const trending = await prisma.videos.findMany({
+        orderBy: { likeCount: "desc" },
+        take: 50,
+        select: { id: true },
+    });
+    const ids = trending.map((v: any) => v.id);
+
+    try {
+        if (ids.length > 0) {
+            await redisClient.del(TRENDING_KEY);
+            await redisClient.rPush(TRENDING_KEY, ids);
+            await redisClient.expire(TRENDING_KEY, TRENDING_TTL);
+        }
+    } catch (err) {
+        console.error("Trending cache write error:", err);
+    }
+
+    return ids;
+};
+
 const generateFeedForUser = async (userId: string, redisClient: any, feedKey: string) => {
+    // Per-user lock so overlapping requests don't run duplicate generations.
+    const lockKey = `${feedKey}:lock`;
+    let locked = false;
+    try {
+        locked = (await redisClient.set(lockKey, "1", { NX: true, EX: 30 })) === "OK";
+    } catch (err) {
+        console.error("Feed lock error:", err);
+    }
+    if (!locked) return; // another generation is already in progress
+
     try {
         // Find recent interactions
         const likes = await prisma.like.findMany({
@@ -65,24 +111,30 @@ const generateFeedForUser = async (userId: string, redisClient: any, feedKey: st
             newVideoIds = recommended.map((v: any) => v.id);
         }
 
-        // Cold Start Fallback
+        // Cold Start Fallback — read shared trending cache instead of scanning.
         if (newVideoIds.length < 10) {
-            const trending = await prisma.videos.findMany({
-                orderBy: { likeCount: 'desc' },
-                take: 50,
-                select: { id: true }
-            });
-            // Mix in trending
-            const trendingIds = trending.map((v: any) => v.id);
+            const trendingIds = await getTrendingVideoIds(redisClient);
             newVideoIds = Array.from(new Set([...newVideoIds, ...trendingIds]));
         }
 
-        // Push to Redis
+        // Push to Redis, skipping ids already queued so the user doesn't see
+        // repeats across replenishment runs.
         if (newVideoIds.length > 0) {
-            await redisClient.rPush(feedKey, newVideoIds);
+            const existing: string[] = await redisClient.lRange(feedKey, 0, -1);
+            const existingSet = new Set(existing);
+            const toPush = newVideoIds.filter((id) => !existingSet.has(id));
+            if (toPush.length > 0) {
+                await redisClient.rPush(feedKey, toPush);
+            }
         }
     } catch (err) {
         console.error("Feed Generator Error:", err);
+    } finally {
+        try {
+            await redisClient.del(lockKey);
+        } catch (err) {
+            console.error("Feed lock release error:", err);
+        }
     }
 };
 
@@ -102,18 +154,18 @@ export const getForYouFeed = async (req: Request, res: Response) => {
         const poppedIds = await redisClient.sendCommand(["LPOP", feedKey, "10"]) as string[] | null;
         let videoIds = poppedIds || [];
 
-        // Check if queue needs replenishment in background
-        const queueLength = await redisClient.lLen(feedKey);
-        if (queueLength < 20) {
-            // Asynchronous worker trigger (do not await)
-            generateFeedForUser(userId, redisClient, feedKey);
-        }
-
         if (videoIds.length === 0) {
-            // Await generation just this once if completely empty
+            // Completely empty (cold start): generate synchronously, then pop.
+            // Generation is internally guarded by a per-user lock.
             await generateFeedForUser(userId, redisClient, feedKey);
             const freshPopped = await redisClient.sendCommand(["LPOP", feedKey, "10"]) as string[] | null;
             videoIds = freshPopped || [];
+        } else {
+            // Have items but running low → replenish in the background.
+            const queueLength = await redisClient.lLen(feedKey);
+            if (queueLength < 20) {
+                generateFeedForUser(userId, redisClient, feedKey); // do not await
+            }
         }
 
         if (videoIds.length === 0) {
