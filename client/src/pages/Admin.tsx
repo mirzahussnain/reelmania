@@ -4,7 +4,7 @@ import { userType } from "../types";
 import { toast } from "react-toastify";
 import { useAppSelector } from "../utils/hooks/storeHooks";
 import { Button } from "../shared/components/ui/Button";
-import { APP_ROLES } from "../shared/constants/roles";
+import { ROLES } from "../shared/constants/roles";
 
 // Access is enforced by RoleProtectedRoute (client) and requireAdmin (server);
 // no in-component gate needed.
@@ -84,7 +84,7 @@ const Admin = () => {
             onChange={(e)=>setUsername(e.target.value)}
           />
             <select value={role!=""?role:"Select Role"} onChange={((e)=>setRole(e.target.value))}  className="lg:px-20 px-12 py-2 rounded-md text-center" >
-                {Object.values(APP_ROLES).map((r) => (
+                {Object.values(ROLES).map((r) => (
                   <option key={r} value={r}>{r}</option>
                 ))}
             </select>

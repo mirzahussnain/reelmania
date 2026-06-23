@@ -63,7 +63,9 @@ export const userManagement = async (req: Request, res: Response) => {
       last_name: last_name,
       email: email_addresses[0]?.email_address,
       created_at: email_addresses[0]?.created_at,
-      role: process.env.DEFAULT_USER_ROLE || "Consumer",
+      // Every new user is a Curator by default; Creator is derived once they
+      // upload (use the Studio). See client shared/constants/roles.ts.
+      role: process.env.DEFAULT_USER_ROLE || "Curator",
     };
 
     await rabbitMQService.publishToExchange("user_events", {

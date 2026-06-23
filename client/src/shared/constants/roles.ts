@@ -1,24 +1,34 @@
-// Canonical role taxonomy (Phase 7.3) — the single source of truth shared by
-// the client guards and the Admin role editor.
+// Komorebi role model (Phase 7.3) — per the product vision.
 //
-// Two distinct dimensions, deliberately:
-//  • App role  — stored on the DB user record (users.role). Describes what a
-//    user IS in the product: a Consumer, a Creator, or a Curator.
-//  • Admin     — granted via Clerk publicMetadata.role === "admin". Gates the
-//    /admin area and privileged mutations. NOT a DB app-role.
+// Roles are a SET, not a single mutually-exclusive value:
+//  • Curator — the BASE role. Every user is a Curator by default: they can
+//    discover, connect, and build Vault collections.
+//  • Creator — ADDITIVE. Granted once a user uploads / uses the Studio. A
+//    Creator is still also a Curator (Creator ⊃ Curator).
+//
+// Creator status is DERIVED from activity (whether the user has uploads) rather
+// than stored as a second field, so it needs no schema migration: the moment a
+// user publishes their first video they are a Creator+Curator. `rolesForUser`
+// is the single place that mapping lives.
+//
+// Admin is intentionally NOT part of the product role set — the admin role,
+// dashboard and pages are not yet defined. ADMIN_ROLE exists only to back the
+// existing privileged-route guard (Clerk publicMetadata.role).
 
-export const APP_ROLES = {
-  CONSUMER: "Consumer",
-  CREATOR: "Creator",
+export const ROLES = {
   CURATOR: "Curator",
+  CREATOR: "Creator",
 } as const;
 
-export type AppRole = (typeof APP_ROLES)[keyof typeof APP_ROLES];
+export type Role = (typeof ROLES)[keyof typeof ROLES];
 
-/** Selectable app roles (e.g. the Admin role editor). */
-export const APP_ROLE_VALUES = Object.values(APP_ROLES) as AppRole[];
+/** The role every new user starts with. */
+export const DEFAULT_ROLE: Role = ROLES.CURATOR;
 
-/** Clerk publicMetadata.role value that grants admin access. */
+/** Derive a user's role set. Everyone is a Curator; uploaders are also Creators. */
+export const rolesForUser = (hasUploads: boolean): Role[] =>
+  hasUploads ? [ROLES.CURATOR, ROLES.CREATOR] : [ROLES.CURATOR];
+
+// ── Reserved ────────────────────────────────────────────────────────────────
+// Admin is not a defined product concept yet; this only backs the route guard.
 export const ADMIN_ROLE = "admin" as const;
-
-export type Role = AppRole | typeof ADMIN_ROLE;
