@@ -24,7 +24,7 @@ export const useFollow = (targetUserId: string | undefined) => {
   const [followStatus, setFollowStatus] = useState(false);
 
   useEffect(() => {
-    if (followCheck) setFollowStatus(!!followCheck.isFollowing);
+    if (followCheck) setFollowStatus(!!followCheck.data?.isFollowing);
   }, [followCheck]);
 
   const handleFollow = async () => {

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { getRedisClient } from "../utils/redis";
 import prisma from "../utils/dbconnection.config";
 import { getAuth } from "@clerk/express";
+import { ok, fail } from "../utils/http";
 
 const TRENDING_KEY = "trending:videoIds";
 const TRENDING_TTL = 300; // 5 minutes
@@ -143,7 +144,7 @@ export const getForYouFeed = async (req: Request, res: Response) => {
         const auth = getAuth(req);
         const userId = auth.userId;
         if (!userId) {
-            res.status(401).json({ message: "Unauthorized" });
+            fail(res, 401, "Unauthorized");
             return;
         }
 
@@ -169,7 +170,7 @@ export const getForYouFeed = async (req: Request, res: Response) => {
         }
 
         if (videoIds.length === 0) {
-            res.status(200).send({ message: "No Videos", videos: [] });
+            ok(res, [], undefined, "No Videos");
             return;
         }
 
@@ -186,12 +187,11 @@ export const getForYouFeed = async (req: Request, res: Response) => {
             uploaded_at: video.uploaded_at.toISOString(),
         }));
 
-        res.status(200).send({ message: "For You Feed", videos: formattedVideos });
+        ok(res, formattedVideos, undefined, "For You Feed");
         return;
     } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : "Unknown error";
         console.error("getForYouFeed Error:", err);
-        res.status(500).send(`Operation Failed: ${errorMsg}`);
+        fail(res, 500, "Operation Failed", err);
         return;
     }
 };

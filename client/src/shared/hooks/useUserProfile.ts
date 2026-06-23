@@ -24,14 +24,14 @@ export const useUserProfile = () => {
     isLoading: isProfileLoading,
     isError,
   } = useGetUserByUsernameQuery(cleanUsername as string, { skip: !cleanUsername });
-  const userProfile: userType | null = profileData?.body ?? null;
+  const userProfile: userType | null = profileData?.data ?? null;
 
   // Per-user videos endpoint (replaces fetching ALL videos and filtering).
   const { data: videosData, isLoading: isVideosLoading } = useFetchUserVideosQuery(
     userProfile?.id,
     { skip: !userProfile?.id }
   );
-  const userVideos: VideoType[] = videosData?.videos ?? [];
+  const userVideos: VideoType[] = videosData?.data ?? [];
 
   // O(1) follow-status check (replaces pulling the full follower list).
   const { data: followCheck } = useCheckUserFollowerQuery(
@@ -51,7 +51,7 @@ export const useUserProfile = () => {
 
   // Seed follow status from the O(1) check.
   useEffect(() => {
-    if (followCheck) setFollowStatus(!!followCheck.isFollowing);
+    if (followCheck) setFollowStatus(!!followCheck.data?.isFollowing);
   }, [followCheck]);
 
   useEffect(() => {

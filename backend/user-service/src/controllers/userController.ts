@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 
 import prisma from "../utils/dbconnection.config";
 import { UserService } from "../services/userService";
+import { ok, fail } from "../utils/http";
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
@@ -16,14 +17,13 @@ export const getUsers = async (req: Request, res: Response) => {
     });
 
     if (result.length === 0) {
-      res.status(404).json({ success: false, message: "No user found." });
+      fail(res, 404, "No user found.");
       return;
     }
-    res.status(200).json({ success: true, message: "Users found.", users: result, page, limit });
+    ok(res, result, { page, limit }, "Users found.");
     return;
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ success: false, message: "Something went wrong.", error: errorMsg });
+    fail(res, 500, "Something went wrong.", err);
     return;
   }
 };
@@ -50,19 +50,15 @@ export const getUser = async (req: Request, res: Response) => {
 
     // Check if user exists
     if (!user) {
-      // Respond with 404 if user is not found
-      res.status(404).json({ success: false, message: "User not found" });
+      fail(res, 404, "User not found");
       return;
     }
 
-    // Send successful response
-    res.status(200).json({ success: true, message: "User Found Successfully", body: user });
+    ok(res, user, undefined, "User Found Successfully");
     return;
   } catch (err: unknown) {
-    // Log the error and send a server error response
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
     console.error(err);
-    res.status(500).json({ success: false, message: `User not Found`, error: errorMsg });
+    fail(res, 500, "User not Found", err);
   }
 };
 
@@ -71,7 +67,7 @@ export const getUserByUsername = async (req: Request, res: Response) => {
   try {
     const username = req?.params?.username;
     if (!username) {
-      res.status(400).json({ success: false, message: "Username is missing" });
+      fail(res, 400, "Username is missing");
       return;
     }
 
@@ -90,32 +86,30 @@ export const getUserByUsername = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      res.status(404).json({ success: false, message: "User not found" });
+      fail(res, 404, "User not found");
       return;
     }
 
-    res.status(200).json({ success: true, message: "User Found Successfully", body: user });
+    ok(res, user, undefined, "User Found Successfully");
     return;
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
     console.error(err);
-    res.status(500).json({ success: false, message: "User not Found", error: errorMsg });
+    fail(res, 500, "User not Found", err);
   }
 };
 
 export const createUser = async (req: Request, res: Response) => {
   try {
     const user = await UserService.createUser(req.body);
-    res.status(200).json({ success: true, message: "User Created Successfully", body: user });
+    ok(res, user, undefined, "User Created Successfully");
     return;
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "User already exists") {
-      res.status(400).json({ success: false, message: "User already exists" });
+      fail(res, 400, "User already exists");
       return;
     }
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
     console.error(err);
-    res.status(500).json({ success: false, message: `User Creation Failed`, error: errorMsg });
+    fail(res, 500, "User Creation Failed", err);
   }
 };
 
@@ -123,11 +117,10 @@ export const updateUser = async (req: Request, res: Response) => {
   try {
     const targetedUser = req.params.id || req.params.userId;
     const result = await UserService.updateUser(targetedUser, req.body);
-    res.status(200).json({ success: true, message: "User Updated Successfully", body: result });
+    ok(res, result, undefined, "User Updated Successfully");
     return;
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ success: false, message: `User Updation Failed`, error: errorMsg });
+    fail(res, 500, "User Updation Failed", err);
   }
 };
 
@@ -136,11 +129,11 @@ export const updateUserRole = async (req: Request, res: Response) => {
     const username = req?.params?.username;
     const newRole = req?.body?.newRole
     if (!username) {
-      res.status(401).json({ success: false, message: "User name is missing" });
+      fail(res, 401, "User name is missing");
       return;
     }
     if (!newRole) {
-      res.status(401).json({ success: false, message: "User Role is missing" });
+      fail(res, 401, "User Role is missing");
       return;
     }
     const result = await prisma.users.update({
@@ -154,23 +147,20 @@ export const updateUserRole = async (req: Request, res: Response) => {
       }
     })
 
-    res.status(200).json({ success: true, message: "USER ROLE UPDATED SUCCESSFULLY", data: result })
+    ok(res, result, undefined, "USER ROLE UPDATED SUCCESSFULLY");
     return;
 
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ success: false, message: "OPERATION FAILED", error: errorMsg });
+    fail(res, 500, "OPERATION FAILED", err);
   }
 }
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const targetedId = req.params.id || req.params.userId;
     await UserService.deleteUser(targetedId);
-    res.status(200).json({ success: true, message: "User deleted successfully" });
+    ok(res, null, undefined, "User deleted successfully");
     return;
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ success: false, message: `User deletion failed`, error: errorMsg });
+    fail(res, 500, "User deletion failed", err);
   }
 };
-

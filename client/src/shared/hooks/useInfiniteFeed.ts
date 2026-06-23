@@ -22,9 +22,9 @@ export const useInfiniteFeed = (inView: boolean) => {
     const loadInitial = async () => {
       if (!isSignedIn) {
         fetchAll({}).unwrap().then((res) => {
-          if (res?.videos) {
-            dispatch(setForYouVideos(res.videos));
-            setHasMore(res.videos.length > 0);
+          if (res?.data) {
+            dispatch(setForYouVideos(res.data));
+            setHasMore(res.data.length > 0);
           }
         }).catch(() => toast.error("Failed to fetch trending videos"));
         return;
@@ -34,9 +34,9 @@ export const useInfiniteFeed = (inView: boolean) => {
       if (!token) return; 
 
       fetchForYou({ token }).unwrap().then((res) => {
-        if (res?.videos) {
-          dispatch(setForYouVideos(res.videos));
-          setHasMore(res.videos.length > 0);
+        if (res?.data) {
+          dispatch(setForYouVideos(res.data));
+          setHasMore(res.data.length > 0);
         }
       }).catch(() => toast.error("Failed to fetch personalized feed"));
     }
@@ -56,8 +56,8 @@ export const useInfiniteFeed = (inView: boolean) => {
         if (!token) return;
 
         fetchForYou({ token }).unwrap().then((res) => {
-          if (res?.videos?.length > 0) {
-            dispatch(appendForYouVideos(res.videos));
+          if (res?.data?.length > 0) {
+            dispatch(appendForYouVideos(res.data));
             setHasMore(true);
           } else {
             setHasMore(false);

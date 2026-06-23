@@ -41,8 +41,8 @@ export const useVideoLikes = (videoId: string | undefined) => {
       const userData = { userId: user?.id, userName: user?.username };
       const query = await updateLikes({ videoId, userData, token }).unwrap();
 
-      if (query?.updatedLikes) {
-        setLikes(query.updatedLikes);
+      if (query?.data?.updatedLikes) {
+        setLikes(query.data.updatedLikes);
       }
     } catch (err) {
       console.error(err);
@@ -57,7 +57,7 @@ export const useVideoLikes = (videoId: string | undefined) => {
     getVideoLikes(videoId)
       .unwrap()
       .then((query) => {
-        if (query?.likes) setLikes(query.likes);
+        if (query?.data) setLikes(query.data);
       })
       .catch((err) => console.error(err));
   }, [videoId, getVideoLikes]);

@@ -13,7 +13,7 @@ const Explore = () => {
   // no separate filtered-results slice to maintain.
   const [searchArgs, setSearchArgs] = useState<{ q?: string; type?: string }>({});
   const { data, isFetching } = useFetchAllVideosQuery(searchArgs);
-  const videos: VideoType[] = data?.videos ?? [];
+  const videos: VideoType[] = data?.data ?? [];
 
   return (
     <div className="min-h-dvh w-full pt-20 pb-24 flex flex-col items-center justify-start overflow-y-auto scrollbar-hide bg-gradient-to-br from-surface to-surface-container">

@@ -20,12 +20,12 @@ const NetworkRelations: React.FC = () => {
     skip: !user?.id || !token,
   });
 
-  const { data: followersData, isLoading } = useGetUserFollowersQuery(profileData?.body?.id || "", {
-    skip: !profileData?.body?.id,
+  const { data: followersData, isLoading } = useGetUserFollowersQuery(profileData?.data?.id || "", {
+    skip: !profileData?.data?.id,
   });
 
-  const followers = followersData?.result || [];
-  const totalNodes = followersData?.total || 0;
+  const followers = followersData?.data || [];
+  const totalNodes = followersData?.meta?.total || 0;
 
   if (isLoading) return <Loader />;
 

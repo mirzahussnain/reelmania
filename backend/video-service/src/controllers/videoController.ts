@@ -5,6 +5,7 @@ import { StorageFactory } from "../providers/StorageFactory";
 
 import { getRedisClient } from "../utils/redis";
 import { shuffleArray } from "../utils/shuffleArray";
+import { ok, fail } from "../utils/http";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
@@ -22,8 +23,8 @@ export const getVideos = async (req: Request, res: Response) => {
             if (cachedData) {
                 const parsedPayload = JSON.parse(cachedData);
                 // Shuffle the cached videos so every guest gets a randomized experience
-                parsedPayload.videos = shuffleArray(parsedPayload.videos);
-                res.status(200).send(parsedPayload);
+                const shuffled = shuffleArray(parsedPayload.videos);
+                ok(res, shuffled, { nextCursor: parsedPayload.nextCursor, limit: parsedPayload.limit }, "Videos Fetched Successfully");
                 return;
             }
         } catch (cacheErr) {
@@ -60,35 +61,31 @@ export const getVideos = async (req: Request, res: Response) => {
         });
 
         if (videos.length === 0) {
-            const emptyPayload = { message: "No Video Exists in Database", videos: [], nextCursor: null };
-            res.status(200).send(emptyPayload);
+            ok(res, [], { nextCursor: null }, "No Video Exists in Database");
             return;
         }
 
-        let formattedDateVideos = videos.map((video) => ({
+        const formattedDateVideos = videos.map((video) => ({
             ...video,
             uploaded_at: video.uploaded_at.toISOString(),
         }));
 
         const nextCursor = videos.length === limit ? videos[videos.length - 1].id : null;
-        
-        const payload = { message: "Videos Fetched Successfully", videos: formattedDateVideos, nextCursor, limit };
-        
+
+        // Cache the ORIGINAL (unshuffled) array so the cache is consistent.
+        const cachePayload = { videos: formattedDateVideos, nextCursor, limit };
         try {
-            // Cache the ORIGINAL (unshuffled) array so the cache is consistent
-            await redisClient.setEx(cacheKey, 60, JSON.stringify(payload));
+            await redisClient.setEx(cacheKey, 60, JSON.stringify(cachePayload));
         } catch (cacheErr) {
             console.error("Redis Cache Write Error:", cacheErr);
         }
 
-        // Shuffle the payload just before sending it to the current user
-        payload.videos = shuffleArray(payload.videos);
-        res.status(200).send(payload);
+        // Shuffle just before sending it to the current user.
+        ok(res, shuffleArray(formattedDateVideos), { nextCursor, limit }, "Videos Fetched Successfully");
         return;
     } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : "Unknown error";
         console.error(err);
-        res.status(500).send(`Operation Failed:${errorMsg}`);
+        fail(res, 500, "Operation Failed", err);
         return;
     }
 };
@@ -102,14 +99,14 @@ export const getVideoById=async(req:Request,res:Response)=>{
             }
         })
         if(!result){
-            res.status(200).send({message:"No Video Found",videos:null})
+            fail(res, 404, "No Video Found");
             return;
         }
-        res.status(200).send({message:"Video Found Successfully",video:result})
+        ok(res, result, undefined, "Video Found Successfully");
         return;
     }
     catch(error){
-        res.status(500).send(error)
+        fail(res, 500, "Operation Failed", error);
     }
 }
 
@@ -150,18 +147,17 @@ export const getUserVideos = async (req: Request, res: Response) => {
         const nextCursor =
             paginated && videos.length === limit ? videos[videos.length - 1].id : null;
 
-        res.status(200).send({
-            message: videos.length
+        ok(
+            res,
+            formattedDateVideos,
+            { nextCursor },
+            videos.length
                 ? `${videos.length} videos found`
-                : "User Hasn't Uploaded Any Video Yet",
-            videos: formattedDateVideos,
-            nextCursor,
-        });
+                : "User Hasn't Uploaded Any Video Yet"
+        );
         return;
     } catch (err: unknown) {
-        res
-            .status(500)
-            .send(`Operation Failed:${String(err)}`);
+        fail(res, 500, "Operation Failed", err);
         return;
     }
 };
@@ -173,7 +169,7 @@ export const getLikesByVideoId = async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 20;
 
         if (!videoId) {
-            res.status(400).send("Video Id is missing");
+            fail(res, 400, "Video Id is missing");
             return;
         }
 
@@ -198,11 +194,11 @@ export const getLikesByVideoId = async (req: Request, res: Response) => {
             }
         }));
 
-        res.status(200).send({ message: "Likes Fetched Successfully", likes: mappedLikes, nextCursor });
+        ok(res, mappedLikes, { nextCursor }, "Likes Fetched Successfully");
         return;
     } catch (err: unknown) {
-        res.status(500).send(`Operation Failed:${String(err)}`);
         console.error(err);
+        fail(res, 500, "Operation Failed", err);
         return;
     }
 }
@@ -214,7 +210,7 @@ export const getCommentsByVideoId = async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 20;
 
         if (!videoId) {
-            res.status(400).send("Video Id is missing");
+            fail(res, 400, "Video Id is missing");
             return;
         }
 
@@ -240,11 +236,11 @@ export const getCommentsByVideoId = async (req: Request, res: Response) => {
             text: comment.text
         }));
 
-        res.status(200).send({ message: "Comments Fetched Successfully", comments: mappedComments, nextCursor });
+        ok(res, mappedComments, { nextCursor }, "Comments Fetched Successfully");
         return;
     } catch (err: unknown) {
         console.error(err);
-        res.status(500).send(`Operation Failed:${String(err)}`);
+        fail(res, 500, "Operation Failed", err);
         return;
     }
 }
@@ -253,7 +249,7 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
     try {
         const { fileName, contentType } = req.body;
         if (!fileName || !contentType) {
-            res.status(400).json({ error: "fileName and contentType are required" });
+            fail(res, 400, "fileName and contentType are required");
             return;
         }
 
@@ -261,11 +257,10 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
         const storageProvider = StorageFactory.getProvider();
         const signedUrl = await storageProvider.generateSignedUploadUrl(uniqueName, contentType);
 
-        res.status(200).json({ signedUrl, fileName: uniqueName });
+        ok(res, { signedUrl, fileName: uniqueName }, undefined, "Upload URL generated");
         return;
     } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : "Unknown error";
-        res.status(500).json({ error: `Failed to generate upload URL: ${errorMsg}` });
+        fail(res, 500, "Failed to generate upload URL", err);
     }
 };
 
@@ -299,11 +294,10 @@ export const createVideo = async (req: Request, res: Response) => {
         };
         const result = await prisma.videos.create({ data: videoData });
 
-        res.status(200).json({ message: "Video Created Successfully.", video: result });
+        ok(res, result, undefined, "Video Created Successfully.");
         return;
     } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : "Unknown error";
-        res.status(500).json({ error: `Video is not Stored in Database: ${errorMsg}` });
+        fail(res, 500, "Video is not Stored in Database", err);
         return;
     }
 };
@@ -328,16 +322,15 @@ export const deleteVideo = async (req: Request, res: Response) => {
         if (deleted) {
             const deleteResult = await prisma.videos.delete({ where: { id: videoId } });
             if (deleteResult) {
-                res.status(200).json({ message: "Video Deleted Successfully." });
+                ok(res, null, undefined, "Video Deleted Successfully.");
                 return;
             }
         } else {
-            res.status(500).json({ error: "Video file could not be deleted from storage" });
+            fail(res, 500, "Video file could not be deleted from storage");
             return;
         }
     } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : "Unknown error";
-        res.status(500).json({ error: `Video could not be deleted: ${errorMsg}` });
+        fail(res, 500, "Video could not be deleted", err);
         return;
     }
 };
@@ -382,17 +375,16 @@ export const addNewComment = async (req: Request, res: Response) => {
             text: createdComment.text
         };
 
-        res.status(200).send({ 
-            message: "Comment Posted Successfully", 
-            newVideos: updatedVideo, 
-            videoId: videoId, 
-            newComments: mappedComment,
-            commentsCount: updatedVideo.commentCount 
-        });
+        ok(
+            res,
+            { videoId, comment: mappedComment, commentCount: updatedVideo.commentCount },
+            undefined,
+            "Comment Posted Successfully"
+        );
         return;
     } catch (err: unknown) {
         console.error(err);
-        res.status(500).send(`Operation Failed:${String(err)}`);
+        fail(res, 500, "Operation Failed", err);
         return;
     }
 };
@@ -403,7 +395,8 @@ export const updateLikes = async (req: Request, res: Response) => {
 
     try {
         if (!videoId || !userData?.userId || !userData?.userName) {
-            throw new Error("Video ID or User data is incomplete");
+            fail(res, 400, "Video ID or User data is incomplete");
+            return;
         }
 
         const existingLike = await prisma.like.findUnique({
@@ -464,11 +457,11 @@ export const updateLikes = async (req: Request, res: Response) => {
             }
         }));
 
-        res.status(200).send({ message: "Likes Updated", videoId, updatedLikes: mappedLikes });
+        ok(res, { videoId, updatedLikes: mappedLikes }, undefined, "Likes Updated");
         return;
     } catch (err: unknown) {
         console.error(err);
-        res.status(500).send(`Operation Failed:${String(err)}`);
+        fail(res, 500, "Operation Failed", err);
         return;
     }
 };

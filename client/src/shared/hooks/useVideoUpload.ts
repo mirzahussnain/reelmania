@@ -84,11 +84,12 @@ export const useVideoUpload = (onSuccess?: () => void) => {
 
       // Step 1: Generate Pre-Signed URL
       setIsUploadingToS3(true);
-      const { signedUrl, fileName } = await generateUploadUrl({ 
-        fileName: cachedFile.name, 
-        contentType: cachedFile.type, 
-        token 
+      const uploadUrlRes = await generateUploadUrl({
+        fileName: cachedFile.name,
+        contentType: cachedFile.type,
+        token
       }).unwrap();
+      const { signedUrl, fileName } = uploadUrlRes.data;
 
       // Step 2: Upload directly to S3
       const uploadRes = await fetch(signedUrl, {

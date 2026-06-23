@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import prisma from "../utils/dbconnection.config";
 import { Prisma } from "@prisma/client";
+import { ok, fail } from "../utils/http";
 
 export const getFollowers = async (req: Request, res: Response) => {
   try {
     const userId = req?.params?.userId;
     if (!userId) {
-      res.status(401).json({ success: false, message: "User Id is missing" });
+      fail(res, 401, "User Id is missing");
       return;
     }
 
@@ -41,18 +42,10 @@ export const getFollowers = async (req: Request, res: Response) => {
       where: { following_id: userId },
     });
 
-    res.status(200).json({
-      success: true,
-      message: "Followers Fetched Successfully",
-      result,
-      page,
-      limit,
-      total: totalFollowers,
-    });
+    ok(res, result, { page, limit, total: totalFollowers }, "Followers Fetched Successfully");
     return;
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ success: false, message: "Operation Failed", error: errorMsg });
+    fail(res, 500, "Operation Failed", err);
     return;
   }
 };
@@ -63,7 +56,7 @@ export const updateFollower = async (req: Request, res: Response) => {
     const following_id: string = req?.params?.userId;
 
     if (!follower_id || !following_id) {
-      res.status(400).json({ success: false, message: "Follower or Following Id is missing" });
+      fail(res, 400, "Follower or Following Id is missing");
       return;
     }
 
@@ -75,13 +68,13 @@ export const updateFollower = async (req: Request, res: Response) => {
           following_id,
         },
       });
-      res.status(200).json({ success: true, message: "Follower Added Successfully", result });
+      ok(res, result, undefined, "Follower Added Successfully");
       return;
     } catch (createErr: unknown) {
       // P2002 means Unique Constraint Failed (They are already following)
       if (createErr instanceof Prisma.PrismaClientKnownRequestError && createErr.code === "P2002") {
         // Safe to Unfollow (Delete)
-        const result = await prisma.followers.delete({
+        await prisma.followers.delete({
           where: {
             follower_id_following_id: {
               follower_id: follower_id,
@@ -89,17 +82,16 @@ export const updateFollower = async (req: Request, res: Response) => {
             },
           },
         });
-        res.status(200).json({ success: true, message: "Unfollowed", result: null });
+        ok(res, null, undefined, "Unfollowed");
         return;
       }
-      
+
       // If it's a different error, throw it to the main catch block
       throw createErr;
     }
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
     console.error(err);
-    res.status(500).json({ success: false, message: "Operation Failed", error: errorMsg });
+    fail(res, 500, "Operation Failed", err);
   }
 };
 
@@ -109,7 +101,7 @@ export const checkFollower = async (req: Request, res: Response) => {
     const follower_id = req.query.followerId as string;
 
     if (!following_id || !follower_id) {
-      res.status(400).json({ success: false, message: "Follower or Following Id is missing" });
+      fail(res, 400, "Follower or Following Id is missing");
       return;
     }
 
@@ -122,9 +114,8 @@ export const checkFollower = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(200).json({ success: true, isFollowing: !!connection });
+    ok(res, { isFollowing: !!connection }, undefined, "Follow status fetched");
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ success: false, message: "Operation Failed", error: errorMsg });
+    fail(res, 500, "Operation Failed", err);
   }
 };

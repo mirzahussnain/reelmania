@@ -130,7 +130,7 @@ export const videoApi = createApi({
                   socket.connect();
                   if (socket) {
                    
-                    socket.emit(SOCKET_EVENTS.NEW_COMMENT, { videoId: data?.videoId,newComment:data?.newComments,newVideo:data?.newVideos,commentCount:data?.commentsCount });
+                    socket.emit(SOCKET_EVENTS.NEW_COMMENT, { videoId: data?.data?.videoId, newComment: data?.data?.comment, commentCount: data?.data?.commentCount });
                   }
                 } catch(err) {
                     console.error(err)
@@ -154,7 +154,7 @@ export const videoApi = createApi({
                   const socket = connectSocket("");
                   socket.connect();
                   if (socket) {
-                    socket.emit(SOCKET_EVENTS.LIKE_UPDATED, { videoId: data?.videoId, updatedLikes: data?.updatedLikes });
+                    socket.emit(SOCKET_EVENTS.LIKE_UPDATED, { videoId: data?.data?.videoId, updatedLikes: data?.data?.updatedLikes });
                   }
                 } catch(err) {
                     console.error(err)

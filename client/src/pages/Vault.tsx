@@ -26,14 +26,14 @@ const Vault: React.FC = () => {
     skip: !user?.id || !token,
   });
 
-  const userProfile = profileData?.body;
+  const userProfile = profileData?.data;
 
   // Per-user videos endpoint (replaces fetching ALL videos and filtering).
   const { data: videosData, isLoading: isLoadingVideos } = useFetchUserVideosQuery(
     userProfile?.id,
     { skip: !userProfile?.id }
   );
-  const userVideos: VideoType[] = videosData?.videos ?? [];
+  const userVideos: VideoType[] = videosData?.data ?? [];
   const [activeTab, setActiveTab] = useState("My Uploads");
 
   if (profileLoading) return <Loader />;

@@ -40,7 +40,7 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
   const [followUser] = useUpdateUserFollowerMutation();
 
   const isOwnProfile = Boolean(user?.id && video?.uploaded_by?.id && user.id === video.uploaded_by.id);
-  const isFollowing = Boolean(checkFollowerData?.isFollowing);
+  const isFollowing = Boolean(checkFollowerData?.data?.isFollowing);
 
   const handleConnect = async () => {
     try {
@@ -70,7 +70,7 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
           {/* Reusable Avatar Connect Badge */}
           <AvatarConnectBadge 
             username={video?.uploaded_by?.username || "Unknown"}
-            avatarUrl={uploaderProfile?.body?.avatar_url}
+            avatarUrl={uploaderProfile?.data?.avatar_url}
             sizeClassName="w-12 h-12 text-lg"
             onConnect={handleConnect}
             isOwnProfile={isOwnProfile}

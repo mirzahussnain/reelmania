@@ -78,7 +78,7 @@ const VideoInfo = () => {
             <div className="flex justify-between items-center mb-4">
               <Link to={`/users/@${videoState.uploaded_by?.username}`} className="flex items-center gap-3 group">
                 <img
-                  src={videoUser?.body?.avatar_url || "/default-avatar.png"}
+                  src={videoUser?.data?.avatar_url || "/default-avatar.png"}
                   alt="user"
                   className="w-12 h-12 rounded-full object-cover border border-outline-variant/30 group-hover:border-primary transition-colors"
                 />
@@ -92,7 +92,7 @@ const VideoInfo = () => {
                 </div>
               </Link>
 
-              {videoUser?.body?.id !== currentUser?.id && (
+              {videoUser?.data?.id !== currentUser?.id && (
                 <Button
                   variant="unstyled"
                   className={cn(

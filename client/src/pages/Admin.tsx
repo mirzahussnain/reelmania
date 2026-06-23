@@ -66,7 +66,7 @@ const Admin = () => {
         if(queryRan) return;
         const query=await getUsers().unwrap();
         if(query){
-            setUsers(query?.users)
+            setUsers(query?.data)
             setQueryRan(true);
         }
 

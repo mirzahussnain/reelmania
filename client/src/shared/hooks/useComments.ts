@@ -50,7 +50,9 @@ export const useComments = (video: VideoType | null | undefined) => {
       if (query) {
         setCommentText("");
         toast.success(query?.message);
-        setVideoComments((prev) => [query?.newComments, ...prev]);
+        if (query?.data?.comment) {
+          setVideoComments((prev) => [query.data.comment, ...prev]);
+        }
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to post comment.");
@@ -65,8 +67,8 @@ export const useComments = (video: VideoType | null | undefined) => {
       const fetchComments = async (videoId: string) => {
         try {
           const query = await getComments(videoId).unwrap();
-          if (query?.comments) {
-            setVideoComments(query.comments);
+          if (query?.data) {
+            setVideoComments(query.data);
           }
         } catch (err) {
           console.error(err);

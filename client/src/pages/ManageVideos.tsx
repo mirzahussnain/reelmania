@@ -35,7 +35,7 @@ const ManageVideos = () => {
   useEffect(() => {
     if (data) {
 
-      setUserVideos(data?.videos);
+      setUserVideos(data?.data);
     }
   }, [data]);
 

@@ -66,7 +66,7 @@ export const useVideoDetails = () => {
       if (!videoState && videoId) {
         try {
           const query = await getVideo(videoId).unwrap();
-          if (query?.video) setVideoState(query.video);
+          if (query?.data) setVideoState(query.data);
         } catch (err) {
           console.error(err);
         }
