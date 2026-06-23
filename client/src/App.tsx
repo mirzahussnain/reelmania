@@ -13,6 +13,7 @@ import {useGetMyProfileQuery} from "./utils/store/features/user/userApi";
 import { useAppDispatch, useAppSelector } from "./utils/hooks/storeHooks";
 import { userSignedIn, userSignedOut } from "./utils/store/features/user/userSlice";
 import { APP_ROUTES } from "./app/routes.config";
+import { RoleProtectedRoute } from "./shared/components/RoleProtectedRoute";
 import { RootState } from "./utils/store/store";
 import { setToken } from "./utils/store/features/user/authSlice";
 
@@ -32,11 +33,11 @@ const ProtectedRoute = () => {
   return <Outlet />;
 };
 
-// Routes that need no authentication (incl. the "*" catch-all) vs. routes
-// gated behind sign-in. Admin ("role:admin") is sign-in gated today and will
-// be split out behind a RoleProtectedRoute in Phase 7.
+// Routes grouped by access: public (incl. the "*" catch-all), sign-in only,
+// and admin-only (gated by RoleProtectedRoute).
 const publicRoutes = APP_ROUTES.filter((r) => r.access === "public");
-const protectedRoutes = APP_ROUTES.filter((r) => r.access !== "public");
+const authRoutes = APP_ROUTES.filter((r) => r.access === "auth");
+const adminRoutes = APP_ROUTES.filter((r) => r.access === "role:admin");
 
 // Main App Component
 const App = () => {
@@ -97,7 +98,14 @@ const App = () => {
 
             {/* Protected routes — require sign-in */}
             <Route element={<ProtectedRoute />}>
-              {protectedRoutes.map(({ path, component: Component }) => (
+              {authRoutes.map(({ path, component: Component }) => (
+                <Route key={path} path={path} element={<Component />} />
+              ))}
+            </Route>
+
+            {/* Admin routes — require an admin role (client + server enforced) */}
+            <Route element={<RoleProtectedRoute require="admin" />}>
+              {adminRoutes.map(({ path, component: Component }) => (
                 <Route key={path} path={path} element={<Component />} />
               ))}
             </Route>

@@ -1,7 +1,7 @@
-export {}
+import type { Role } from './shared/constants/roles'
 
-// Create a type for the roles
-export type Roles = 'admin' | 'moderator'
+// Canonical role type (single source of truth in shared/constants/roles.ts).
+export type Roles = Role
 
 declare global {
   interface CustomJwtSessionClaims {

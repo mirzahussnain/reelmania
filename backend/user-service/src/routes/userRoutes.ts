@@ -1,5 +1,3 @@
-import { Request, Response } from "express";
-
 import express from 'express';
 import {
     createUser,
@@ -10,8 +8,7 @@ import {
     getUsers,
     updateUserRole
 } from '../controllers/userController';
-import { requireAuth } from "@clerk/express";
-import { authMiddleware } from "../middlewares/authMiddleware";
+import { authMiddleware, requireAdmin } from "../middlewares/authMiddleware";
 
 const userRouter = express.Router(); 
 
@@ -27,13 +24,8 @@ userRouter.get("/profile/:userId",getUser) //Get other user profile
     userRouter.get("/:userId/myprofile",authMiddleware,getUser); // Get user own profile
     userRouter.put("/:userId/myprofile", authMiddleware,updateUser); // Update user profile
     userRouter.delete("/:userId/myprofile",authMiddleware, deleteUser); // Delete user profile
-    userRouter.put("/:username/role",authMiddleware,updateUserRole)
 
-
-    // User Videos Protected Routes
-   
-    userRouter.get("/:userId/videos/:videoId",requireAuth({apiUrl:"/erros/sign-in"})); // Get specific video
-    userRouter.put("/:userId/videos/:videoId",requireAuth({apiUrl:"/erros/sign-in"})); // Update specific video
-    
+    // Role changes are admin-only (previously any signed-in user could call this).
+    userRouter.put("/:username/role", authMiddleware, requireAdmin, updateUserRole);
 
 export default userRouter;

@@ -1,22 +1,15 @@
-
-import {  redirect } from "react-router-dom"
-import { checkRole } from "../utils/functions/roles";
 import { FormEvent, useEffect, useState } from "react";
 import { useLazyGetUsersQuery, useLazyUpdateUserRoleQuery } from "../utils/store/features/user/userApi";
 import { userType } from "../types";
 import { toast } from "react-toastify";
 import { useAppSelector } from "../utils/hooks/storeHooks";
 import { Button } from "../shared/components/ui/Button";
+import { APP_ROLES } from "../shared/constants/roles";
 
-
-
-
+// Access is enforced by RoleProtectedRoute (client) and requireAdmin (server);
+// no in-component gate needed.
 const Admin = () => {
 
-   const isAdmin=checkRole("admin");
-   if(!isAdmin){
-    redirect("/foryou")
-   }
    const [username,setUsername]=useState("");
    const [users,setUsers]=useState<userType[]>()
    const [role,setRole]=useState("");
@@ -91,8 +84,9 @@ const Admin = () => {
             onChange={(e)=>setUsername(e.target.value)}
           />
             <select value={role!=""?role:"Select Role"} onChange={((e)=>setRole(e.target.value))}  className="lg:px-20 px-12 py-2 rounded-md text-center" >
-                <option className="w-full" value={"Creator"}>Creator</option>
-                <option value="Consumer">Consumer</option>
+                {Object.values(APP_ROLES).map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
             </select>
             <Button variant="unstyled" className="px-4 py-3 bg-surface-container-high text-on-surface rounded-xl"
             type="button" onClick={()=>findUser()}>Find User</Button>
