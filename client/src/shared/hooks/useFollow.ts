@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { useAppSelector } from "../../utils/hooks/storeHooks";
-import { RootState } from "../../utils/store/store";
+import { useCurrentUser } from "./useCurrentUser";
 import {
   useCheckUserFollowerQuery,
   useUpdateUserFollowerMutation,
@@ -12,8 +11,7 @@ import {
  * check-follower endpoint; the toggle is optimistic and reverts on failure.
  */
 export const useFollow = (targetUserId: string | undefined) => {
-  const { token } = useAppSelector((state: RootState) => state.auth);
-  const currentUser = useAppSelector((state: RootState) => state.user);
+  const { user: currentUser, token } = useCurrentUser();
   const [followUser] = useUpdateUserFollowerMutation();
 
   const { data: followCheck } = useCheckUserFollowerQuery(

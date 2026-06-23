@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useUploadVideoMutation, useGenerateUploadUrlMutation } from "../../utils/store/features/video/videoApi";
-import { useAppSelector } from "../../utils/hooks/storeHooks";
-import { RootState } from "../../utils/store/store";
+import { useCurrentUser } from "./useCurrentUser";
 import { toast } from "react-toastify";
 
 export const useVideoUpload = (onSuccess?: () => void) => {
@@ -12,9 +11,8 @@ export const useVideoUpload = (onSuccess?: () => void) => {
   const [timeLeft, setTimeLeft] = useState(40);
   const [isUploaded, setIsUploaded] = useState(false);
 
-  const { token } = useAppSelector((state: RootState) => state.auth);
-  const user = useAppSelector((state: RootState) => state.user);
-  
+  const { user, token } = useCurrentUser();
+
   const [postToMongo, { isLoading: isSavingMetadata }] = useUploadVideoMutation();
   const [generateUploadUrl] = useGenerateUploadUrlMutation();
   

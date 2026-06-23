@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { useAuth } from "@clerk/clerk-react";
-import { useAppSelector } from "../../utils/hooks/storeHooks";
-import { RootState } from "../../utils/store/store";
+import { useCurrentUser } from "./useCurrentUser";
 import { useGetUserProfileQuery } from "../../utils/store/features/user/userApi";
 import { useLazyFetchVideoByIdQuery } from "../../utils/store/features/video/videoApi";
 import { VideoType } from "../../types";
@@ -19,8 +17,7 @@ export const useVideoDetails = () => {
   const [videoState, setVideoState] = useState<VideoType | null>(locationState || null);
   // Derive the current user directly from the store (live) rather than copying
   // it into local state once, which previously went stale.
-  const user = useAppSelector((state: RootState) => state.user);
-  const { isSignedIn } = useAuth();
+  const { user, isSignedIn } = useCurrentUser();
 
   const { data: videoUser } = useGetUserProfileQuery(videoState?.uploaded_by?.id, {
     skip: !videoState?.uploaded_by?.id,

@@ -7,8 +7,7 @@ import {
 } from "../../utils/store/features/video/videoApi";
 import { useSocket } from "../providers/SocketProvider";
 import { SOCKET_EVENTS, LikesChangedPayload } from "../constants/socketEvents";
-import { useAppSelector } from "../../utils/hooks/storeHooks";
-import { RootState } from "../../utils/store/store";
+import { useCurrentUser } from "./useCurrentUser";
 
 /**
  * Likes for a single video: initial load, the like/unlike toggle, and live
@@ -18,8 +17,7 @@ import { RootState } from "../../utils/store/store";
 export const useVideoLikes = (videoId: string | undefined) => {
   const [getVideoLikes] = useLazyGetLikesByVideoIdQuery();
   const [updateLikes] = useUpdateLikesMutation();
-  const { token } = useAppSelector((state: RootState) => state.auth);
-  const user = useAppSelector((state: RootState) => state.user);
+  const { user, token } = useCurrentUser();
   const { socket, joinVideo, leaveVideo } = useSocket();
 
   const [likes, setLikes] = useState<VideoLikes[]>();

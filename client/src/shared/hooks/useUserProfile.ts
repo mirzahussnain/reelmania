@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useAppSelector } from "../../utils/hooks/storeHooks";
-import { RootState } from "../../utils/store/store";
+import { useCurrentUser } from "./useCurrentUser";
 import {
   useGetUserByUsernameQuery,
   useCheckUserFollowerQuery,
@@ -13,8 +12,7 @@ import { userType, VideoType } from "../../types";
 
 export const useUserProfile = () => {
   const { username } = useParams<{ username: string }>();
-  const currentUser = useAppSelector((state: RootState) => state.user);
-  const { token } = useAppSelector((state: RootState) => state.auth);
+  const { user: currentUser, token } = useCurrentUser();
 
   const cleanUsername = username?.replace("@", "");
 

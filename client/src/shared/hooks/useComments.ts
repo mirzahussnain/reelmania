@@ -1,15 +1,13 @@
 import { useState, useEffect, ChangeEvent } from "react";
-import { useAppSelector } from "../../utils/hooks/storeHooks";
-import { RootState } from "../../utils/store/store";
 import { useAddNewCommentMutation, useLazyGetCommentsByVideoIdQuery } from "../../utils/store/features/video/videoApi";
 import { useSocket } from "../providers/SocketProvider";
+import { useCurrentUser } from "./useCurrentUser";
 import { SOCKET_EVENTS, CommentAddedPayload } from "../constants/socketEvents";
 import { toast } from "react-toastify";
 import { CommentType, VideoType } from "../../types";
 
 export const useComments = (video: VideoType | null | undefined) => {
-  const user = useAppSelector((state: RootState) => state.user);
-  const token = useAppSelector((state: RootState) => state.auth.token);
+  const { user, token } = useCurrentUser();
   
   const [commentText, setCommentText] = useState("");
   const [videoComments, setVideoComments] = useState<CommentType[]>([]);

@@ -7,8 +7,7 @@ import { FiShoppingBag } from "react-icons/fi";
 import { AvatarConnectBadge } from "./AvatarConnectBadge";
 import { Button } from "./ui/Button";
 import { useGetUserProfileQuery, useUpdateUserFollowerMutation, useCheckUserFollowerQuery } from "../../utils/store/features/user/userApi";
-import { useAppSelector } from "../../utils/hooks/storeHooks";
-import { RootState } from "../../utils/store/store";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 import { toast } from "react-toastify";
 
 interface VideoInfoOverlayProps {
@@ -18,8 +17,7 @@ interface VideoInfoOverlayProps {
 export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
-  const user = useAppSelector((state: RootState) => state.user);
-  const { token } = useAppSelector((state: RootState) => state.auth);
+  const { user, token } = useCurrentUser();
 
   // Dynamically fetch the uploader's profile to get their Clerk avatar
   const { data: uploaderProfile } = useGetUserProfileQuery(video?.uploaded_by?.id, {
