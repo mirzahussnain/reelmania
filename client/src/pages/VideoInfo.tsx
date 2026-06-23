@@ -11,6 +11,7 @@ import { useComments } from "../shared/hooks/useComments";
 import { CommentItem } from "../shared/components/CommentItem";
 import { CommentForm } from "../shared/components/CommentForm";
 import { cn } from "../shared/utils/cn";
+import { Button } from "../shared/components/ui/Button";
 
 const VideoInfo = () => {
   const navigateTo = useNavigate();
@@ -47,12 +48,13 @@ const VideoInfo = () => {
       <div className="w-full max-w-[1200px] h-full flex flex-col lg:flex-row bg-surface-container/30 backdrop-blur-3xl shadow-2xl relative z-10">
         
         {/* Close Button */}
-        <button
+        <Button
+          variant="unstyled"
           className="absolute top-4 left-4 z-50 p-3 rounded-full bg-surface-container/50 backdrop-blur-md text-on-surface hover:text-primary hover:bg-surface-container transition-colors border border-outline-variant/30"
           onClick={() => window.history.back()}
         >
           <FaX />
-        </button>
+        </Button>
 
         {/* Video Player Section */}
         <div className="flex-1 h-[40vh] lg:h-full bg-surface-container-lowest/80 flex items-center justify-center relative border-r border-outline-variant/20 shadow-inner">
@@ -91,17 +93,18 @@ const VideoInfo = () => {
               </Link>
 
               {videoUser?.body?.id !== currentUser?.id && (
-                <button
+                <Button
+                  variant="unstyled"
                   className={cn(
                     "px-5 py-1.5 rounded-full text-sm font-bold transition-all",
-                    followStatus 
-                      ? "bg-surface-container text-on-surface hover:bg-surface-container-high border border-outline-variant/20" 
+                    followStatus
+                      ? "bg-surface-container text-on-surface hover:bg-surface-container-high border border-outline-variant/20"
                       : "bg-primary text-on-primary hover:bg-primary-container hover:glow-primary"
                   )}
                   onClick={isSignedIn ? handleFollow : () => navigateTo("/sign-in")}
                 >
                   {followStatus ? "Following" : "Follow"}
-                </button>
+                </Button>
               )}
             </div>
 
@@ -129,7 +132,8 @@ const VideoInfo = () => {
           <div className="w-full flex-1 overflow-y-auto scrollbar-hide flex flex-col bg-surface-container-lowest/50">
             <div className="sticky top-0 w-full flex justify-between items-center p-4 bg-surface-container/90 backdrop-blur-md border-b border-outline-variant/20 z-10">
               <h3 className="text-on-surface font-semibold">Comments</h3>
-              <button
+              <Button
+                variant="unstyled"
                 className={cn(
                   "text-xl transition-colors",
                   filter ? "text-primary glow-primary rounded-full" : "text-on-surface-variant"
@@ -137,7 +141,7 @@ const VideoInfo = () => {
                 onClick={() => setFilter((prev) => !prev)}
               >
                 <div className="flex items-center"><IoFilter /> {filter ? <IoIosArrowRoundUp /> : <IoIosArrowRoundDown />}</div>
-              </button>
+              </Button>
             </div>
 
             {videoComments?.length > 0 ? (
@@ -164,12 +168,13 @@ const VideoInfo = () => {
             )
           ) : (
             <div className="w-full p-4 border-t border-outline-variant/20 bg-surface-container/50 backdrop-blur-md">
-              <button
+              <Button
+                variant="unstyled"
                 className="w-full py-3 bg-primary/20 text-primary font-semibold rounded-xl hover:bg-primary hover:text-on-primary transition-colors"
                 onClick={() => navigateTo("/sign-in")}
               >
                 Sign in to comment
-              </button>
+              </Button>
             </div>
           )}
 

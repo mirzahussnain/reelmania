@@ -4,6 +4,7 @@ import Modal from "react-modal";
 import { MutatingDots } from "react-loader-spinner";
 import { useVideoUpload } from "../shared/hooks/useVideoUpload";
 import { cn } from "../shared/utils/cn";
+import { Button } from "../shared/components/ui/Button";
 
 type Props = {
   isOpen: boolean;
@@ -86,14 +87,15 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
                 {fileURL ? (
                   <div className="w-full h-full relative rounded-xl overflow-hidden glow-primary group">
                     <video className="w-full h-full object-cover" src={fileURL} autoPlay loop muted />
-                    <button
+                    <Button
+                      variant="unstyled"
                       className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-primary/80 text-white rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all"
                       title="Change Video"
                       onClick={(e) => { e.stopPropagation(); triggerFileInput(); }}
                       type="button"
                     >
                       <FaExchangeAlt />
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <div className="flex flex-col justify-center items-center text-on-surface-variant group-hover:text-primary transition-colors">
@@ -144,21 +146,23 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
             </div>
 
             <div className="w-full flex justify-end gap-3 pt-6 mt-4 border-t border-white/5">
-              <button
+              <Button
+                variant="unstyled"
                 type="button"
                 onClick={handleClose}
                 className="px-6 py-2.5 rounded-full text-on-surface-variant font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
                 disabled={isPending}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="unstyled"
                 type="submit"
                 className="px-8 py-2.5 bg-primary text-on-primary font-bold rounded-full hover:bg-primary-container hover:glow-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isPending || !fileURL || !title.trim()}
               >
                 {isPending ? "Uploading..." : "Publish"}
-              </button>
+              </Button>
             </div>
           </div>
 

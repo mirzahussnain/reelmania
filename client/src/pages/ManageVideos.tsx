@@ -9,6 +9,7 @@ import {  useAppSelector } from "../utils/hooks/storeHooks";
 import { RootState } from "../utils/store/store";
 import { VideoType } from "../types";
 import Loader from "../components/Loader";
+import { Button } from "../shared/components/ui/Button";
 
 
 const ManageVideos = () => {
@@ -48,12 +49,13 @@ const ManageVideos = () => {
               bg-gradient-to-r from-red-500/30 to-red-700 lg:rounded-t-2xl"
           >
             <h2 className="ml-6 mt-2 text-xl">All Your Videos</h2>
-            <button
+            <Button
+              variant="unstyled"
               className="rounded-full p-2 bg-red-500 hover:bg-red-700 text-white mr-3"
               onClick={openModal}
             >
               <FaPlus />
-            </button>
+            </Button>
           </div>
 
           {userVideos?.length > 0 ? (

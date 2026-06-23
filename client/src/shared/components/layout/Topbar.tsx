@@ -5,6 +5,7 @@ import { FaCog, FaBell } from "react-icons/fa";
 import { useAppSelector } from "../../../utils/hooks/storeHooks";
 import { RootState } from "../../../utils/store/store";
 import { cn } from "../../utils/cn";
+import { Button } from "../ui/Button";
 
 export const Topbar: React.FC = () => {
   const { isSignedIn } = useUser();
@@ -50,12 +51,12 @@ export const Topbar: React.FC = () => {
       <div className="flex items-center gap-6 w-[120px] justify-end">
         {isSignedIn && user ? (
           <>
-            <button className="text-on-surface-variant hover:text-on-surface transition-colors hover:scale-110 drop-shadow-md">
+            <Button variant="unstyled" className="text-on-surface-variant hover:text-on-surface transition-colors hover:scale-110 drop-shadow-md">
               <FaBell className="text-[22px]" />
-            </button>
-            <button className="text-on-surface-variant hover:text-on-surface transition-colors hover:scale-110 drop-shadow-md">
+            </Button>
+            <Button variant="unstyled" className="text-on-surface-variant hover:text-on-surface transition-colors hover:scale-110 drop-shadow-md">
               <FaCog className="text-[22px]" />
-            </button>
+            </Button>
             <div className="ml-2 hover:scale-105 transition-transform hover:glow-primary rounded-full">
               <UserButton
                 appearance={{ elements: { avatarBox: { width: "2.5rem", height: "2.5rem" } } }}
@@ -65,12 +66,9 @@ export const Topbar: React.FC = () => {
             </div>
           </>
         ) : (
-          <button
-            className="px-6 py-2 bg-primary text-on-primary font-bold rounded-full hover:bg-primary-container hover:glow-primary transition-all whitespace-nowrap"
-            onClick={() => navigateTo("/sign-in")}
-          >
+          <Button className="text-base font-bold" onClick={() => navigateTo("/sign-in")}>
             Sign in
-          </button>
+          </Button>
         )}
       </div>
 

@@ -1,6 +1,8 @@
 import React from "react";
 import { userType } from "../../../types";
 import { HiOutlineUserAdd, HiOutlineUserRemove } from "react-icons/hi";
+import { StatBlock } from "../ui/StatBlock";
+import { Button } from "../ui/Button";
 
 interface UserProfileHeaderProps {
   userProfile: userType;
@@ -21,8 +23,8 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
   handleFollow,
   className = "pt-8 md:pt-16"
 }) => {
-  // Mocking C-Score and Bio based on Figma design since they don't exist in DB yet
-  const cScore = 98;
+  // Bio and C-Score are not modelled in the DB yet. Bio uses placeholder copy;
+  // C-Score shows "soon" until the scoring job ships (no fabricated number).
   const bio = "Curating the finest cuts of neo-tokyo drift and digital melancholy. Syncing timelines since 2024.";
 
   return (
@@ -52,25 +54,18 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
 
       {/* Stats Block */}
       <div className="card-glass flex items-center gap-8 md:gap-16 px-8 md:px-16 py-6 mt-10">
-        <div className="flex flex-col items-center">
-          <span className="text-2xl md:text-3xl font-syne font-bold text-primary">{followerCount.toLocaleString()}</span>
-          <span className="label-meta mt-1">Network</span>
-        </div>
+        <StatBlock value={followerCount.toLocaleString()} label="Network" tone="primary" align="center" />
         <div className="divider-v"></div>
-        <div className="flex flex-col items-center">
-          <span className="text-2xl md:text-3xl font-syne font-bold text-on-surface">{videoCount}</span>
-          <span className="label-meta mt-1">Archives</span>
-        </div>
+        <StatBlock value={videoCount} label="Archives" align="center" />
         <div className="divider-v"></div>
-        <div className="flex flex-col items-center">
-          <span className="text-2xl md:text-3xl font-syne font-bold text-secondary">{cScore}</span>
-          <span className="label-meta mt-1">C-Score</span>
-        </div>
+        {/* C-Score not modelled yet — placeholder until the scoring job ships. */}
+        <StatBlock value="soon" label="C-Score" tone="secondary" align="center" />
       </div>
 
       {/* Connect Button */}
       {!isCurrentUser && (
-        <button
+        <Button
+          variant="unstyled"
           onClick={handleFollow}
           className={`mt-10 px-8 py-3 rounded-full flex items-center gap-2 font-bold transition-all duration-300 hover:scale-105 ${followStatus
             ? "bg-surface-variant text-on-surface hover:bg-surface-variant/80 border border-outline-variant/20"
@@ -88,7 +83,7 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
               Connect
             </>
           )}
-        </button>
+        </Button>
       )}
     </div>
   );

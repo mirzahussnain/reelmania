@@ -3,6 +3,7 @@ import { FaPlay, FaPause } from "react-icons/fa";
 import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
 import { BiDotsHorizontalRounded } from "react-icons/bi";
 import { cn } from "../utils/cn";
+import { Button } from "./ui/Button";
 
 interface VideoControlsOverlayProps {
   isPlaying: boolean;
@@ -65,7 +66,8 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
         
         {/* Top Left: Settings / Speed Control */}
         <div className="relative">
-          <button 
+          <Button
+            variant="unstyled"
             className="p-2 text-on-media drop-shadow-md hover:scale-110 transition-transform"
             onClick={(e) => {
               e.stopPropagation();
@@ -74,7 +76,7 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
             }}
           >
             <BiDotsHorizontalRounded className="text-[28px]" />
-          </button>
+          </Button>
           
           {/* Settings Menu Dropdown */}
           {showSettings && (
@@ -83,8 +85,9 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
                 Speed
               </div>
               {[0.5, 1, 1.5, 2].map((rate) => (
-                <button
+                <Button
                   key={rate}
+                  variant="unstyled"
                   className={cn(
                     "px-4 py-2 text-sm text-left transition-colors hover:bg-surface-container-high",
                     playbackRate === rate ? "text-tertiary font-bold" : "text-on-media font-medium"
@@ -96,7 +99,7 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
                   }}
                 >
                   {rate === 1 ? "Normal" : `${rate}x`}
-                </button>
+                </Button>
               ))}
             </div>
           )}
@@ -129,7 +132,8 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
             />
           </div>
           
-          <button 
+          <Button
+            variant="unstyled"
             className="p-2 text-on-media drop-shadow-md hover:scale-110 transition z-10 rounded-full"
             onClick={(e) => {
               e.stopPropagation();
@@ -139,7 +143,7 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
             }}
           >
             {isMuted || volume === 0 ? <HiVolumeOff className="text-2xl" /> : <HiVolumeUp className="text-2xl" />}
-          </button>
+          </Button>
         </div>
       </div>
 

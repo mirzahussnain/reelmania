@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FiPlus, FiCheck } from "react-icons/fi";
 import { cn } from "../utils/cn";
+import { Button } from "./ui/Button";
 
 interface AvatarConnectBadgeProps {
   username: string;
@@ -98,13 +99,14 @@ export const AvatarConnectBadge: React.FC<AvatarConnectBadgeProps> = ({
       {status !== "hidden" && (
         <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
           {status === "idle" && (
-            <button
+            <Button
+              variant="unstyled"
               onClick={handleConnect}
               className="bg-primary text-on-primary rounded-full p-[3px] glow-primary-sm hover:scale-110 hover:bg-on-surface hover:text-primary transition-transform duration-200"
               title="Connect"
             >
               <FiPlus className="w-3 h-3" strokeWidth={3.5} />
-            </button>
+            </Button>
           )}
 
           {status === "loading" && (

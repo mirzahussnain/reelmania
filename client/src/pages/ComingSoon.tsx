@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '../shared/components/ui/Button';
 
 const ComingSoon: React.FC = () => {
   const navigate = useNavigate();
@@ -10,12 +11,13 @@ const ComingSoon: React.FC = () => {
       <p className="text-lg font-inter text-on-surface-variant mb-8 w-[90%] max-w-[450px]">
         We are actively engineering this feature to bring you the best cinematic experience. Stay tuned!
       </p>
-      <button
+      <Button
+        variant="unstyled"
         onClick={() => navigate(-1)}
         className="px-6 py-3 rounded-full bg-surface-container border border-outline-variant/20 hover:bg-surface-container-high transition-colors font-semibold"
       >
         Go Back
-      </button>
+      </Button>
     </div>
   );
 };

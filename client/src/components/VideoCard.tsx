@@ -7,6 +7,7 @@ import { useAppSelector } from "../utils/hooks/storeHooks.tsx";
 import { RootState } from "../utils/store/store.ts";
 import { toast } from "react-toastify";
 import Loader from "./Loader.tsx";
+import { Button } from "../shared/components/ui/Button.tsx";
 
 const VideoCard = ({ videoInfo }: { videoInfo: VideoType }) => {
   const NavigateTo: NavigateFunction = useNavigate();
@@ -51,11 +52,11 @@ const VideoCard = ({ videoInfo }: { videoInfo: VideoType }) => {
         onMouseEnter={(e) => e.currentTarget.play()}
         onMouseLeave={(e) => e.currentTarget.pause()}
       />
-      <button className="  rounded-full absolute top-0 left-0 p-3 text-xl text-red-500 hover:text-red-400 z-50"
+      <Button variant="unstyled" className="  rounded-full absolute top-0 left-0 p-3 text-xl text-red-500 hover:text-red-400 z-50"
       onClick={(e)=>handleDeleteVideo(e)}
       type="button">
         <FaRegTrashAlt />
-      </button>
+      </Button>
       <div className="absolute left-0 bottom-2  w-full  flex flex-col justify-center items-start px-3">
         <h2 className="w-full font-semibold">
           <Link to={`/users/${videoInfo?.uploaded_by?.username}`} className="hover:underline mr-1">

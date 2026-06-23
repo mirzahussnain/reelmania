@@ -5,6 +5,7 @@ import { useAppSelector } from "../utils/hooks/storeHooks";
 import { RootState } from "../utils/store/store";
 import { FiArrowLeft, FiDownload, FiEye, FiBarChart2 } from "react-icons/fi";
 import Loader from "../components/Loader";
+import { Button } from "../shared/components/ui/Button";
 
 const NetworkRelations: React.FC = () => {
   const navigate = useNavigate();
@@ -31,13 +32,14 @@ const NetworkRelations: React.FC = () => {
     <div className="page-shell px-4 md:px-12 py-8">
 
       {/* Back Button */}
-      <button
+      <Button
+        variant="unstyled"
         onClick={() => navigate('/vault')}
         className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface mb-8 transition-colors w-max"
       >
         <FiArrowLeft />
         <span className="text-sm font-semibold tracking-widest uppercase">Return to Vault</span>
-      </button>
+      </Button>
 
       {/* Header Section */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 mb-12">
@@ -74,13 +76,14 @@ const NetworkRelations: React.FC = () => {
       {/* Tabs */}
       <div className="flex flex-wrap items-center gap-4 mb-8">
         {["Mutuals", "High Resonance", "Recent Adds"].map((tab) => (
-          <button
+          <Button
             key={tab}
+            variant="pill"
+            active={activeTab === tab}
             onClick={() => setActiveTab(tab)}
-            className={`pill-btn ${activeTab === tab ? "pill-active" : "pill-inactive"}`}
           >
             {tab}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -90,10 +93,12 @@ const NetworkRelations: React.FC = () => {
           const node = f.users_followers_follower_idTousers;
           if (!node) return null;
 
-          const cScore = (Math.random() * (99 - 60) + 60).toFixed(1);
-          const reach  = (Math.random() * 50 + 1).toFixed(1) + "k";
-          const views  = (Math.random() * 200 + 10).toFixed(1) + "k";
-          const sales  = Math.floor(Math.random() * 500);
+          // Per-node metrics are not modelled yet. Placeholder until backed by
+          // real data (previously Math.random, which flickered on every render).
+          const cScore = "—";
+          const reach  = "—";
+          const views  = "—";
+          const sales  = "—";
 
           return (
             <Link

@@ -1,4 +1,5 @@
 import { ChangeEvent } from "react";
+import { Button } from "./ui/Button";
 
 export const CommentForm = ({
   user,
@@ -36,20 +37,12 @@ export const CommentForm = ({
       </div>
 
       <div className="w-full flex justify-end items-center gap-2 mt-3">
-        <button
-          className="py-1.5 px-4 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors"
-          type="button"
-          onClick={() => setCommentText("")}
-        >
+        <Button variant="ghost" size="sm" onClick={() => setCommentText("")}>
           Cancel
-        </button>
-        <button
-          className="py-1.5 px-5 text-sm font-medium bg-primary text-on-primary hover:glow-primary hover:bg-primary-container transition-all rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
-          type="submit"
-          disabled={!commentText.trim()}
-        >
+        </Button>
+        <Button variant="primary" size="sm" type="submit" disabled={!commentText.trim()}>
           Post
-        </button>
+        </Button>
       </div>
     </form>
   );

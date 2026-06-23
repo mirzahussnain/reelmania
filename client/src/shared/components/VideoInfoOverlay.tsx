@@ -5,6 +5,7 @@ import { VideoType } from "../../types";
 import { cn } from "../utils/cn";
 import { FiShoppingBag } from "react-icons/fi";
 import { AvatarConnectBadge } from "./AvatarConnectBadge";
+import { Button } from "./ui/Button";
 import { useGetUserProfileQuery, useUpdateUserFollowerMutation, useCheckUserFollowerQuery } from "../../utils/store/features/user/userApi";
 import { useAppSelector } from "../../utils/hooks/storeHooks";
 import { RootState } from "../../utils/store/store";
@@ -109,7 +110,8 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
             </div>
           </div>
           
-          <button 
+          <Button
+            variant="unstyled"
             className="absolute bottom-0 right-0 font-bold text-sm text-on-media drop-shadow-md bg-transparent px-1 hover:underline"
             onClick={(e) => {
               e.stopPropagation();
@@ -117,15 +119,15 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
             }}
           >
             {isExpanded ? "less" : "more"}
-          </button>
+          </Button>
         </div>
 
         {/* Marketplace Asset Link */}
         <div className="mt-2 pointer-events-auto flex items-center">
-          <button className="flex items-center gap-1.5 backdrop-blur-md border border-outline-variant/50 hover:border-primary/60 text-on-media-dim text-xs font-semibold px-3 py-1.5 rounded-full transition-all shadow-md group" style={{ background: 'var(--color-media-scrim)' }}>
+          <Button variant="unstyled" className="flex items-center gap-1.5 backdrop-blur-md border border-outline-variant/50 hover:border-primary/60 text-on-media-dim text-xs font-semibold px-3 py-1.5 rounded-full transition-all shadow-md group" style={{ background: 'var(--color-media-scrim)' }}>
             <FiShoppingBag className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" strokeWidth={2.5} />
             <span>Project File • $5.00</span>
-          </button>
+          </Button>
         </div>
       </div>
       

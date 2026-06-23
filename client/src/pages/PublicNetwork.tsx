@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "../shared/hooks/useUserProfile";
 import Loader from "../components/Loader";
 import { TbNetwork } from "react-icons/tb";
+import { Button } from "../shared/components/ui/Button";
 
 /* ─── C-Score Ring ─────────────────────────────────── */
 const CScoreRing = ({ score }: { score: number }) => {
@@ -155,12 +156,13 @@ const PublicNetwork: React.FC = () => {
 
             {/* Join CTA */}
             <div className="mt-auto pt-8">
-              <button
+              <Button
+                variant="unstyled"
                 onClick={() => navigate('/sign-up')}
                 className="w-full py-4 rounded-xl border border-outline-variant/20 bg-surface-container hover:bg-surface-container-high text-sm font-syne font-bold transition-colors"
               >
                 Join the Network
-              </button>
+              </Button>
             </div>
           </div>
 

@@ -2,6 +2,7 @@ import { FaSearch, FaUndo } from "react-icons/fa";
 import { FormEvent, useState } from "react";
 
 import { FiFilter } from "react-icons/fi";
+import { Button } from "../shared/components/ui/Button";
 
 // Presentational search control. It owns only its own input state and reports
 // the active query up via `onSearch` / `onClear`. The video data itself is
@@ -62,22 +63,23 @@ export const SearchBar = ({
 
         {/* Action Button */}
         {filterMode ? (
-          <button
+          <Button
+            variant="unstyled"
             className="h-full aspect-square flex items-center justify-center bg-surface-container-high rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors"
-            type="button"
             onClick={handleClearFilter}
             title="Clear Search"
           >
             <FaUndo className="text-xl" />
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
+            variant="unstyled"
             className="h-full px-6 flex items-center justify-center bg-primary text-on-primary rounded-full hover:glow-primary transition-all font-bold tracking-wide"
             type="submit"
           >
             <FaSearch className="text-lg md:mr-2" />
             <span className="hidden md:inline">Search</span>
-          </button>
+          </Button>
         )}
       </div>
 

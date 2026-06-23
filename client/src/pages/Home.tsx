@@ -8,6 +8,7 @@ import Comments from "../components/Comments";
 import useScreenWidth from "../utils/hooks/useScreenWidth";
 import { useInView } from "react-intersection-observer";
 import { useInfiniteFeed } from "../shared/hooks/useInfiniteFeed";
+import { Button } from "../shared/components/ui/Button";
 
 const Home = () => {
   const { ref, inView } = useInView({ threshold: 0.5 });
@@ -95,18 +96,20 @@ const Home = () => {
 
       {/* Custom Neon Navigation Arrows */}
       <div className="fixed right-6 bottom-24 lg:top-1/2 lg:-translate-y-1/2 lg:bottom-auto hidden lg:flex flex-col gap-4 z-[40]">
-        <button
+        <Button
+          variant="unstyled"
           onClick={() => scrollFeed('up')}
           className="p-3 rounded-full card-glass text-on-surface-variant hover:text-on-surface hover:bg-primary/20 hover:border-primary/50 hover:glow-primary transition-all duration-300 group"
         >
           <svg className="w-6 h-6 group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="unstyled"
           onClick={() => scrollFeed('down')}
           className="p-3 rounded-full card-glass text-on-surface-variant hover:text-on-surface hover:bg-primary/20 hover:border-primary/50 hover:glow-primary transition-all duration-300 group"
         >
           <svg className="w-6 h-6 group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-        </button>
+        </Button>
       </div>
 
       {isFetching && hasMore && (

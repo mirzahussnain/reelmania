@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { FaSignInAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { BRAND } from '../shared/constants/brand';
+import { Button } from '../shared/components/ui/Button';
 
 export default function WelcomePage() {
   const { isSignedIn } = useAuth();
@@ -26,13 +27,14 @@ export default function WelcomePage() {
         </div>
 
         <div className="space-y-4 flex flex-col justify-center items-center">
-          <button
+          <Button
+            variant="unstyled"
             className="lg:w-[30rem] w-[19rem] py-4 bg-primary rounded-xl flex justify-center items-center hover:bg-primary-container hover:shadow-[0_0_15px_var(--color-primary)] transition-all"
             onClick={() => navigateTo("/sign-in")}
           >
             <FaSignInAlt className="text-2xl text-on-primary" />
             <span className="ml-5 text-xl text-on-primary font-bold tracking-wider">Sign in by Email</span>
-          </button>
+          </Button>
 
           <div className="relative my-8 w-full">
             <div className="absolute inset-0 flex items-center">
@@ -43,12 +45,13 @@ export default function WelcomePage() {
             </div>
           </div>
 
-          <button
+          <Button
+            variant="unstyled"
             className="lg:w-[30rem] w-[20rem] py-4 bg-surface-container-high rounded-xl flex justify-center items-center hover:bg-surface-container-highest transition-all"
             onClick={() => navigateTo("/foryou")}
           >
             <span className="text-xl text-on-surface font-medium tracking-wider">Continue as Guest</span>
-          </button>
+          </Button>
 
           <p className="mt-8 text-center text-sm text-on-surface-variant">
             By continuing, you agree to our{' '}

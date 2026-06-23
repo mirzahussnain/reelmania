@@ -10,6 +10,7 @@ import { RootState } from "../utils/store/store";
 import { MobileNavItem } from "../shared/components/navbar/MobileNavItem";
 import { MobileUserItem } from "../shared/components/navbar/MobileUserItem";
 import { isStandaloneRoute } from "../app/routes.config";
+import { Button } from "../shared/components/ui/Button";
 
 const Navbar: React.FC = () => {
   const screenWidth = useScreenWidth();
@@ -39,12 +40,9 @@ const Navbar: React.FC = () => {
       {isSignedIn ? (
         <MobileUserItem user={user} pathname={currentLocation.pathname} />
       ) : (
-        <button
-          className="px-4 py-1.5 bg-primary text-on-primary font-bold rounded-full hover:bg-primary-container text-sm"
-          onClick={() => navigateTo("/sign-in")}
-        >
+        <Button variant="primary" size="sm" className="font-bold" onClick={() => navigateTo("/sign-in")}>
           Sign in
-        </button>
+        </Button>
       )}
     </div>
   );

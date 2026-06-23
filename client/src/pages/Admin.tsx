@@ -6,6 +6,7 @@ import { useLazyGetUsersQuery, useLazyUpdateUserRoleQuery } from "../utils/store
 import { userType } from "../types";
 import { toast } from "react-toastify";
 import { useAppSelector } from "../utils/hooks/storeHooks";
+import { Button } from "../shared/components/ui/Button";
 
 
 
@@ -93,10 +94,10 @@ const Admin = () => {
                 <option className="w-full" value={"Creator"}>Creator</option>
                 <option value="Consumer">Consumer</option>
             </select>
-            <button className="px-4 py-3 bg-red-700 rounded-xl"
-            type="button" onClick={()=>findUser()}>Find User</button>
-            <button className="px-4 py-3 bg-blue-400/30 rounded-xl"
-            type="submit">Change Role</button>
+            <Button variant="unstyled" className="px-4 py-3 bg-red-700 rounded-xl"
+            type="button" onClick={()=>findUser()}>Find User</Button>
+            <Button variant="unstyled" className="px-4 py-3 bg-blue-400/30 rounded-xl"
+            type="submit">Change Role</Button>
         </form>
     </div>
 

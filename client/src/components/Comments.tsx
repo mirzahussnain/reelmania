@@ -8,6 +8,7 @@ import { formatNumber } from "../utils/functions/formatter";
 import { useComments } from "../shared/hooks/useComments";
 import { CommentItem } from "../shared/components/CommentItem";
 import { CommentForm } from "../shared/components/CommentForm";
+import { Button } from "../shared/components/ui/Button";
 
 const Comments = ({
   video,
@@ -38,7 +39,8 @@ const Comments = ({
           </span>
         </h2>
         <div className="flex items-center gap-4">
-          <button
+          <Button
+            variant="unstyled"
             className={`text-xl flex items-center justify-center transition-colors hover:text-primary ${
               filter ? "text-primary glow-primary" : "text-on-surface-variant"
             }`}
@@ -46,13 +48,14 @@ const Comments = ({
             title="Sort Comments"
           >
             <IoFilter /> {filter ? <IoIosArrowRoundUp /> : <IoIosArrowRoundDown />}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="unstyled"
             className="text-lg text-on-surface-variant hover:text-error transition-colors"
             onClick={() => setIsModalOpen({ isOpen: false })}
           >
             <FaX />
-          </button>
+          </Button>
         </div>
       </div>
 

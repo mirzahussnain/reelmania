@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import Share from "../../components/Share";
 import { VideoLikes } from "../../types";
 import { cn } from "../utils/cn";
+import { Button } from "./ui/Button";
 
 interface VideoActionsProps {
   videoId: string;
@@ -27,7 +28,8 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
     <div className="absolute right-3 bottom-16 lg:bottom-10 flex flex-col items-center gap-5 z-20">
 
       {/* Like Button */}
-      <button
+      <Button
+        variant="unstyled"
         className="flex flex-col items-center group transition-transform hover:scale-105"
         onClick={handleLikes}
         type="button"
@@ -45,10 +47,11 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
         <span className="text-on-media font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
           {pending ? "..." : likes?.length || 0}
         </span>
-      </button>
+      </Button>
 
       {/* Comment Button */}
-      <button
+      <Button
+        variant="unstyled"
         data-comment-btn="true"
         className="flex flex-col items-center group transition-transform hover:scale-105"
         onClick={() => token ? setIsModalOpen({ isOpen: true }) : toast.error("Sign In Required")}
@@ -63,11 +66,12 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
         <span className="text-on-media font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
           {commentsLength}
         </span>
-      </button>
+      </Button>
 
       {/* Share Button */}
       <div className="relative flex flex-col items-center group">
-        <button
+        <Button
+          variant="unstyled"
           className="flex flex-col items-center transition-transform hover:scale-105"
           onClick={() => setOpenShareModel(!openShareModel)}
         >
@@ -77,7 +81,7 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
           <span className="text-on-media font-bold text-[13px] tracking-wide drop-shadow-md mt-1">
             Share
           </span>
-        </button>
+        </Button>
 
         {openShareModel && (
           <div className="absolute bottom-16 right-10 z-50">
@@ -87,14 +91,15 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
       </div>
 
       {/* Bookmark Button */}
-      <button
+      <Button
+        variant="unstyled"
         className="flex flex-col items-center group transition-transform hover:scale-105"
         onClick={() => toast.info("Bookmark feature coming soon!")}
       >
         <div className="action-circle bg-media-scrim-lg group-hover:scale-110">
           <BiBookmark className="text-[24px] text-on-media drop-shadow-sm" />
         </div>
-      </button>
+      </Button>
 
     </div>
   );

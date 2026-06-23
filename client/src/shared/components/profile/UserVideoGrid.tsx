@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { VideoType } from "../../../types";
 import { FiPlay } from "react-icons/fi";
+import { EmptyState } from "../ui/EmptyState";
 
 interface UserVideoGridProps {
   userVideos: VideoType[];
@@ -12,11 +13,7 @@ export const UserVideoGrid: React.FC<UserVideoGridProps> = ({ userVideos, classN
   const navigate = useNavigate();
 
   if (!userVideos || userVideos.length === 0) {
-    return (
-      <div className="w-full flex justify-center items-center py-20 text-on-surface-variant font-mono text-sm">
-        No archives found.
-      </div>
-    );
+    return <EmptyState message="No archives found." />;
   }
 
   return (
@@ -44,10 +41,10 @@ export const UserVideoGrid: React.FC<UserVideoGridProps> = ({ userVideos, classN
             {/* Content Container */}
             <div className="absolute bottom-0 left-0 right-0 p-5 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
 
-              {/* Badge */}
+              {/* Badge — view count not tracked yet; placeholder until modelled. */}
               <div className="flex items-center gap-2 mb-3">
                 <span className="bg-surface-container backdrop-blur-md border border-outline-variant/20 text-on-media text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-sm flex items-center gap-1">
-                  <FiPlay /> {Math.floor(Math.random() * 100) + 1}k
+                  <FiPlay /> —
                 </span>
                 <span className="bg-error/20 border border-error/30 text-error text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-sm">
                   Must Watch
