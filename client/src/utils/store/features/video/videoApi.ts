@@ -138,7 +138,6 @@ export const videoApi = createApi({
                   const { data } = await queryFulfilled;
                   const socket = connectSocket("");
                   socket.connect();
-                  console.log(socket)
                   if (socket) {
                     socket.emit("likeUpdated", { videoId: data?.videoId, updatedLikes: data?.updatedLikes });
                   }

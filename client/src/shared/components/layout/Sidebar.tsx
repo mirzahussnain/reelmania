@@ -10,6 +10,7 @@ import {
 } from "react-icons/bi";
 import { cn } from "../../utils/cn";
 import { useState } from "react";
+import { BRAND } from "../../constants/brand";
 
 interface SidebarItemProps {
   to: string;
@@ -71,7 +72,7 @@ export const Sidebar: React.FC = () => {
               <img src="/images/logo-3.png" className="w-full h-full object-contain drop-shadow-md scale-[1.7]" alt="Logo" />
             </div>
             <div className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 flex items-center">
-              <span className="font-syne font-bold text-xl text-on-surface tracking-wide">ReelMania</span>
+              <span className="font-syne font-bold text-xl text-on-surface tracking-wide">{BRAND}</span>
             </div>
           </Link>
         </div>

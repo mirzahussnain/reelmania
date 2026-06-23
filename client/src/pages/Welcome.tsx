@@ -2,6 +2,7 @@ import { useAuth } from '@clerk/clerk-react';
 import { useEffect } from 'react';
 import { FaSignInAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { BRAND } from '../shared/constants/brand';
 
 export default function WelcomePage() {
   const { isSignedIn } = useAuth();
@@ -19,7 +20,7 @@ export default function WelcomePage() {
         <div className="text-center mb-12 space-y-4">
           <h1 className="text-5xl font-syne font-bold text-on-surface">
             Welcome
-            <span className="block mt-2 text-primary drop-shadow-[0_0_15px_var(--color-primary)]">ReelMania</span>
+            <span className="block mt-2 text-primary drop-shadow-[0_0_15px_var(--color-primary)]">{BRAND}</span>
           </h1>
           <p className="text-on-surface-variant text-lg">Choose how you want to continue</p>
         </div>

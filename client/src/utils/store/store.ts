@@ -2,7 +2,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import { userApi } from "./features/user/userApi";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import userSlice from "./features/user/userSlice";
-import uploaderSlice from "./features/video/uploaderSlice";
 import { videoApi } from "./features/video/videoApi";
 import authSlice from "./features/user/authSlice";
 import videoSlice from "./features/video/videoSlice";
@@ -24,7 +23,6 @@ const persistedAuth = persistReducer(persistConfig, authSlice);
 export const store = configureStore({
   reducer: {
     user: persistedUser,
-    uploader: uploaderSlice,
     auth: persistedAuth,
     video: persistedVideo,
     filteredVideo: filteredVideoSlice,

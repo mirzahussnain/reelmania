@@ -4,6 +4,7 @@ import { useUserProfile } from "../shared/hooks/useUserProfile";
 import { UserProfileHeader } from "../shared/components/profile/UserProfileHeader";
 import { UserVideoGrid } from "../shared/components/profile/UserVideoGrid";
 import { Link } from "react-router-dom";
+import { BRAND } from "../shared/constants/brand";
 
 const PublicProfile: React.FC = () => {
   const {
@@ -38,7 +39,7 @@ const PublicProfile: React.FC = () => {
       {/* Brand / Logo area */}
       <header className="w-full flex justify-center mb-10">
         <span className="text-4xl md:text-5xl font-syne font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary text-glow-primary">
-          Komorebi
+          {BRAND}
         </span>
       </header>
 
@@ -67,7 +68,7 @@ const PublicProfile: React.FC = () => {
       <div className="w-[90%] max-w-4xl rounded-3xl border border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent p-12 mt-12 mb-20 flex flex-col items-center z-10 relative overflow-hidden backdrop-blur-md">
         
         <h3 className="text-3xl md:text-4xl font-syne font-bold text-on-surface text-center">
-          Experience Komorebi
+          Experience {BRAND}
         </h3>
         
         <div className="w-full flex justify-center mt-4">

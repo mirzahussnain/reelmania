@@ -33,15 +33,12 @@ export const useVideoRealtime = (videoId: string | undefined) => {
       setPending(true);
       const userData = { userId: user?.id, userName: user?.username };
       const query = await updateLikes({ videoId, userData, token }).unwrap();
-      
-      console.log("Mutation response:", query);
-      
+
       if (query?.updatedLikes) {
-        console.log("Setting local likes to:", query.updatedLikes);
         setLikes(query.updatedLikes);
       }
     } catch (err) {
-      console.log("Mutation error:", err);
+      console.error(err);
     } finally {
       setPending(false);
     }
@@ -55,7 +52,7 @@ export const useVideoRealtime = (videoId: string | undefined) => {
           setLikes(query?.likes);
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     };
     
@@ -67,7 +64,7 @@ export const useVideoRealtime = (videoId: string | undefined) => {
           setComments(videoComments.sort((a, b) => new Date(b.posted_at).getTime() - new Date(a.posted_at).getTime()));
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     };
 
