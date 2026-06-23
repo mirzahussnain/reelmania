@@ -9,7 +9,7 @@
     "docker:build": "docker build -t user-service .",
     "docker:run": "docker run -p 8000:8000 user-service",
     "prisma:deploy": "prisma migrate deploy",
-    "healthcheck": "node dist/healthcheck.js"
+    "healthcheck": "node dist/src/healthcheck.js"
   },
   "keywords": [],
   "author": "",

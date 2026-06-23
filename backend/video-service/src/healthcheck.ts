@@ -2,7 +2,7 @@ import http from 'http';
 
 const options = {
     host: 'localhost',
-    port: process.env.PORT || 8001,
+    port: process.env.VIDEO_SERVICE_PORT || 8001,
     path: '/health',
     timeout: 2000
 };

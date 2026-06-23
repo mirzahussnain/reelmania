@@ -20,7 +20,12 @@ app.use(cors({
     origin: origin_url, // Replace with your frontend URL
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true, // If you're using cookies or authentication
-  })); 
+  }));
+
+// Lightweight liveness endpoint for the container healthcheck.
+app.get("/health", (_req: Request, res: Response) => {
+  res.status(200).json({ status: "ok" });
+});
 
 connectRedis();
 

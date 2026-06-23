@@ -9,7 +9,7 @@
     "docker:build": "docker build -t video-service .",
     "docker:run": "docker run -p 8001:8001 video-service",
     "prisma:deploy": "prisma migrate deploy",
-    "healthcheck": "node dist/healthcheck.js"
+    "healthcheck": "node dist/src/healthcheck.js"
   },
   "keywords": [],
   "author": "",

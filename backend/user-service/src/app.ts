@@ -21,6 +21,10 @@ app.use(cors(
     credentials: true, // If you're using cookies or authentication
   }
 ))
+// Lightweight liveness endpoint for the container healthcheck.
+app.get("/health", (_req: Request, res: Response) => {
+  res.status(200).json({ status: "ok" });
+});
 // app.use(morgan("combined")); // Use 'combined' format for detailed logs
 app.use("/api/webhook/*", bodyParser.raw({ type: "application/json" }));
 app.use(express.json())
