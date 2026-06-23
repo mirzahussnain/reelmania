@@ -36,7 +36,7 @@ export const useUserProfile = () => {
   // O(1) follow-status check (replaces pulling the full follower list).
   const { data: followCheck } = useCheckUserFollowerQuery(
     { followingId: userProfile?.id ?? "", followerId: currentUser?.id ?? "" },
-    { skip: !userProfile?.id || !currentUser?.id }
+    { skip: !userProfile?.id || !currentUser?.id, refetchOnMountOrArgChange: true }
   );
 
   const [followUser] = useUpdateUserFollowerMutation();

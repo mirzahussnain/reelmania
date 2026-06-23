@@ -18,7 +18,7 @@ export const useFollow = (targetUserId: string | undefined) => {
 
   const { data: followCheck } = useCheckUserFollowerQuery(
     { followingId: targetUserId ?? "", followerId: currentUser?.id ?? "" },
-    { skip: !targetUserId || !currentUser?.id }
+    { skip: !targetUserId || !currentUser?.id, refetchOnMountOrArgChange: true }
   );
 
   const [followStatus, setFollowStatus] = useState(false);

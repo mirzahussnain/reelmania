@@ -28,7 +28,12 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
   // Efficient O(1) lookup to check if current user follows the uploader
   const { data: checkFollowerData } = useCheckUserFollowerQuery(
     { followingId: video?.uploaded_by?.id, followerId: user?.id },
-    { skip: !video?.uploaded_by?.id || !user?.id }
+    {
+      skip: !video?.uploaded_by?.id || !user?.id,
+      // Revalidate on mount so follow state set on another page (e.g. the
+      // profile) is reflected here without a hard refresh.
+      refetchOnMountOrArgChange: true,
+    }
   );
 
   const [followUser] = useUpdateUserFollowerMutation();

@@ -31,6 +31,10 @@ export const AvatarConnectBadge: React.FC<AvatarConnectBadgeProps> = ({
   useEffect(() => {
     if (isFollowing || isOwnProfile) {
       setStatus("hidden");
+    } else {
+      // No longer following (e.g. unfollowed elsewhere): show the connect
+      // affordance again, but don't interrupt an in-progress connect animation.
+      setStatus((prev) => (prev === "hidden" ? "idle" : prev));
     }
   }, [isFollowing, isOwnProfile]);
 
