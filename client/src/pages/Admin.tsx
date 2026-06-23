@@ -83,10 +83,10 @@ const Admin = () => {
   
    },[queryRan])
    return(
-    <div className="w-screen h-screen text-white flex flex-col justify-center items-center">
-        <h2 className="text-2xl font-bold tracking-wider  shadow-slate-50 drop-shadow-xl">CHANGE USERS ROLE</h2>
-        <form className="flex justify-center items-center p-5 flex-wrap gap-4 text-zinc-400 " onSubmit={(e)=>handleSubmit(e)}>
-            <input type="text" className="w-full p-3 py-2 mr-3 rounded-md placeholder:text-center ring-2 ring-red-500/30" placeholder="Search User By username"
+    <div className="w-screen h-screen text-on-surface flex flex-col justify-center items-center">
+        <h2 className="text-2xl font-bold tracking-wider drop-shadow-xl">CHANGE USERS ROLE</h2>
+        <form className="flex justify-center items-center p-5 flex-wrap gap-4 text-on-surface-variant " onSubmit={(e)=>handleSubmit(e)}>
+            <input type="text" className="w-full p-3 py-2 mr-3 rounded-md placeholder:text-center ring-2 ring-primary/30" placeholder="Search User By username"
             value={username}
             onChange={(e)=>setUsername(e.target.value)}
           />
@@ -94,9 +94,9 @@ const Admin = () => {
                 <option className="w-full" value={"Creator"}>Creator</option>
                 <option value="Consumer">Consumer</option>
             </select>
-            <Button variant="unstyled" className="px-4 py-3 bg-red-700 rounded-xl"
+            <Button variant="unstyled" className="px-4 py-3 bg-surface-container-high text-on-surface rounded-xl"
             type="button" onClick={()=>findUser()}>Find User</Button>
-            <Button variant="unstyled" className="px-4 py-3 bg-blue-400/30 rounded-xl"
+            <Button variant="unstyled" className="px-4 py-3 bg-primary text-on-primary rounded-xl"
             type="submit">Change Role</Button>
         </form>
     </div>

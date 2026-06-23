@@ -156,7 +156,7 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
             style={{ width: `${progress}%` }}
           >
             {/* Scrubber Knob (visible on hover) */}
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md shadow-tertiary/50 transform translate-x-1/2" />
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-on-media rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md shadow-tertiary/50 transform translate-x-1/2" />
           </div>
         </div>
         

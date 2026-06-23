@@ -149,7 +149,7 @@ const Vault: React.FC = () => {
         </div>
 
         {/* 3. Tab Navigation */}
-        <div className="w-full mt-10 border-b border-white/10 flex items-center gap-8 px-2">
+        <div className="w-full mt-10 border-b border-hairline/10 flex items-center gap-8 px-2">
           {['My Uploads', 'Liked', 'Collections'].map((tab) => (
             <Button
               key={tab}

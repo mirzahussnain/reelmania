@@ -23,7 +23,7 @@ const CScoreRing = ({ score }: { score: number }) => {
         
         {/* SVG Radial */}
         <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" fill="none" r="45" stroke="rgba(255,255,255,0.05)" strokeWidth="10"></circle>
+          <circle cx="50" cy="50" fill="none" r="45" stroke="var(--color-ring-track)" strokeWidth="10"></circle>
           <circle className="transition-all duration-1000" cx="50" cy="50" fill="none" r="45" stroke="var(--color-ring-1)" strokeDasharray="282" strokeDashoffset={282 - (282 * score / 100)} strokeLinecap="round" strokeWidth="10"></circle>
           <circle className="transition-all duration-1000 opacity-80" cx="50" cy="50" fill="none" r="35" stroke="var(--color-ring-2)" strokeDasharray="219" strokeDashoffset={219 - (219 * (score + 5) / 100)} strokeLinecap="round" strokeWidth="4"></circle>
         </svg>
@@ -31,7 +31,7 @@ const CScoreRing = ({ score }: { score: number }) => {
         {/* Core Value */}
         <div className="z-10 flex flex-col items-center">
           <div className="label-meta text-on-surface-variant mb-1 tracking-widest">C-SCORE</div>
-          <div className="text-6xl md:text-[80px] font-syne font-bold text-white text-glow-primary leading-none">{score}</div>
+          <div className="text-6xl md:text-[80px] font-syne font-bold text-on-media text-glow-primary leading-none">{score}</div>
         </div>
       </div>
 
@@ -63,7 +63,7 @@ const MetricCard = ({ title, value, unit, progress, borderColor, bgBarColor }: {
 
 /* ─── Resonant Node Card ─────────────────────────── */
 const NodeCard = ({ user, match, borderColors }: { user: { avatar: string; handle: string }; match: number, borderColors: string }) => (
-  <div className="card-glass-panel p-4 rounded-xl flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors border-l border-transparent hover:border-primary">
+  <div className="card-glass-panel p-4 rounded-xl flex items-center justify-between hover:bg-hairline/5 cursor-pointer transition-colors border-l border-transparent hover:border-primary">
     <div className="flex items-center space-x-4">
       <div className="relative">
         <img src={user.avatar} alt={user.handle} className={`w-10 h-10 rounded-full object-cover border ${borderColors}`} />
@@ -119,7 +119,7 @@ const PublicNetwork: React.FC = () => {
 
       <main className="relative z-10 pt-[100px] pb-[100px] px-4 md:px-[100px] max-w-[1440px] mx-auto min-h-screen flex flex-col">
         {/* Top Header */}
-        <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/10 pb-6 relative z-10">
+        <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-hairline/10 pb-6 relative z-10">
           <div>
             <h1 className="heading-page text-glow-primary mb-2">Share Network</h1>
             <p className="label-meta text-primary/80">C-Score / Aesthetic Resonance Mapping</p>

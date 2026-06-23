@@ -65,7 +65,7 @@ const PublicProfile: React.FC = () => {
       </div>
 
       {/* Experience Komorebi CTA */}
-      <div className="w-[90%] max-w-4xl rounded-3xl border border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent p-12 mt-12 mb-20 flex flex-col items-center z-10 relative overflow-hidden backdrop-blur-md">
+      <div className="w-[90%] max-w-4xl rounded-3xl border border-hairline/5 bg-gradient-to-b from-hairline/[0.04] to-transparent p-12 mt-12 mb-20 flex flex-col items-center z-10 relative overflow-hidden backdrop-blur-md">
         
         <h3 className="text-3xl md:text-4xl font-syne font-bold text-on-surface text-center">
           Experience {BRAND}

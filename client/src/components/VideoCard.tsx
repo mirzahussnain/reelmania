@@ -40,7 +40,7 @@ const VideoCard = ({ videoInfo }: { videoInfo: VideoType }) => {
   return isLoading?<Loader/>:(
 
     <div
-      className="w-full h-[30rem] md:w-[15rem] md:h-[23rem]    last:mb-10 relative  lg:border-[1px] border-white/40 "
+      className="w-full h-[30rem] md:w-[15rem] md:h-[23rem]    last:mb-10 relative  lg:border-[1px] border-outline-variant/40 "
       onClick={() => NavigateTo(`/videos/${videoInfo?.id}`,{
         state:videoInfo
       })}
@@ -52,7 +52,7 @@ const VideoCard = ({ videoInfo }: { videoInfo: VideoType }) => {
         onMouseEnter={(e) => e.currentTarget.play()}
         onMouseLeave={(e) => e.currentTarget.pause()}
       />
-      <Button variant="unstyled" className="  rounded-full absolute top-0 left-0 p-3 text-xl text-red-500 hover:text-red-400 z-50"
+      <Button variant="unstyled" className="  rounded-full absolute top-0 left-0 p-3 text-xl text-error hover:text-error/80 z-50"
       onClick={(e)=>handleDeleteVideo(e)}
       type="button">
         <FaRegTrashAlt />
@@ -62,7 +62,7 @@ const VideoCard = ({ videoInfo }: { videoInfo: VideoType }) => {
           <Link to={`/users/${videoInfo?.uploaded_by?.username}`} className="hover:underline mr-1">
             {videoInfo.uploaded_by?.username}
           </Link>
-          .<span className="text-sm text-zinc-400 ml-1">{dateFormatter(new Date(videoInfo?.uploaded_at))}</span>
+          .<span className="text-sm text-on-surface-variant ml-1">{dateFormatter(new Date(videoInfo?.uploaded_at))}</span>
         </h2>
         <p className="w-full text-ellipsis text-nowrap overflow-hidden hover:text-wrap hover:overflow-y-auto peer">
           {videoInfo?.title}

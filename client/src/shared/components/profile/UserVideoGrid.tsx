@@ -19,7 +19,7 @@ export const UserVideoGrid: React.FC<UserVideoGridProps> = ({ userVideos, classN
   return (
     <div className={`w-full max-w-6xl mx-auto px-4 ${className}`}>
 
-      <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-2">
+      <div className="flex items-center justify-between mb-6 border-b border-hairline/10 pb-2">
         <h2 className="text-2xl md:text-3xl font-syne font-bold text-on-surface">Featured Archives</h2>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -27,7 +27,7 @@ export const UserVideoGrid: React.FC<UserVideoGridProps> = ({ userVideos, classN
           <div
             key={video.id}
             onClick={() => navigate(`/videos/${video.id}`, { state: video })}
-            className={`card-glass-panel rounded-xl overflow-hidden group cursor-pointer aspect-[9/16] relative flex flex-col justify-end transition-transform duration-500 hover:-translate-y-2 hover:glow-primary-lg border border-white/5 hover:border-primary/50 ${index === 2 ? 'md:hidden lg:flex' : ''}`}
+            className={`card-glass-panel rounded-xl overflow-hidden group cursor-pointer aspect-[9/16] relative flex flex-col justify-end transition-transform duration-500 hover:-translate-y-2 hover:glow-primary-lg border border-hairline/5 hover:border-primary/50 ${index === 2 ? 'md:hidden lg:flex' : ''}`}
           >
             {/* Video Thumbnail (Using poster or video first frame) */}
             <video

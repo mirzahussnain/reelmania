@@ -31,7 +31,7 @@ const Navbar: React.FC = () => {
   }
 
   return (
-    <div className="w-full h-[68px] shrink-0 border-t border-white/10 flex items-center justify-around px-2 z-50 bg-black order-last pb-safe relative">
+    <div className="w-full h-[68px] shrink-0 border-t border-hairline/10 flex items-center justify-around px-2 z-50 bg-scrim order-last pb-safe relative">
       <MobileNavItem to="/foryou" icon={FaHome} />
       <MobileNavItem to="/explore" icon={BiSolidVideo} />
       {isSignedIn && user && (

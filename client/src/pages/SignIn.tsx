@@ -13,7 +13,7 @@ const Login = () => {
   return (
     <div className="w-full h-full flex items-start justify-center  py-3 lg:py-10 relative">
         <SignIn signUpUrl="/sign-up"/>
-         <Button variant="unstyled" className='absolute lg:top-0 lg:left-0 top-1 left-3 text-gray-500 sm:text-gray-200 p-3 lg:text-3xl text-xl' onClick={()=>navigateTo("/foryou")}
+         <Button variant="unstyled" className='absolute lg:top-0 lg:left-0 top-1 left-3 text-on-surface-variant sm:text-on-surface p-3 lg:text-3xl text-xl' onClick={()=>navigateTo("/foryou")}
               title='Go to home'>{
                 (screenWidth<768)?(<FaChevronLeft/>):(<TiHome/>)
               }</Button>

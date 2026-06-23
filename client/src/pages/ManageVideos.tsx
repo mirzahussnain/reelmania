@@ -42,16 +42,16 @@ const ManageVideos = () => {
   return isLoading?(<Loader/>):(
 
     <div className="w-full h-full flex items-start justify-center  lg:p-6 transition-all ease-in-out duration-75">
-      <main className="w-full h-full lg:w-11/12 lg:h-[90%]  lg:rounded-2xl bg-zinc-700 lg:shadow-lg lg:shadow-slate-800">
-        <div className="w-full h-full flex flex-col justify-center items-center text-white lg:static">
+      <main className="w-full h-full lg:w-11/12 lg:h-[90%]  lg:rounded-2xl bg-surface-container lg:shadow-lg">
+        <div className="w-full h-full flex flex-col justify-center items-center text-on-surface lg:static">
           <div
-            className="w-full h-[3rem] flex justify-between items-center p-3 
-              bg-gradient-to-r from-red-500/30 to-red-700 lg:rounded-t-2xl"
+            className="w-full h-[3rem] flex justify-between items-center p-3
+              bg-gradient-to-r from-primary/20 to-primary-container/40 lg:rounded-t-2xl"
           >
             <h2 className="ml-6 mt-2 text-xl">All Your Videos</h2>
             <Button
               variant="unstyled"
-              className="rounded-full p-2 bg-red-500 hover:bg-red-700 text-white mr-3"
+              className="rounded-full p-2 bg-primary hover:bg-primary-container text-on-primary mr-3"
               onClick={openModal}
             >
               <FaPlus />
@@ -61,14 +61,14 @@ const ManageVideos = () => {
           {userVideos?.length > 0 ? (
             <div
               className="w-full h-full p-5 grid grid-cols-[repeat(auto-fill,_minmax(215px,_1fr))] gap-[0.4rem] overflow-y-auto
-               scrollbar-custom max-lg:scrollbar-hide bg-gradient-to-br from-zinc-800/80 to-white/20 backdrop-filter backdrop-blur-2xl rounded-b-2xl "
+               scrollbar-custom max-lg:scrollbar-hide bg-gradient-to-br from-surface-container/80 to-hairline/20 backdrop-filter backdrop-blur-2xl rounded-b-2xl "
             >
               {userVideos.map((userVideo, index) => (
                 <VideoCard key={index} videoInfo={userVideo} />
               ))}
             </div>
           ) : (
-            <div className="text-xl flex flex-col justify-center items-center h-full w-full text-zinc-300">
+            <div className="text-xl flex flex-col justify-center items-center h-full w-full text-on-surface-variant">
               <span className="text-5xl">😔</span>
               <h2 className="font-semibold">No Video Exists</h2>
               <span>Upload Videos To Stream</span>

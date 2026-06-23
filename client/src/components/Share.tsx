@@ -16,12 +16,12 @@ const Share = ({videoId}: Props) => {
     }
     const videoLink=`${BASE_SHARE_URL}/videos/${videoId}`;
   return (
-    <div className="w-full h-9 text-zinc-600 flex justify-start items-center p-3 rounded-xl bg-zinc-500/30">
+    <div className="w-full h-9 text-on-surface-variant flex justify-start items-center p-3 rounded-xl bg-surface-container">
       
         <EmailShareButton children={<EmailIcon size={30} className='rounded-full mx-2'/>} url={videoLink} />
         
         <CopyToClipboard text={videoLink} onCopy={()=>toast.info("Link copied to clipboard")}>
-            <Button variant="unstyled" className='p-2 rounded-full bg-zinc-500 text-white mx-2'>
+            <Button variant="unstyled" className='p-2 rounded-full bg-surface-container-high text-on-surface mx-2'>
             <FaRegCopy/>
             </Button>
         </CopyToClipboard>

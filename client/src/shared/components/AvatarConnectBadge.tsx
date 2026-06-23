@@ -72,7 +72,7 @@ export const AvatarConnectBadge: React.FC<AvatarConnectBadgeProps> = ({
           <circle
             cx="50" cy="50" r="48"
             stroke="currentColor" strokeWidth="6" fill="none"
-            className="text-primary drop-shadow-[0_0_12px_rgba(208,188,255,1)] animate-circle-fill"
+            className="text-primary drop-shadow-[0_0_12px_var(--color-primary)] animate-circle-fill"
             strokeLinecap="round"
             style={{ strokeDasharray: 301.59 }}
           />

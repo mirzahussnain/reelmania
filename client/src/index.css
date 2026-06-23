@@ -69,6 +69,15 @@
   --color-media-scrim: rgba(0, 0, 0, 0.4);
   --color-media-scrim-lg: rgba(0, 0, 0, 0.6);
 
+  /* ─── Hairline / Scrim — named base colours for translucent borders,
+     glass sheens and black overlays. Components apply opacity modifiers
+     (e.g. border-hairline/10, bg-scrim/60) so these stay the single source
+     of truth without baking opacity into the token. ─── */
+  --color-hairline: #ffffff;
+  --color-scrim: #000000;
+  /* Faint track behind SVG progress/score rings. */
+  --color-ring-track: rgba(255, 255, 255, 0.05);
+
   /* ─── Typography ─── */
   --font-syne: "Syne", sans-serif;
   --font-inter: "Inter", sans-serif;
@@ -86,17 +95,6 @@
   --radius-2xl: 2rem;
   /* 32px — cinematic panels */
   --radius-full: 9999px;
-
-  /* ─── Spacing Scale ─── */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 40px;
-  --spacing-xxl: 80px;
-  --spacing-container-max: 1440px;
-  --spacing-page-gutter: 24px;
-  --spacing-page-gutter-lg: 48px;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -168,9 +166,9 @@ body {
 }
 
 @utility card-glass-panel {
-  background: rgba(30, 32, 36, 0.4);
+  background: color-mix(in srgb, var(--color-surface-container) 40%, transparent);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid color-mix(in srgb, var(--color-hairline) 5%, transparent);
   border-radius: var(--radius-xl);
 }
 
@@ -280,11 +278,11 @@ body {
 }
 
 @utility text-glow-primary {
-  text-shadow: 0 0 10px rgba(208, 188, 255, 0.5);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 50%, transparent);
 }
 
 @utility border-glow-primary {
-  box-shadow: inset 0 0 20px rgba(208, 188, 255, 0.2);
+  box-shadow: inset 0 0 20px color-mix(in srgb, var(--color-primary) 20%, transparent);
 }
 
 /* ─── Dot Grid Background ─── */

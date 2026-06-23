@@ -38,12 +38,12 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
       onRequestClose={handleClose}
       contentLabel="Upload Video Modal"
       className="outline-none w-full h-full lg:w-[800px] lg:h-[600px] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-center items-center overflow-hidden z-50"
-      overlayClassName="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+      overlayClassName="fixed inset-0 bg-scrim/60 backdrop-blur-sm z-50"
     >
-      <div className="w-full h-full bg-surface-container/80 backdrop-blur-xl border border-white/10 lg:rounded-2xl shadow-2xl flex flex-col relative overflow-hidden">
-        
+      <div className="w-full h-full bg-surface-container/80 backdrop-blur-xl border border-hairline/10 lg:rounded-2xl shadow-2xl flex flex-col relative overflow-hidden">
+
         {/* Header */}
-        <h2 className="w-full bg-surface-container-highest/80 border-b border-white/5 text-center text-on-surface font-semibold text-lg py-4 shrink-0">
+        <h2 className="w-full bg-surface-container-highest/80 border-b border-hairline/5 text-center text-on-surface font-semibold text-lg py-4 shrink-0">
           Upload New Video
         </h2>
 
@@ -59,7 +59,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
           encType="multipart/form-data"
         >
           {/* Left Side: Dropzone / Preview */}
-          <div className="w-full lg:w-[45%] h-[300px] lg:h-full bg-black/20 p-6 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/5 relative">
+          <div className="w-full lg:w-[45%] h-[300px] lg:h-full bg-scrim/20 p-6 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-hairline/5 relative">
             {isPending ? (
               <div className="w-full h-full flex flex-col justify-center items-center gap-4">
                 <MutatingDots color="var(--color-primary)" secondaryColor="var(--color-primary-container)" />
@@ -89,7 +89,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
                     <video className="w-full h-full object-cover" src={fileURL} autoPlay loop muted />
                     <Button
                       variant="unstyled"
-                      className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-primary/80 text-white rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all"
+                      className="absolute top-2 right-2 p-2 bg-scrim/50 hover:bg-primary/80 text-on-media rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all"
                       title="Change Video"
                       onClick={(e) => { e.stopPropagation(); triggerFileInput(); }}
                       type="button"
@@ -123,7 +123,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-surface-container-lowest border border-white/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:glow-primary transition-all"
+                  className="w-full bg-surface-container-lowest border border-hairline/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:glow-primary transition-all"
                   placeholder="Catchy title..."
                   required
                 />
@@ -138,19 +138,19 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
                   id="hashtags"
                   value={hashtags.join(",")}
                   onChange={(e) => setHashtags(e.target.value.split(","))}
-                  className="w-full bg-surface-container-lowest border border-white/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:glow-primary transition-all"
+                  className="w-full bg-surface-container-lowest border border-hairline/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:glow-primary transition-all"
                   placeholder="gaming, lifestyle, comedy"
                 />
               </div>
 
             </div>
 
-            <div className="w-full flex justify-end gap-3 pt-6 mt-4 border-t border-white/5">
+            <div className="w-full flex justify-end gap-3 pt-6 mt-4 border-t border-hairline/5">
               <Button
                 variant="unstyled"
                 type="button"
                 onClick={handleClose}
-                className="px-6 py-2.5 rounded-full text-on-surface-variant font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+                className="px-6 py-2.5 rounded-full text-on-surface-variant font-medium hover:bg-hairline/5 transition-colors disabled:opacity-50"
                 disabled={isPending}
               >
                 Cancel
