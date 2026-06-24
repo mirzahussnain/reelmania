@@ -9,6 +9,8 @@ import { initializeSocketServer } from "../src/utils/socketServer"
 import { setSocketInstance } from "./controllers/socketController"
 import { connectRedis } from "../src/utils/redis";
 import { startUserEventsWorker } from "./workers/userEventsWorker";
+import { pinoHttp } from "pino-http"
+import { logger } from "./utils/logger"
 
 dotenv.config()
 const origin_url=process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')
@@ -27,6 +29,9 @@ app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Structured per-request logging with an auto request id (req.log child).
+app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === "/health" } }));
+
 connectRedis();
 
 
@@ -41,7 +46,7 @@ const io = initializeSocketServer(httpServer);
 setSocketInstance(io);
 
 httpServer.listen(PORT,()=>{
-    console.log(`Server is running at PORT:${PORT}`)
-    startUserEventsWorker().catch(err => console.error("UserEventsWorker failed to start", err));
+    logger.info(`Server is running at PORT:${PORT}`)
+    startUserEventsWorker().catch(err => logger.error({ err }, "UserEventsWorker failed to start"));
 })
 

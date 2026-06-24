@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import dotenv from "dotenv";
 import { userType } from "@/utils/types";
 import { rabbitMQService } from "../utils/rabbitmq";
+import { logger } from "../utils/logger";
 
 dotenv.config();
 export const userManagement = async (req: Request, res: Response) => {
@@ -45,7 +46,7 @@ export const userManagement = async (req: Request, res: Response) => {
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    console.error("Error: Could not verify webhook:", errorMsg);
+    logger.error({ err: errorMsg }, "Could not verify webhook");
     return void res.status(400).json({
       success: false,
       message: errorMsg,

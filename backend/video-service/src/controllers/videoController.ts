@@ -6,6 +6,7 @@ import { StorageFactory } from "../providers/StorageFactory";
 import { getRedisClient } from "../utils/redis";
 import { shuffleArray } from "../utils/shuffleArray";
 import { ok, fail } from "../utils/http";
+import { logger } from "../utils/logger";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
@@ -28,7 +29,7 @@ export const getVideos = async (req: Request, res: Response) => {
                 return;
             }
         } catch (cacheErr) {
-            console.error("Redis Cache Read Error:", cacheErr);
+            logger.error({ err: cacheErr }, "Redis cache read error");
         }
 
         let whereClause: any = {};
@@ -77,14 +78,14 @@ export const getVideos = async (req: Request, res: Response) => {
         try {
             await redisClient.setEx(cacheKey, 60, JSON.stringify(cachePayload));
         } catch (cacheErr) {
-            console.error("Redis Cache Write Error:", cacheErr);
+            logger.error({ err: cacheErr }, "Redis cache write error");
         }
 
         // Shuffle just before sending it to the current user.
         ok(res, shuffleArray(formattedDateVideos), { nextCursor, limit }, "Videos Fetched Successfully");
         return;
     } catch (err: unknown) {
-        console.error(err);
+        logger.error({ err });
         fail(res, 500, "Operation Failed", err);
         return;
     }
@@ -197,7 +198,7 @@ export const getLikesByVideoId = async (req: Request, res: Response) => {
         ok(res, mappedLikes, { nextCursor }, "Likes Fetched Successfully");
         return;
     } catch (err: unknown) {
-        console.error(err);
+        logger.error({ err });
         fail(res, 500, "Operation Failed", err);
         return;
     }
@@ -239,7 +240,7 @@ export const getCommentsByVideoId = async (req: Request, res: Response) => {
         ok(res, mappedComments, { nextCursor }, "Comments Fetched Successfully");
         return;
     } catch (err: unknown) {
-        console.error(err);
+        logger.error({ err });
         fail(res, 500, "Operation Failed", err);
         return;
     }
@@ -383,7 +384,7 @@ export const addNewComment = async (req: Request, res: Response) => {
         );
         return;
     } catch (err: unknown) {
-        console.error(err);
+        logger.error({ err });
         fail(res, 500, "Operation Failed", err);
         return;
     }
@@ -460,7 +461,7 @@ export const updateLikes = async (req: Request, res: Response) => {
         ok(res, { videoId, updatedLikes: mappedLikes }, undefined, "Likes Updated");
         return;
     } catch (err: unknown) {
-        console.error(err);
+        logger.error({ err });
         fail(res, 500, "Operation Failed", err);
         return;
     }

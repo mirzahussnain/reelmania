@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../utils/dbconnection.config";
 import { Prisma } from "@prisma/client";
 import { ok, fail } from "../utils/http";
+import { logger } from "../utils/logger";
 
 export const getFollowers = async (req: Request, res: Response) => {
   try {
@@ -90,7 +91,7 @@ export const updateFollower = async (req: Request, res: Response) => {
       throw createErr;
     }
   } catch (err: unknown) {
-    console.error(err);
+    logger.error({ err });
     fail(res, 500, "Operation Failed", err);
   }
 };

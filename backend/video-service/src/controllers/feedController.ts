@@ -3,6 +3,7 @@ import { getRedisClient } from "../utils/redis";
 import prisma from "../utils/dbconnection.config";
 import { getAuth } from "@clerk/express";
 import { ok, fail } from "../utils/http";
+import { logger } from "../utils/logger";
 
 const TRENDING_KEY = "trending:videoIds";
 const TRENDING_TTL = 300; // 5 minutes
@@ -17,7 +18,7 @@ const getTrendingVideoIds = async (redisClient: any): Promise<string[]> => {
         const cached = await redisClient.lRange(TRENDING_KEY, 0, -1);
         if (cached && cached.length > 0) return cached;
     } catch (err) {
-        console.error("Trending cache read error:", err);
+        logger.error({ err }, "Trending cache read error");
     }
 
     const trending = await prisma.videos.findMany({
@@ -34,7 +35,7 @@ const getTrendingVideoIds = async (redisClient: any): Promise<string[]> => {
             await redisClient.expire(TRENDING_KEY, TRENDING_TTL);
         }
     } catch (err) {
-        console.error("Trending cache write error:", err);
+        logger.error({ err }, "Trending cache write error");
     }
 
     return ids;
@@ -47,7 +48,7 @@ const generateFeedForUser = async (userId: string, redisClient: any, feedKey: st
     try {
         locked = (await redisClient.set(lockKey, "1", { NX: true, EX: 30 })) === "OK";
     } catch (err) {
-        console.error("Feed lock error:", err);
+        logger.error({ err }, "Feed lock error");
     }
     if (!locked) return; // another generation is already in progress
 
@@ -129,12 +130,12 @@ const generateFeedForUser = async (userId: string, redisClient: any, feedKey: st
             }
         }
     } catch (err) {
-        console.error("Feed Generator Error:", err);
+        logger.error({ err }, "Feed generator error");
     } finally {
         try {
             await redisClient.del(lockKey);
         } catch (err) {
-            console.error("Feed lock release error:", err);
+            logger.error({ err }, "Feed lock release error");
         }
     }
 };
@@ -190,7 +191,7 @@ export const getForYouFeed = async (req: Request, res: Response) => {
         ok(res, formattedVideos, undefined, "For You Feed");
         return;
     } catch (err: unknown) {
-        console.error("getForYouFeed Error:", err);
+        logger.error({ err }, "getForYouFeed error");
         fail(res, 500, "Operation Failed", err);
         return;
     }

@@ -7,7 +7,8 @@ import bodyParser from "body-parser";
 import errorRouter from "../src/routes/errorRoute";
 import hookRouter from "../src/routes/webhookRoutes";
 import cors from "cors"
-import morgan from "morgan"
+import { pinoHttp } from "pino-http"
+import { logger } from "./utils/logger"
 dotenv.config()
 const app: Express = express();
 const client_url=process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')
@@ -25,7 +26,9 @@ app.use(cors(
 app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "ok" });
 });
-// app.use(morgan("combined")); // Use 'combined' format for detailed logs
+// Structured per-request logging with an auto request id (req.log child).
+// Health checks are excluded to keep the logs signal-rich.
+app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === "/health" } }));
 app.use("/api/webhook/*", bodyParser.raw({ type: "application/json" }));
 app.use(express.json())
 app.use(clerkMiddleware());
@@ -37,6 +40,6 @@ app.use("/api/webhook/user",hookRouter)
 import { startUserWorker } from "./workers/userWorker";
 
 app.listen(port, () => {
-  console.log(`Server is Running at port:${port}`);
-  startUserWorker().catch(err => console.error("Worker failed to start", err));
+  logger.info(`Server is Running at port:${port}`);
+  startUserWorker().catch(err => logger.error({ err }, "Worker failed to start"));
 });

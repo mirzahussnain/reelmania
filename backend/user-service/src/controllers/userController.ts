@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import prisma from "../utils/dbconnection.config";
 import { UserService } from "../services/userService";
 import { ok, fail } from "../utils/http";
+import { logger } from "../utils/logger";
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
@@ -57,7 +58,7 @@ export const getUser = async (req: Request, res: Response) => {
     ok(res, user, undefined, "User Found Successfully");
     return;
   } catch (err: unknown) {
-    console.error(err);
+    logger.error({ err });
     fail(res, 500, "User not Found", err);
   }
 };
@@ -93,7 +94,7 @@ export const getUserByUsername = async (req: Request, res: Response) => {
     ok(res, user, undefined, "User Found Successfully");
     return;
   } catch (err: unknown) {
-    console.error(err);
+    logger.error({ err });
     fail(res, 500, "User not Found", err);
   }
 };
@@ -108,7 +109,7 @@ export const createUser = async (req: Request, res: Response) => {
       fail(res, 400, "User already exists");
       return;
     }
-    console.error(err);
+    logger.error({ err });
     fail(res, 500, "User Creation Failed", err);
   }
 };
