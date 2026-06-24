@@ -12,7 +12,8 @@
     "docker:build": "docker build -t reelmania-client .",
     "docker:run": "docker run -p 3000:3000 reelmania-client",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.26.0",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^18.3.12",
