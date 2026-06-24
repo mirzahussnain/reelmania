@@ -244,6 +244,14 @@ npm run dev
 
 ## 🔌 API Reference
 
+> **Response envelope.** Every endpoint in both services returns one shape:
+> `{ success, message, data, meta? }`. The payload is always under `data`
+> (`null` on error/no-content); list endpoints carry pagination in `meta`
+> (`nextCursor` / `page` / `limit` / `total`). Helpers `ok()` / `fail()` in each
+> service's `src/utils/http.ts` are the only way responses are written, so the
+> shape can't drift. Client request/response types are derived from this
+> envelope in `client/src/shared/contracts/api.ts`.
+
 ### User Service — `http://localhost:8000/api/users`
 
 | Method | Endpoint | Auth | Description |
@@ -283,17 +291,56 @@ npm run dev
 
 ## 🌐 WebSocket Events
 
-The Video Service exposes a Socket.IO server at `/videosocket/`.
+The Video Service exposes a Socket.IO server at `/videosocket/`. Clients hold a
+**single** connection (owned by `SocketProvider`) and events are scoped to a
+**per-video room** (`videoId`) — a client only receives events for videos it is
+viewing. Event names live in one constants module per side and must stay in
+sync.
 
 | Event (emit) | Payload | Description |
 |---|---|---|
-| `newComment` | `{ videoId, newComment, newVideo, commentCount }` | Broadcast a new comment |
-| `likeUpdated` | `{ videoId, updatedLikes }` | Broadcast updated likes array |
+| `joinVideo` / `leaveVideo` | `videoId` | Join / leave a video's room |
+| `newComment` | `{ videoId, newComment, commentCount }` | Notify a new comment |
+| `likeUpdated` | `{ videoId, updatedLikes }` | Notify updated likes |
 
 | Event (listen) | Payload | Description |
 |---|---|---|
-| `newCommentAdded` | `{ videoId, newComment }` | Received when a new comment is posted |
-| `likesChange` | `{ videoId, updatedLikes }` | Received when likes update on any video |
+| `newCommentAdded` | `{ videoId, newComment, commentCount? }` | A new comment in the room |
+| `likesChange` | `{ videoId, updatedLikes }` | Likes changed in the room |
+
+📄 Full contract: [`docs/realtime-contract.md`](docs/realtime-contract.md).
+
+---
+
+## 🧪 Testing, Quality Gates & CI
+
+Conventions enforced across the stack (see [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md)):
+
+- **Routing SSOT** — routes, layout, guards and nav are generated from
+  `client/src/app/routes.config.ts`; adding a route means editing only that file.
+- **Design tokens** — no raw hex / `rgba()` / `-white/` / palette classes in
+  `client/src/**`; the `npm run lint:tokens` guard fails the build otherwise.
+- **Types** — `tsc --noEmit` is clean across all three packages with `strict`
+  on; `@typescript-eslint/no-explicit-any` and `no-console` are eslint errors in
+  the client.
+- **Observability** — both services log structured JSON via a shared `pino`
+  logger; `pino-http` adds a per-request id.
+
+**Tests** (Vitest; backend deps are mocked, so no datastore is required):
+
+```bash
+# client (component + hook + socket tests)
+cd client && npm test
+# services
+cd backend/user-service && npm test
+cd backend/video-service && npm test
+# e2e scaffold (flows deferred — needs the full stack)
+cd client && npm run test:e2e
+```
+
+**CI** — [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on PRs and
+pushes to `main`: client (lint, token guard, typecheck, build, tests) and a
+matrix over both services (prisma generate, typecheck, tests).
 
 ---
 
