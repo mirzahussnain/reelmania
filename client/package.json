@@ -10,7 +10,9 @@
     "lint:tokens": "node scripts/check-tokens.mjs",
     "preview": "vite preview",
     "docker:build": "docker build -t reelmania-client .",
-    "docker:run": "docker run -p 3000:3000 reelmania-client"
+    "docker:run": "docker run -p 3000:3000 reelmania-client",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.26.0",
@@ -40,6 +42,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^18.3.12",
     "@types/react-copy-to-clipboard": "^5.0.7",
     "@types/react-dom": "^18.3.1",
@@ -51,9 +55,11 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.12.0",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4.3.1",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.15.0",
-    "vite": "^6.0.1"
+    "vite": "^6.0.1",
+    "vitest": "^3.2.6"
   }
 }
