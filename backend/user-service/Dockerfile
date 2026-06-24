@@ -1,4 +1,4 @@
-FROM node:18-alpine as builder
+FROM node:24-alpine AS builder
 
 WORKDIR /src
 COPY package*.json ./
@@ -6,7 +6,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:18-alpine
+FROM node:24-alpine
 WORKDIR /src
 # Set environment variables for runtime
 ENV USER_DATABASE_URL=${USER_DATABASE_URL}
