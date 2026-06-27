@@ -2,10 +2,10 @@ import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import type { IconType } from "react-icons";
 import {
   BiHomeAlt, BiSolidHome,
-  BiCompass, BiSolidCompass,
   BiMoviePlay, BiSolidMoviePlay,
   BiCollection, BiSolidCollection,
   BiHistory, BiHeart, BiSolidHeart,
+  BiStore, BiSolidStore,
 } from "react-icons/bi";
 import { matchPath } from "react-router-dom";
 
@@ -50,14 +50,14 @@ export const APP_ROUTES: AppRoute[] = [
   { path: "/share/network/:username", component: lazy(() => import("../pages/PublicNetwork")), layout: "standalone", access: "public" },
 
   // ── App shell, public ────────────────────────────────────────────────────
-  { path: "/", component: lazy(() => import("../pages/Welcome")), layout: "app", access: "public", topbar: true },
+  { path: "/", component: lazy(() => import("../pages/Welcome")), layout: "standalone", access: "public" },
   {
     path: "/foryou", component: lazy(() => import("../pages/Home")), layout: "app", access: "public", topbar: true,
     nav: { label: "Home", icon: BiHomeAlt, activeIcon: BiSolidHome, group: "primary", order: 1 },
   },
   {
-    path: "/explore", component: lazy(() => import("../pages/Explore")), layout: "app", access: "public",
-    nav: { label: "Explore", icon: BiCompass, activeIcon: BiSolidCompass, group: "primary", order: 2 },
+    path: "/explore", component: lazy(() => import("../pages/Explore")), layout: "app", access: "public", topbar: true,
+    nav: { label: "Marketplace", icon: BiStore, activeIcon: BiSolidStore, group: "primary", order: 2 },
   },
   {
     path: "/studio", component: lazy(() => import("../pages/ComingSoon")), layout: "app", access: "public",

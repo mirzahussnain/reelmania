@@ -20,8 +20,12 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "src");
 const RULES = [
   { re: /#[0-9a-fA-F]{3,8}\b/, label: "hex colour (#rrggbb)" },
   { re: /\brgba?\(/, label: "rgb()/rgba() literal" },
-  { re: /-white\//, label: "white/x utility (use hairline/on-media token)" },
-  { re: /\b(bg|text|border)-(black|white)\b/, label: "bare black/white utility (use scrim/on-media token)" },
+  // Any colour-bearing Tailwind prefix paired with black/white — covers
+  // gradient stops (from-/via-/to-) and ring/fill/stroke/etc., not just bg/text.
+  {
+    re: /\b(bg|text|border|from|via|to|ring|fill|stroke|outline|divide|shadow|decoration|placeholder|caret|accent)-(black|white)\b/,
+    label: "bare black/white utility (use scrim/on-media/hairline token)",
+  },
   { re: /-(zinc|gray|grey|slate|red|blue|green|yellow|amber|emerald)-\d/, label: "raw Tailwind palette colour (use semantic token)" },
 ];
 

@@ -1,4 +1,4 @@
-// Komorebi role model (Phase 7.3) — per the product vision.
+// Kinetix role model (Phase 7.3) — per the product vision.
 //
 //  • Curator — the only role we track today. Every user IS a Curator: they can
 //    discover, connect, and build Vault collections. New users default to it.

@@ -37,7 +37,7 @@ const CScoreRing = ({ score }: { score: number }) => {
 
       <div className="mt-10 text-center max-w-[380px] w-full">
         <p className="text-base text-on-surface-variant leading-relaxed">
-          Your influence map within the Komorebi ecosystem. Higher scores indicate deeper aesthetic resonance with connected nodes.
+          Your influence map within the Kinetix ecosystem. Higher scores indicate deeper aesthetic resonance with connected nodes.
         </p>
       </div>
     </div>

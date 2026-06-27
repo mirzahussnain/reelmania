@@ -31,11 +31,11 @@ P0 ─┬─ P1 ─ P2 ─┐
 | 0.1 | 🟡 Dead component `DesktopNavItem.tsx` (never imported) | Delete `client/src/shared/components/navbar/DesktopNavItem.tsx`. |
 | 0.2 | 🟡 Empty placeholder `FeaturedArchivesGrid.tsx` | Delete `client/src/shared/components/profile/FeaturedArchivesGrid.tsx`. |
 | 0.3 | 🟡 Dead slice `uploaderSlice` (`setUploadProgress` never dispatched) | Either wire real upload progress in `useVideoUpload` or delete the slice + its store registration. Decision: **delete** (S3 PUT via `fetch` has no progress events anyway; use `XMLHttpRequest` later if progress is wanted). |
-| 0.4 | 🔵 Brand-name inconsistency: "Komorebi" vs "ReelMania" | Add `client/src/shared/constants/brand.ts` → `export const BRAND = "ReelMania";`. Replace the literal in `PublicProfile.tsx:41` and the toast copy. |
+| 0.4 | 🔵 Brand-name inconsistency: "Kinetix" vs "ReelMania" | Add `client/src/shared/constants/brand.ts` → `export const BRAND = "ReelMania";`. Replace the literal in `PublicProfile.tsx:41` and the toast copy. |
 | 0.5 | 🟡 `console.log` left in production paths | Remove logs in `useVideoRealtime.ts` (lines 37, 40, 44), `videoApi.ts:141`, `socketController.ts:18`. Add an eslint `no-console` warn rule (allow `warn`/`error`). |
 | 0.6 | 🟡 LF/CRLF churn on commit | Add `.gitattributes` with `* text=auto eol=lf` and renormalize (`git add --renormalize .`). |
 
-**Acceptance:** app builds; `git grep -n Komorebi` empty; no `console.log` in `src`; no unused-export warnings for the deleted modules.
+**Acceptance:** app builds; `git grep -n Kinetix` empty; no `console.log` in `src`; no unused-export warnings for the deleted modules.
 
 ---
 

@@ -48,7 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {routeHasTopbar(location.pathname) && <Topbar />}
 
         {/* Page Content */}
-        <main className="flex-1 w-full h-full relative overflow-hidden">
+        <main className="flex-1 w-full h-full relative overflow-y-auto overflow-x-hidden">
           {children}
         </main>
       </div>
