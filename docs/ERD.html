@@ -13,6 +13,7 @@
     --user: #a078ff;
     --video: #00c2d4;
     --market: #ffb454;
+    --curation: #5fd08a;
     --fk: #7fd1ff;
     --soft: #ffb454;
   }
@@ -38,6 +39,7 @@
     <span class="item"><span class="swatch" style="background:var(--user)"></span>user-service · Postgres</span>
     <span class="item"><span class="swatch" style="background:var(--video)"></span>video-service · Mongo</span>
     <span class="item"><span class="swatch" style="background:var(--market)"></span>marketplace-service · Postgres</span>
+    <span class="item"><span class="swatch" style="background:var(--curation)"></span>curation-service · Postgres</span>
     <span class="item"><span class="line" style="border-top:2px solid var(--fk)"></span>FK (intra-service)</span>
     <span class="item"><span class="line" style="border-top:2px dashed var(--soft)"></span>soft id-ref (no FK)</span>
   </div>
@@ -51,6 +53,7 @@ const SERVICES = {
   user:   { color: "#a078ff", label: "user-service" },
   video:  { color: "#00c2d4", label: "video-service" },
   market: { color: "#ffb454", label: "marketplace-service" },
+  curation: { color: "#5fd08a", label: "curation-service" },
 };
 
 // key: PK / FK / UK / soft (cross-service) / "" plain
@@ -84,6 +87,12 @@ const ENTITIES = {
     ["id","PK"],["userId","UK soft"],["stripeAccountId","UK"],["payoutsEnabled",""],["onboardingDone",""] ] },
   Subscription: { svc: "market", x: 1080, y: 640, fields: [
     ["id","PK"],["userId","UK soft"],["stripeCustomerId","UK"],["stripeSubscriptionId","UK"],["tier",""],["status",""] ] },
+
+  Collection: { svc: "curation", x: 1410, y: 70, fields: [
+    ["id","PK"],["ownerId","soft"],["title",""],["slug","UK"],["description",""],
+    ["coverImageUrl",""],["isPrivate",""],["createdAt",""] ] },
+  CollectionItem: { svc: "curation", x: 1410, y: 390, fields: [
+    ["id","PK"],["collectionId","FK"],["videoId","soft"],["addedById","soft"],["note",""],["position",""],["createdAt",""] ] },
 };
 
 const RELS = [
@@ -106,6 +115,11 @@ const RELS = [
   ["users","PayoutAccount","soft","userId"],
   ["users","Subscription","soft","userId"],
   ["videos","AssetVideoLink","soft","videoId"],
+  // curation-service
+  ["Collection","CollectionItem","fk","collectionId"],
+  ["users","Collection","soft","ownerId"],
+  ["users","CollectionItem","soft","addedById"],
+  ["videos","CollectionItem","soft","videoId"],
 ];
 
 const HEADER_H = 30, ROW_H = 19, PAD = 10, BOX_W = 250, FONT = 12;

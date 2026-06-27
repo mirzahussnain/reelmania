@@ -12,10 +12,11 @@
 
 ## 1. Why this exists
 
-The three services own **three separate databases** (user-service · Postgres,
-video-service · Mongo, marketplace-service · Postgres). A foreign key cannot cross a
-database boundary, so every cross-service reference is a **soft link** — a bare id with
-no DB-level enforcement (e.g. `AssetVideoLink.videoId → videos.id`). Integrity across
+The four services own **four separate databases** (user-service · Postgres,
+video-service · Mongo, marketplace-service · Postgres, curation-service · Postgres). A
+foreign key cannot cross a database boundary, so every cross-service reference is a **soft
+link** — a bare id with no DB-level enforcement (e.g. `AssetVideoLink.videoId → videos.id`,
+`CollectionItem.videoId → videos.id`). Integrity across
 those edges is the *application's* job, and the mechanism is **events on RabbitMQ**:
 
 - **Async propagation** (this doc) — "user renamed", "video deleted", "order paid".
@@ -37,12 +38,16 @@ RabbitMQ broker
 └── vhost: /kinetix
     ├── exchange: user.events         (topic)  ── published by user-service
     ├── exchange: video.events        (topic)  ── published by video-service
-    └── exchange: marketplace.events  (topic)  ── published by marketplace-service
+    ├── exchange: marketplace.events  (topic)  ── published by marketplace-service
+    └── exchange: curation.events     (topic)  ── published by curation-service
 
     Consumers declare their OWN queues (+ a paired .dlq) and bind to the exchanges
     they care about:
     ├── marketplace.user-events.q   ← user.events   (user.deleted, user.updated)
     ├── marketplace.video-events.q  ← video.events  (video.deleted)
+    ├── marketplace.curation-events.q ← curation.events (collection.item.added — affiliate/C-Score)
+    ├── curation.user-events.q      ← user.events   (user.deleted)
+    ├── curation.video-events.q     ← video.events  (video.deleted)
     └── video.subscription-events.q ← marketplace.events (subscription.updated)
 ```
 
@@ -100,7 +105,30 @@ set with TTL) so a redelivered event is a harmless no-op.
 
 ---
 
-## 6. The overriding rule: financial records are immutable
+## 6. curation-service — events
+
+### Published (exchange `curation.events`)
+
+| Routing key | `data` payload | Primary consumers / purpose |
+|---|---|---|
+| `collection.item.added` | `{ collectionId, videoId, addedById, ownerId }` | marketplace (affiliate context); C-Score job ("curation success" input, roadmap §5); notify the video's creator their work was curated |
+| `collection.item.removed` | `{ collectionId, videoId }` | C-Score recompute; analytics |
+
+### Consumed
+
+| Source · routing key | Queue (+ `.dlq`) | Handler intent |
+|---|---|---|
+| `video.events` · `video.deleted` | `curation.video-events.q` | **Unlink:** delete `CollectionItem` rows for that `videoId` (orphan cleanup; the soft `videoId` ref can't cascade). |
+| `user.events` · `user.deleted` | `curation.user-events.q` | Delete / anonymize that user's `Collection`s. Past **affiliate attribution already lives on `Order.curatorId` in marketplace**, so deleting collections does not erase sales history. |
+
+**PRO gating note (not an event):** creating a private collection (`isPrivate = true`) is a
+PRO perk, but tier lives in marketplace-service. curation-service learns tier by consuming
+`marketplace.events · subscription.updated` (cache it) or a sync check at create-time — it
+must **never trust the client** for tier.
+
+---
+
+## 7. The overriding rule: financial records are immutable
 
 When `user.deleted` arrives, the handler **must NOT** cascade-delete `Order`,
 `Entitlement`, or `PayoutAccount`. Those are financial/audit records and must persist:
@@ -117,7 +145,7 @@ money lives in its own service.
 
 ---
 
-## 7. Reliability requirements (apply to every consumer)
+## 8. Reliability requirements (apply to every consumer)
 
 - **Dead-letter queue per queue.** Each `*.q` has a paired `*.dlq` with a max-retry
   header; exhausted messages route to the DLQ. A poison message must never loop forever
@@ -133,11 +161,12 @@ money lives in its own service.
 
 ---
 
-## 8. Status
+## 9. Status
 
 Design complete; **not yet implemented.** The `user.events` fan-out exchange and the DLQ
 work are also prerequisites tracked in IMPLEMENTATION_PLAN §2.1–§2.2. Build order:
 1. `user.events` / `video.events` exchanges + DLQs (foundation).
-2. marketplace-service consumers (`video.deleted` unlink, `user.deleted` anonymize).
+2. marketplace-service consumers (`video.deleted` unlink, `user.deleted` anonymize);
+   curation-service consumers (`video.deleted` unlink, `user.deleted` cleanup).
 3. marketplace-service publishers (`order.paid`, `subscription.updated`) alongside the
-   Stripe webhook handler.
+   Stripe webhook handler; curation-service publisher (`collection.item.added`).
