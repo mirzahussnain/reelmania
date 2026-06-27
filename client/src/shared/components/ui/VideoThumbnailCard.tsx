@@ -4,6 +4,7 @@ import { VideoType } from "../../../types";
 import { cn } from "../../utils/cn";
 import { FiShoppingCart } from "react-icons/fi";
 import { Button } from "./Button";
+import { CurateButton } from "../collections/CurateButton";
 import { MOCK_VIDEO_METADATA } from "../../constants/mocks";
 
 // Card for REAL videos. `grid` is the Explore/discovery card (author overlay,
@@ -84,6 +85,12 @@ export const VideoThumbnailCard: React.FC<VideoThumbnailCardProps> = ({
       
       {/* Top Gradient for Duration */}
       <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-scrim/60 to-transparent pointer-events-none" />
+
+      {/* Curate (add to collection) — applies to any video, not just assets */}
+      <CurateButton
+        videoId={video?.id}
+        className="absolute top-3 left-3 w-7 h-7 md:w-8 md:h-8 rounded-lg bg-media-scrim backdrop-blur-md border border-hairline/20 text-on-media hover:text-primary pointer-events-auto z-10 text-[13px]"
+      />
       
       {/* Duration Badge */}
       <div className="absolute top-3 right-3 bg-primary/10 border border-primary/20 backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-jetbrains font-bold text-primary flex items-center gap-1">

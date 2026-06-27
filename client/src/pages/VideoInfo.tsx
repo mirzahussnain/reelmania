@@ -12,6 +12,7 @@ import { CommentItem } from "../shared/components/CommentItem";
 import { CommentForm } from "../shared/components/CommentForm";
 import { cn } from "../shared/utils/cn";
 import { Button } from "../shared/components/ui/Button";
+import { CurateButton } from "../shared/components/collections/CurateButton";
 
 const VideoInfo = () => {
   const navigateTo = useNavigate();
@@ -125,6 +126,11 @@ const VideoInfo = () => {
                 <FaCommentDots className="text-lg" />
                 <span className="font-semibold text-on-surface">{formatNumber(videoComments?.length || 0)}</span>
               </div>
+              <CurateButton
+                videoId={videoState.id}
+                label="Save"
+                className="ml-auto gap-2 px-3 py-1.5 rounded-full border border-outline-variant/30 text-sm font-semibold text-on-surface-variant hover:text-on-surface hover:border-primary/50"
+              />
             </div>
           </div>
 

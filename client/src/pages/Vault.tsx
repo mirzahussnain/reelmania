@@ -47,6 +47,12 @@ const Vault: React.FC = () => {
     ? activeVideos.filter((v) => v.title?.toLowerCase().includes(q))
     : activeVideos;
 
+  // Curated collections (session mock — curation-service later).
+  const collections = useAppSelector((state: RootState) => state.collections.items);
+  const visibleCollections = q
+    ? collections.filter((c) => c.title.toLowerCase().includes(q))
+    : collections;
+
   if (profileLoading) return <Loader />;
 
   return (
@@ -137,7 +143,7 @@ const Vault: React.FC = () => {
                 onClick={() => navigate('/vault/network')}
               />
               <div className="divider-v"></div>
-              <StatBlock value={userVideos?.length || 0} label="Collections" />
+              <StatBlock value={collections?.length || 0} label="Collections" />
               <div className="divider-v"></div>
               {/* C-Score is not modelled yet — placeholder until the scoring job ships. */}
               <StatBlock value="soon" label="C-Score" highlight />
@@ -184,9 +190,28 @@ const Vault: React.FC = () => {
           />
         </div>
 
-        {/* 4. Video Grid */}
+        {/* 4. Content Grid */}
         <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-          {isLoadingVideos ? (
+          {activeTab === "Collections" ? (
+            visibleCollections.length > 0 ? (
+              visibleCollections.map((c) => (
+                <div
+                  key={c.id}
+                  className="card-solid relative aspect-9/16 rounded-md overflow-hidden group cursor-pointer flex flex-col justify-end p-4 border border-outline-variant/15"
+                >
+                  <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-surface-container to-surface-container-low" />
+                  <div className="absolute top-3 left-3 bg-media-scrim backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-jetbrains font-bold text-on-media">
+                    {c.videoIds.length} items
+                  </div>
+                  <div className="relative z-10">
+                    <h3 className="font-syne font-bold text-on-surface text-lg line-clamp-2">{c.title}</h3>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <EmptyState className="col-span-full" message={q ? `No collections match “${vaultSearch}”.` : "No collections yet — curate videos to build one."} />
+            )
+          ) : isLoadingVideos ? (
             <div className="col-span-full py-10 flex justify-center">
               <Loader />
             </div>
