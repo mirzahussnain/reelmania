@@ -1,0 +1,65 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// curation-service — the curation bounded context.
+//
+// Owns Collections (a.k.a. the "Vault"): user-curated groupings of videos
+// (archives / moodboards). This is curation, NOT commerce and NOT content:
+//   · DigitalAsset (marketplace-service) = the sellable file.
+//   · videos        (video-service)      = the content being curated.
+//   · Collection    (HERE)               = a curated list of videos.
+// The three meet at the VIDEO: a collection holds a video; that video may have
+// an asset behind it (AssetVideoLink). Curating a video transitively surfaces
+// its asset for sale and earns the curator the affiliate cut.
+//
+// Postgres (not Mongo): ownership + per-owner slug uniqueness are relational.
+//
+// CROSS-SERVICE REFERENCES ARE SOFT (id-only, no FK across boundaries):
+//   ownerId / addedById  → user-service  (Postgres users.id = Clerk id)
+//   CollectionItem.videoId → video-service (Mongo videos.id = ObjectId)
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("CURATION_DATABASE_URL")
+}
+
+// ── A user-curated grouping of videos (the Vault / archive / moodboard) ──────
+model Collection {
+  id            String           @id @default(cuid())
+  ownerId       String // → user-service users.id (the curator who owns it)
+  title         String
+  slug          String
+  description   String?
+  coverImageUrl String?
+  isPrivate     Boolean          @default(false) // private moodboards = a PRO perk (tier from marketplace-service)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  items         CollectionItem[]
+
+  @@unique([ownerId, slug]) // stable shareable URL: /vault/:owner/:slug
+  @@index([ownerId])
+}
+
+// ── Compound junction: collection ↔ video (many-to-many) ─────────────────────
+// One collection holds many videos; one video can sit in many collections.
+// addedById is the AFFILIATE ATTRIBUTION anchor → becomes Order.curatorId when
+// a sale is driven through this collection (roadmap §4).
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collectionId String
+  videoId      String // → video-service videos.id (Mongo ObjectId, soft ref)
+  addedById    String // → user-service users.id = the curator (affiliate)
+  note         String? // optional curator annotation
+  position     Int        @default(0) // manual ordering within the collection
+  createdAt    DateTime   @default(now())
+
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, videoId]) // a video appears at most once per collection
+  @@index([videoId]) // reverse lookup + orphan cleanup on video.deleted
+  @@index([addedById]) // "what has this curator curated"
+}
