@@ -1,0 +1,159 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// marketplace-service — the single financial source of truth.
+//
+// Owns ALL money & ownership: digital assets, orders, download entitlements,
+// seller payout accounts, and PRO subscriptions. Postgres is mandatory here —
+// money must be relational + ACID (roadmap §2).
+//
+// CROSS-SERVICE REFERENCES ARE SOFT (by id, no foreign keys across boundaries):
+//   sellerId / buyerId / curatorId / userId  → user-service  (Postgres users.id = Clerk id)
+//   AssetVideoLink.videoId                    → video-service (Mongo videos.id = ObjectId)
+// Existing user/video schemas are NOT modified; this service only points at them.
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("MARKETPLACE_DATABASE_URL")
+}
+
+// ── The product being sold ───────────────────────────────────────────────────
+// A creator-owned digital asset (project file / LUT / preset). NEVER the video
+// itself — money moves for the file, never for views (roadmap §0).
+model DigitalAsset {
+  id            String           @id @default(cuid())
+  sellerId      String // → user-service users.id (single owner per asset)
+  title         String
+  description   String?
+  priceCents    Int // integer cents, never a float
+  currency      String           @default("usd")
+  license       LicenseType      @default(COMMERCIAL)
+  software      String[] // ["AE","C4D",...] — the compatibility badges
+  fileFormat    String? // ".aep" / ".zip" / ".cube"
+  storageKey    String // key in the PRIVATE bucket; never public
+  fileSizeBytes Int?
+  status        AssetStatus      @default(DRAFT)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  videos        AssetVideoLink[]
+  orders        Order[]
+  entitlements  Entitlement[]
+
+  @@index([sellerId])
+  @@index([status])
+}
+
+// ── Compound junction: asset ↔ showcase video (many-to-many) ─────────────────
+// One asset may be showcased across several videos; one video may sell several
+// assets. videoId is a soft reference to video-service Mongo videos.id.
+model AssetVideoLink {
+  id        String       @id @default(cuid())
+  assetId   String
+  videoId   String // → video-service videos.id (Mongo ObjectId)
+  isPrimary Boolean      @default(false) // the hero video shown on the asset card
+  createdAt DateTime     @default(now())
+
+  asset     DigitalAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, videoId]) // the compound reference
+  @@index([videoId]) // Discover lookup: "is there an asset for this video?"
+}
+
+// ── Proof of purchase ────────────────────────────────────────────────────────
+// Created via verified Stripe webhook only. Truth lives here; Stripe holds money.
+model Order {
+  id                  String       @id @default(cuid())
+  buyerId             String // → user-service users.id
+  assetId             String
+  sellerId            String
+  curatorId           String? // affiliate (Vault that drove the sale), if any
+  amountCents         Int
+  platformFeeCents    Int // Kinetix cut (10% + $0.30), or 0 for PRO sellers
+  affiliateCents      Int          @default(0) // curator's 15%, if curatorId set
+  sellerNetCents      Int
+  currency            String       @default("usd")
+  stripeSessionId     String       @unique // idempotency key for webhook redelivery
+  stripePaymentIntent String?
+  status              OrderStatus  @default(PENDING)
+  createdAt           DateTime     @default(now())
+
+  asset       DigitalAsset @relation(fields: [assetId], references: [id])
+  entitlement Entitlement?
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([curatorId])
+}
+
+// ── Download right ───────────────────────────────────────────────────────────
+// Created ONLY in the paid webhook. No entitlement → no bytes, ever.
+// The @@unique pairs make redelivered webhooks idempotent at the DB layer.
+model Entitlement {
+  id        String       @id @default(cuid())
+  buyerId   String
+  assetId   String
+  orderId   String       @unique
+  createdAt DateTime     @default(now())
+
+  asset DigitalAsset @relation(fields: [assetId], references: [id])
+  order Order        @relation(fields: [orderId], references: [id])
+
+  @@unique([buyerId, assetId])
+  @@index([buyerId])
+}
+
+// ── Seller payout account (Stripe Connect Express) ───────────────────────────
+// Kinetix never touches bank details — Stripe does KYC.
+model PayoutAccount {
+  id              String   @id @default(cuid())
+  userId          String   @unique // → user-service users.id
+  stripeAccountId String   @unique // acct_...
+  chargesEnabled  Boolean  @default(false)
+  payoutsEnabled  Boolean  @default(false)
+  onboardingDone  Boolean  @default(false)
+  country         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ── PRO subscription (Stripe Billing) ────────────────────────────────────────
+// Entitlement to PRO is owned here (all money in one service). Other services
+// read the tier via API/event; never trust the client for tier.
+model Subscription {
+  id                   String   @id @default(cuid())
+  userId               String   @unique // → user-service users.id
+  stripeCustomerId     String   @unique
+  stripeSubscriptionId String?  @unique
+  tier                 Tier     @default(FREE)
+  status               String? // active | past_due | canceled ...
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+enum LicenseType {
+  PERSONAL
+  COMMERCIAL
+  EXTENDED
+}
+
+enum AssetStatus {
+  DRAFT
+  PUBLISHED
+  UNLISTED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum Tier {
+  FREE
+  PRO
+}
