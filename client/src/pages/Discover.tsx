@@ -10,7 +10,7 @@ import { Button } from "../shared/components/ui/Button";
 import { FiFolder, FiTag, FiUserPlus, FiAlertTriangle, FiRefreshCcw, FiUser } from "react-icons/fi";
 import { BsLightningFill } from "react-icons/bs";
 
-const Explore = () => {
+const Discover = () => {
   const navigateTo = useNavigate();
   // The active query args ARE the source of truth. RTK Query caches each
   // distinct {q, type} combination, so search is just changing these args —
@@ -20,7 +20,7 @@ const Explore = () => {
   const videos: VideoType[] = data?.data ?? [];
 
   return (
-    <div className="min-h-full w-full pt-20 pb-24 flex flex-col items-center justify-start bg-gradient-to-br from-surface to-surface-container">
+    <div className="min-h-full w-full pt-8 pb-24 flex flex-col items-center justify-start bg-linear-to-br from-surface to-surface-container">
       <div className="w-full max-w-7xl px-4 md:px-8 flex flex-col items-center justify-start mb-16">
         
         {/* Header Section */}
@@ -138,7 +138,7 @@ const Explore = () => {
         {/* Grid Section */}
         <div className="w-full">
           <h2 className="text-xl md:text-2xl font-syne font-bold text-on-surface mb-6">
-            Trending Shorts & Assets
+            Trending Shorts
           </h2>
           
           {isFetching ? (
@@ -180,4 +180,4 @@ const Explore = () => {
   );
 };
 
-export default Explore;
+export default Discover;

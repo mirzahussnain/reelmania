@@ -28,8 +28,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   if (isMobile) {
     return (
       <div className="w-full h-[100dvh] overflow-hidden relative bg-background flex flex-col">
-        <div className="flex-1 w-full h-full relative overflow-hidden">
-          {children} 
+        {/* Scrollable content area. Full-height feed pages (Home) manage their
+            own internal scroll and stay h-full; normal long pages (Discover,
+            Marketplace) scroll here. */}
+        <div className="flex-1 w-full min-h-0 relative overflow-y-auto overflow-x-hidden">
+          {children}
         </div>
         <Navbar /> {/* Mobile Navbar at bottom */}
       </div>

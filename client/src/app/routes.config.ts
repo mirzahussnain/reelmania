@@ -2,6 +2,7 @@ import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import type { IconType } from "react-icons";
 import {
   BiHomeAlt, BiSolidHome,
+  BiCompass, BiSolidCompass,
   BiMoviePlay, BiSolidMoviePlay,
   BiCollection, BiSolidCollection,
   BiHistory, BiHeart, BiSolidHeart,
@@ -56,8 +57,17 @@ export const APP_ROUTES: AppRoute[] = [
     nav: { label: "Home", icon: BiHomeAlt, activeIcon: BiSolidHome, group: "primary", order: 1 },
   },
   {
-    path: "/explore", component: lazy(() => import("../pages/Explore")), layout: "app", access: "public", topbar: true,
-    nav: { label: "Marketplace", icon: BiStore, activeIcon: BiSolidStore, group: "primary", order: 2 },
+    // Following feed — signed-in only. Topbar tab (paired with For You), not a
+    // sidebar entry, so it has no `nav`.
+    path: "/following", component: lazy(() => import("../pages/Following")), layout: "app", access: "auth", topbar: true,
+  },
+  {
+    path: "/discover", component: lazy(() => import("../pages/Discover")), layout: "app", access: "public",
+    nav: { label: "Discover", icon: BiCompass, activeIcon: BiSolidCompass, group: "primary", order: 2 },
+  },
+  {
+    path: "/marketplace", component: lazy(() => import("../pages/Marketplace")), layout: "app", access: "public",
+    nav: { label: "Marketplace", icon: BiStore, activeIcon: BiSolidStore, group: "primary", order: 3 },
   },
   {
     path: "/studio", component: lazy(() => import("../pages/ComingSoon")), layout: "app", access: "public",
@@ -75,6 +85,7 @@ export const APP_ROUTES: AppRoute[] = [
     path: "/liked", component: lazy(() => import("../pages/ComingSoon")), layout: "app", access: "public",
     nav: { label: "Liked", icon: BiHeart, activeIcon: BiSolidHeart, group: "library", order: 4 },
   },
+  { path: "/coming-soon", component: lazy(() => import("../pages/ComingSoon")), layout: "app", access: "public" },
   { path: "/users/:username", component: lazy(() => import("../pages/UserProfile")), layout: "app", access: "public" },
   { path: "/videos/:videoId", component: lazy(() => import("../pages/VideoInfo")), layout: "app", access: "public" },
 

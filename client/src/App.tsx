@@ -91,6 +91,9 @@ const App = () => {
       <Suspense fallback={<Loader />}>
         <Layout>
           <Routes>
+            {/* Legacy redirect: /explore was renamed to /discover */}
+            <Route path="/explore" element={<Navigate to="/discover" replace />} />
+
             {/* Public routes (generated from routes.config.ts) */}
             {publicRoutes.map(({ path, component: Component }) => (
               <Route key={path} path={path} element={<Component />} />

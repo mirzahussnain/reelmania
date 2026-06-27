@@ -1,10 +1,16 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { UserButton, useUser } from "@clerk/clerk-react";
+import { FaBell, FaCog } from "react-icons/fa";
+import { FiLogIn } from "react-icons/fi";
 import { cn } from "../../utils/cn";
 import { useState } from "react";
 import { BRAND } from "../../constants/brand";
 import { getNavItems } from "../../../app/routes.config";
+import { useAppSelector } from "../../../utils/hooks/storeHooks";
+import { RootState } from "../../../utils/store/store";
+import { Button } from "../ui/Button";
 
 interface SidebarItemProps {
   to: string;
@@ -46,6 +52,9 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ to, icon: Icon, activeIcon: A
 
 export const Sidebar: React.FC = () => {
   const [isHovered, setIsHovered] = useState(false);
+  const { isSignedIn } = useUser();
+  const user = useAppSelector((state: RootState) => state.user);
+  const navigateTo = useNavigate();
   const primaryNav = getNavItems("primary");
   const libraryNav = getNavItems("library");
 
@@ -79,6 +88,46 @@ export const Sidebar: React.FC = () => {
           </Link>
         </div>
 
+        {/* Account Section — avatar + username, with notifications & settings */}
+        <div className="px-[18px] py-4 shrink-0 border-b border-outline-variant/10">
+          {isSignedIn && user ? (
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full hover:glow-primary transition-all">
+                <UserButton
+                  appearance={{ elements: { avatarBox: { width: "2.25rem", height: "2.25rem" } } }}
+                  userProfileMode="navigation"
+                  userProfileUrl={`/users/${user.id}/profile/manage`}
+                />
+              </div>
+              <div className="flex items-center justify-between flex-1 min-w-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300">
+                <span className="font-inter font-semibold text-sm text-on-surface truncate">
+                  @{user.username}
+                </span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="unstyled" aria-label="Notifications" className="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
+                    <FaBell className="text-[16px]" />
+                  </Button>
+                  <Button variant="unstyled" aria-label="Settings" className="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
+                    <FaCog className="text-[16px]" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => navigateTo("/sign-in")}
+              className="flex items-center gap-3 w-full text-on-surface-variant hover:text-on-surface transition-colors"
+            >
+              <div className="w-9 h-9 shrink-0 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center">
+                <FiLogIn className="text-[16px]" />
+              </div>
+              <span className="font-inter font-semibold text-sm whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300">
+                Sign in
+              </span>
+            </button>
+          )}
+        </div>
+
         {/* Navigation Links — derived from routes.config.ts */}
         <nav className="flex-1 flex flex-col gap-2 py-6 px-3">
           {primaryNav.map(({ path, nav }) => (
@@ -96,7 +145,7 @@ export const Sidebar: React.FC = () => {
             <motion.div
               animate={{ width: isHovered ? 190 : 0, opacity: isHovered ? 1 : 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30, mass: 1 }}
-              className="h-32 shrink-0 rounded-md flex flex-col justify-center items-center cursor-pointer overflow-hidden relative border border-white/10 bg-linear-to-b from-surface-container-high/50 to-surface-container-low/30 shadow-lg group/logo"
+              className="h-32 shrink-0 rounded-md flex flex-col justify-center items-center cursor-pointer overflow-hidden relative border border-hairline/10 bg-linear-to-b from-surface-container-high/50 to-surface-container-low/30 shadow-lg group/logo"
             >
               {/* soft glow pooling at the bottom of the card */}
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-primary/15 to-transparent" />

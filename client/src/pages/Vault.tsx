@@ -7,6 +7,7 @@ import { VideoType } from "../types";
 import { useNavigate } from "react-router-dom";
 import { BiArrowBack } from "react-icons/bi";
 import { FaBell } from "react-icons/fa";
+import { SearchField } from "../shared/components/ui/SearchField";
 import Loader from "../components/Loader";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { toast } from "react-toastify";
@@ -35,6 +36,16 @@ const Vault: React.FC = () => {
   );
   const userVideos: VideoType[] = videosData?.data ?? [];
   const [activeTab, setActiveTab] = useState("My Uploads");
+  const [vaultSearch, setVaultSearch] = useState("");
+
+  // Scoped search: filters only the active tab's items (the user's own
+  // library), not a global search. Liked/Collections are placeholders until
+  // those endpoints exist.
+  const activeVideos: VideoType[] = activeTab === "My Uploads" ? userVideos : [];
+  const q = vaultSearch.trim().toLowerCase();
+  const visibleVideos = q
+    ? activeVideos.filter((v) => v.title?.toLowerCase().includes(q))
+    : activeVideos;
 
   if (profileLoading) return <Loader />;
 
@@ -148,21 +159,29 @@ const Vault: React.FC = () => {
           </div>
         </div>
 
-        {/* 3. Tab Navigation */}
-        <div className="w-full mt-10 border-b border-hairline/10 flex items-center gap-8 px-2">
-          {['My Uploads', 'Liked', 'Collections'].map((tab) => (
-            <Button
-              key={tab}
-              variant="unstyled"
-              onClick={() => setActiveTab(tab)}
-              className={`pb-4 relative font-jetbrains text-sm font-semibold tracking-wide transition-colors ${activeTab === tab ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-            >
-              {tab}
-              {activeTab === tab && (
-                <div className="neon-bar absolute -bottom-[1px] left-0 w-full" />
-              )}
-            </Button>
-          ))}
+        {/* 3. Tab Navigation + scoped search */}
+        <div className="w-full mt-10 border-b border-hairline/10 flex items-center justify-between gap-4 px-2 flex-wrap">
+          <div className="flex items-center gap-8">
+            {['My Uploads', 'Liked', 'Collections'].map((tab) => (
+              <Button
+                key={tab}
+                variant="unstyled"
+                onClick={() => setActiveTab(tab)}
+                className={`pb-4 relative font-jetbrains text-sm font-semibold tracking-wide transition-colors ${activeTab === tab ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+              >
+                {tab}
+                {activeTab === tab && (
+                  <div className="neon-bar absolute -bottom-px left-0 w-full" />
+                )}
+              </Button>
+            ))}
+          </div>
+          <SearchField
+            value={vaultSearch}
+            onChange={setVaultSearch}
+            placeholder={`Search in ${activeTab}…`}
+            className="mb-2 w-full sm:w-64"
+          />
         </div>
 
         {/* 4. Video Grid */}
@@ -171,8 +190,8 @@ const Vault: React.FC = () => {
             <div className="col-span-full py-10 flex justify-center">
               <Loader />
             </div>
-          ) : (activeTab === 'My Uploads' ? userVideos : []).length > 0 ? (
-            (activeTab === 'My Uploads' ? userVideos : []).map((video, idx) => (
+          ) : visibleVideos.length > 0 ? (
+            visibleVideos.map((video, idx) => (
               <VideoThumbnailCard
                 key={video.id || idx}
                 video={video}
@@ -182,7 +201,7 @@ const Vault: React.FC = () => {
               />
             ))
           ) : (
-            <EmptyState className="col-span-full" message="No vaults archived yet." />
+            <EmptyState className="col-span-full" message={q ? `No results in ${activeTab} for “${vaultSearch}”.` : "No vaults archived yet."} />
           )}
         </div>
       </div>
