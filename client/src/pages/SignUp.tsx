@@ -11,7 +11,7 @@ const Register = () => {
   const navigateTo = useNavigate();
   const screenWidth = useScreenWidth();
   return (
-    <div className="w-full h-full flex  items-start justify-center  to-black py-2 overflow-y-auto relative">
+    <div className="w-full h-full flex  items-start justify-center  py-2 overflow-y-auto relative">
       <SignUp
         signInUrl="/sign-in"
         appearance={{

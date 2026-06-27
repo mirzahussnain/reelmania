@@ -4,6 +4,8 @@ import { FaSignInAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { BRAND } from '../shared/constants/brand';
 import { Button } from '../shared/components/ui/Button';
+// import { CanvasNetworkBackground } from '../shared/components/ui/CanvasNetworkBackground';
+
 
 export default function WelcomePage() {
   const { isSignedIn } = useAuth();
@@ -16,8 +18,27 @@ export default function WelcomePage() {
   }, [isSignedIn]);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-background relative flex items-center justify-center p-4 overflow-hidden">
+      {/* 
+        <CanvasNetworkBackground /> 
+        Saved for later use!
+      */}
+      
+      {/* Optimized Video Background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+        src="/assets/kmrebi.webm"
+      />
+      
+      {/* 40% Black Overlay via Token */}
+      <div className="absolute inset-0 bg-media-scrim z-0 pointer-events-none" />
+
+      <div className="max-w-md w-full relative z-10">
         <div className="text-center mb-12 space-y-4">
           <h1 className="text-5xl font-syne font-bold text-on-surface">
             Welcome
@@ -36,13 +57,10 @@ export default function WelcomePage() {
             <span className="ml-5 text-xl text-on-primary font-bold tracking-wider">Sign in by Email</span>
           </Button>
 
-          <div className="relative my-8 w-full">
-            <div className="absolute inset-0 flex items-center">
-              <div className="divider-h"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 text-on-surface-variant bg-background">or</span>
-            </div>
+          <div className="flex items-center my-8 w-full">
+            <div className="flex-1 border-t border-on-surface-variant/60 shadow-sm shadow-scrim"></div>
+            <span className="px-4 text-on-surface text-base font-semibold drop-shadow-md">or</span>
+            <div className="flex-1 border-t border-on-surface-variant/60 shadow-sm shadow-scrim"></div>
           </div>
 
           <Button

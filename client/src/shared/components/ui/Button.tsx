@@ -1,7 +1,7 @@
 import React, { forwardRef } from "react";
 import { cn } from "../../utils/cn";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "pill" | "icon" | "unstyled";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "outline" | "pill" | "icon" | "unstyled";
 type ButtonSize = "sm" | "md" | "lg";
 
 // Variants map to the semantic-token utilities already defined in index.css,
@@ -17,6 +17,8 @@ const VARIANT: Record<ButtonVariant, string> = {
     "bg-surface-container text-on-surface font-semibold hover:bg-surface-container-high",
   ghost:
     "text-on-surface-variant font-medium hover:text-on-surface hover:bg-surface-container-high",
+  outline:
+    "border border-outline-variant/40 text-on-surface font-semibold hover:bg-surface-container-high hover:border-primary/50",
   pill: "pill-btn",
   icon: "action-circle",
   unstyled: "",

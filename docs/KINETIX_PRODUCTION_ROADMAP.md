@@ -1,6 +1,6 @@
-# Komorebi — Production Roadmap (to Real Users & Revenue)
+# Kinetix — Production Roadmap (to Real Users & Revenue)
 
-> Companion to `komorebi_master_blueprint.md` (product vision) and `IMPLEMENTATION_PLAN.md`
+> Companion to `Kinetix_master_blueprint.md` (product vision) and `IMPLEMENTATION_PLAN.md`
 > (code remediation). This document is the **path from the current codebase to a live,
 > paying product**: data models, payments architecture, and the phase sequence to first dollar.
 
@@ -13,7 +13,7 @@ turns the prototype into a business.
 
 ## 0. Guiding Principle
 
-The blueprint's monetization is *legally unassailable* precisely because Komorebi never
+The blueprint's monetization is *legally unassailable* precisely because Kinetix never
 sells access to copyrighted video. **Revenue comes from selling digital assets the creator
 owns** (project files, LUTs, presets) plus a SaaS subscription. Every technical decision
 below protects that line: we move money for *file sales* and *subscriptions*, never for
@@ -122,7 +122,7 @@ model Entitlement {
 }
 ```
 
-### 2.4 Subscription (Komorebi PRO)
+### 2.4 Subscription (Kinetix PRO)
 ```prisma
 model Subscription {
   id                   String   @id @default(cuid())
@@ -175,13 +175,13 @@ Three Stripe products, one consistent pattern: **money on Stripe's side, truth i
 state changes only via verified webhooks.**
 
 ### 3.1 Marketplace sales — Stripe Connect (Express) + Checkout + `application_fee`
-- Each creator onboards a **Connect Express** account (`PayoutAccount`). Komorebi never
+- Each creator onboards a **Connect Express** account (`PayoutAccount`). Kinetix never
   touches the creator's bank details — Stripe does KYC.
 - Buyer purchases via **Checkout Session** created with:
   - `payment_intent_data.application_fee_amount = platformFeeCents (+ affiliateCents)`
   - `payment_intent_data.transfer_data.destination = seller's stripeAccountId`
 - This is a **destination charge**: Stripe routes the seller's net directly to them, holds
-  Komorebi's fee. For the affiliate cut, take a larger `application_fee` and pay the curator
+  Kinetix's fee. For the affiliate cut, take a larger `application_fee` and pay the curator
   via a separate **Transfer** (or a second destination via Separate Charges & Transfers if
   splitting three ways).
 - **Entitlement is created ONLY in the `checkout.session.completed` / `payment_intent.succeeded`
@@ -267,10 +267,10 @@ The UI ring already exists (PublicNetwork). Make the number real and persisted.
 - Stripe Connect onboarding (`PayoutAccount`).
 - Checkout (destination charge) → webhook → `Order` + `Entitlement`.
 - Secure pre-signed download gated on `Entitlement`.
-- **Outcome:** a creator can sell a project file and get paid. Komorebi takes its 10% + $0.30.
-  **This is the milestone that makes Komorebi a business.**
+- **Outcome:** a creator can sell a project file and get paid. Kinetix takes its 10% + $0.30.
+  **This is the milestone that makes Kinetix a business.**
 
-### Phase D — Komorebi PRO (recurring revenue)
+### Phase D — Kinetix PRO (recurring revenue)
 - Stripe Billing $8/mo, `Subscription` model, server-side PRO gating.
 - Apply 0% marketplace fee for PRO, unlock private Collections + 4K uploads.
 - **Outcome:** predictable MRR on top of transactional GMV.
@@ -305,7 +305,7 @@ Money + real users raise the bar from "side project" to "I am liable":
 
 ## 8. The Honest Line (carry it into investor/recruiter conversations)
 
-Komorebi today is a **well-architected prototype**: it scales on paper and survives a laptop
+Kinetix today is a **well-architected prototype**: it scales on paper and survives a laptop
 load test. It does **not** yet move money, has no paying users, and the monetization layer
 above is **designed, not built.** The roadmap is sequenced so the *first revenue milestone
 (Phase C) is reachable without rebuilding anything* — the marketplace bolts onto the existing

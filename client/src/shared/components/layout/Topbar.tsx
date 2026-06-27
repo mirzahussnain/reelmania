@@ -19,32 +19,75 @@ export const Topbar: React.FC = () => {
       {/* Left spacer — Sidebar handles logo */}
       <div className="w-[120px]" />
 
-      {/* Center Tabs */}
+      {/* Center Tabs - Contextual based on Route */}
       <div className="flex items-center gap-8 font-inter font-semibold text-[17px]">
-        <Link
-          to="/following"
-          className={cn(
-            "relative px-1 py-2 transition-colors",
-            location.pathname === "/following" ? "text-on-surface" : "text-on-surface-variant hover:text-on-surface"
-          )}
-        >
-          Following
-          {location.pathname === "/following" && (
-            <div className="neon-bar absolute bottom-0 left-0 w-full" />
-          )}
-        </Link>
-        <Link
-          to="/foryou"
-          className={cn(
-            "relative px-1 py-2 transition-colors",
-            location.pathname === "/foryou" || location.pathname === "/" ? "text-on-surface" : "text-on-surface-variant hover:text-on-surface"
-          )}
-        >
-          For You
-          {(location.pathname === "/foryou" || location.pathname === "/") && (
-            <div className="neon-bar absolute bottom-0 left-0 w-full" />
-          )}
-        </Link>
+        {location.pathname.startsWith("/explore") ? (
+          <>
+            <Link
+              to="/explore"
+              className={cn(
+                "relative px-1 py-2 transition-colors",
+                location.pathname === "/explore" ? "text-on-surface" : "text-on-surface-variant hover:text-on-surface"
+              )}
+            >
+              Trending
+              {location.pathname === "/explore" && (
+                <div className="neon-bar absolute bottom-0 left-0 w-full" />
+              )}
+            </Link>
+            <Link
+              to="/explore?tab=videos"
+              className={cn(
+                "relative px-1 py-2 transition-colors",
+                location.search.includes("tab=videos") ? "text-on-surface" : "text-on-surface-variant hover:text-on-surface"
+              )}
+            >
+              Videos
+              {location.search.includes("tab=videos") && (
+                <div className="neon-bar absolute bottom-0 left-0 w-full" />
+              )}
+            </Link>
+            <Link
+              to="/explore?tab=assets"
+              className={cn(
+                "relative px-1 py-2 transition-colors",
+                location.search.includes("tab=assets") ? "text-on-surface" : "text-on-surface-variant hover:text-on-surface"
+              )}
+            >
+              3D Assets
+              {location.search.includes("tab=assets") && (
+                <div className="neon-bar absolute bottom-0 left-0 w-full" />
+              )}
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link
+              to="/following"
+              className={cn(
+                "relative px-1 py-2 transition-colors",
+                location.pathname === "/following" ? "text-on-surface" : "text-on-surface-variant hover:text-on-surface"
+              )}
+            >
+              Following
+              {location.pathname === "/following" && (
+                <div className="neon-bar absolute bottom-0 left-0 w-full" />
+              )}
+            </Link>
+            <Link
+              to="/foryou"
+              className={cn(
+                "relative px-1 py-2 transition-colors",
+                location.pathname === "/foryou" || location.pathname === "/" ? "text-on-surface" : "text-on-surface-variant hover:text-on-surface"
+              )}
+            >
+              For You
+              {(location.pathname === "/foryou" || location.pathname === "/") && (
+                <div className="neon-bar absolute bottom-0 left-0 w-full" />
+              )}
+            </Link>
+          </>
+        )}
       </div>
 
       {/* Right Controls */}
