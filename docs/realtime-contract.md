@@ -5,6 +5,11 @@
 > `client/src/shared/constants/socketEvents.ts` ↔
 > `backend/video-service/src/constants/socketEvents.ts`.
 > No event-name string literals should appear anywhere else (IMPLEMENTATION_PLAN 2.5).
+>
+> **Scope:** this doc is **browser ↔ video-service** live UI updates only. For
+> **asynchronous service-to-service** events (RabbitMQ — cross-database eventual
+> consistency, money events, orphan cleanup) see
+> [`messaging-contract.md`](./messaging-contract.md).
 
 ## Connection
 

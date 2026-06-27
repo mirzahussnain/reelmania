@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kinetix — System ERD</title>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --panel: #111317;
+    --ink: #e2e2e8;
+    --muted: #b0a8bc;
+    --user: #a078ff;
+    --video: #00c2d4;
+    --market: #ffb454;
+    --fk: #7fd1ff;
+    --soft: #ffb454;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: "Inter", system-ui, sans-serif; }
+  header { padding: 14px 20px; border-bottom: 1px solid #2a2c30;
+    display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  h1 { font-size: 18px; margin: 0; font-weight: 800; letter-spacing: .3px; }
+  .legend { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+  .legend .item { display: flex; align-items: center; gap: 7px; }
+  .swatch { width: 14px; height: 14px; border-radius: 4px; }
+  .line { width: 26px; height: 0; border-top-width: 2px; }
+  .hint { margin-left: auto; font-size: 12px; color: var(--muted); }
+  .wrap { width: 100%; height: calc(100vh - 56px); overflow: hidden; cursor: grab; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Kinetix — System ERD</h1>
+  <div class="legend">
+    <span class="item"><span class="swatch" style="background:var(--user)"></span>user-service · Postgres</span>
+    <span class="item"><span class="swatch" style="background:var(--video)"></span>video-service · Mongo</span>
+    <span class="item"><span class="swatch" style="background:var(--market)"></span>marketplace-service · Postgres</span>
+    <span class="item"><span class="line" style="border-top:2px solid var(--fk)"></span>FK (intra-service)</span>
+    <span class="item"><span class="line" style="border-top:2px dashed var(--soft)"></span>soft id-ref (no FK)</span>
+  </div>
+  <span class="hint">drag boxes &middot; drag canvas to pan &middot; scroll to zoom &middot; hover to highlight</span>
+</header>
+<div class="wrap" id="wrap">
+  <canvas id="c"></canvas>
+</div>
+<script>
+const SERVICES = {
+  user:   { color: "#a078ff", label: "user-service" },
+  video:  { color: "#00c2d4", label: "video-service" },
+  market: { color: "#ffb454", label: "marketplace-service" },
+};
+
+// key: PK / FK / UK / soft (cross-service) / "" plain
+const ENTITIES = {
+  users: { svc: "user", x: 60, y: 70, fields: [
+    ["id","PK"],["email","UK"],["username","UK"],["first_name",""],["last_name",""],
+    ["role",""],["avatar_url",""],["created_at",""] ] },
+  followers: { svc: "user", x: 60, y: 360, fields: [
+    ["follower_id","PK FK"],["following_id","PK FK"],["created_at",""] ] },
+
+  videos: { svc: "video", x: 380, y: 70, fields: [
+    ["id","PK"],["title",""],["video_url",""],["hashtags[]",""],
+    ["uploaded_by {id,username}","emb"],["likeCount",""],["commentCount",""],["uploaded_at",""] ] },
+  Comment: { svc: "video", x: 380, y: 390, fields: [
+    ["id","PK"],["videoId","FK"],["userId","soft"],["username",""],["avatar_url",""],["text",""],["posted_at",""] ] },
+  Like: { svc: "video", x: 380, y: 680, fields: [
+    ["id","PK"],["videoId","FK"],["userId","soft"],["username",""] ] },
+
+  DigitalAsset: { svc: "market", x: 750, y: 70, fields: [
+    ["id","PK"],["sellerId","soft"],["title",""],["priceCents",""],["currency",""],
+    ["license",""],["software[]",""],["fileFormat",""],["storageKey",""],["fileSizeBytes",""],["status",""] ] },
+  AssetVideoLink: { svc: "market", x: 750, y: 460, fields: [
+    ["id","PK"],["assetId","FK"],["videoId","soft"],["isPrimary",""] ] },
+  Order: { svc: "market", x: 1080, y: 70, fields: [
+    ["id","PK"],["assetId","FK"],["buyerId","soft"],["sellerId","soft"],["curatorId","soft"],
+    ["amountCents",""],["platformFeeCents",""],["affiliateCents",""],["sellerNetCents",""],
+    ["stripeSessionId","UK"],["status",""] ] },
+  Entitlement: { svc: "market", x: 1080, y: 480, fields: [
+    ["id","PK"],["orderId","FK UK"],["assetId","FK"],["buyerId","soft"] ] },
+  PayoutAccount: { svc: "market", x: 750, y: 650, fields: [
+    ["id","PK"],["userId","UK soft"],["stripeAccountId","UK"],["payoutsEnabled",""],["onboardingDone",""] ] },
+  Subscription: { svc: "market", x: 1080, y: 640, fields: [
+    ["id","PK"],["userId","UK soft"],["stripeCustomerId","UK"],["stripeSubscriptionId","UK"],["tier",""],["status",""] ] },
+};
+
+const RELS = [
+  // intra-service foreign keys
+  ["users","followers","fk","follower_id"],
+  ["users","followers","fk","following_id"],
+  ["videos","Comment","fk","videoId"],
+  ["videos","Like","fk","videoId"],
+  ["DigitalAsset","AssetVideoLink","fk","assetId"],
+  ["DigitalAsset","Order","fk","assetId"],
+  ["DigitalAsset","Entitlement","fk","assetId"],
+  ["Order","Entitlement","fk","orderId (1:1)"],
+  // cross-service soft id references
+  ["users","videos","soft","uploaded_by.id"],
+  ["users","Comment","soft","userId"],
+  ["users","Like","soft","userId"],
+  ["users","DigitalAsset","soft","sellerId"],
+  ["users","Order","soft","buyer/seller/curator"],
+  ["users","Entitlement","soft","buyerId"],
+  ["users","PayoutAccount","soft","userId"],
+  ["users","Subscription","soft","userId"],
+  ["videos","AssetVideoLink","soft","videoId"],
+];
+
+const HEADER_H = 30, ROW_H = 19, PAD = 10, BOX_W = 250, FONT = 12;
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+const wrap = document.getElementById("wrap");
+
+// measure box heights
+for (const [name, e] of Object.entries(ENTITIES)) {
+  e.name = name;
+  e.w = BOX_W;
+  e.h = HEADER_H + e.fields.length * ROW_H + 8;
+}
+
+let view = { x: 40, y: 10, scale: 1 };
+let dragBox = null, dragOff = {x:0,y:0}, panning = false, panStart = null, hover = null;
+
+function resize() {
+  canvas.width = wrap.clientWidth * devicePixelRatio;
+  canvas.height = wrap.clientHeight * devicePixelRatio;
+  canvas.style.width = wrap.clientWidth + "px";
+  canvas.style.height = wrap.clientHeight + "px";
+  draw();
+}
+window.addEventListener("resize", resize);
+
+function toWorld(px, py) {
+  return { x: (px / view.scale) - view.x, y: (py / view.scale) - view.y };
+}
+
+function edgePoint(box, tx, ty) {
+  const cx = box.x + box.w/2, cy = box.y + box.h/2;
+  let dx = tx - cx, dy = ty - cy;
+  if (dx === 0 && dy === 0) return { x: cx, y: cy };
+  const sx = dx !== 0 ? (box.w/2) / Math.abs(dx) : Infinity;
+  const sy = dy !== 0 ? (box.h/2) / Math.abs(dy) : Infinity;
+  const s = Math.min(sx, sy);
+  return { x: cx + dx * s, y: cy + dy * s };
+}
+
+function relColor(type) { return type === "fk" ? "#7fd1ff" : "#ffb454"; }
+
+function draw() {
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.scale(view.scale, view.scale);
+  ctx.translate(view.x, view.y);
+
+  // relationships
+  for (const [from, to, type, label] of RELS) {
+    const a = ENTITIES[from], b = ENTITIES[to];
+    const ac = { x: a.x + a.w/2, y: a.y + a.h/2 };
+    const bc = { x: b.x + b.w/2, y: b.y + b.h/2 };
+    const p1 = edgePoint(a, bc.x, bc.y);
+    const p2 = edgePoint(b, ac.x, ac.y);
+    const active = hover && (hover === from || hover === to);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.strokeStyle = relColor(type);
+    ctx.globalAlpha = hover ? (active ? 1 : 0.08) : (type === "soft" ? 0.55 : 0.9);
+    ctx.lineWidth = active ? 2.4 : 1.4;
+    ctx.setLineDash(type === "soft" ? [6,5] : []);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // arrowhead at child/target (p2)
+    const ang = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+    ctx.globalAlpha = hover ? (active ? 1 : 0.08) : 0.9;
+    ctx.beginPath();
+    ctx.moveTo(p2.x, p2.y);
+    ctx.lineTo(p2.x - 9*Math.cos(ang - .4), p2.y - 9*Math.sin(ang - .4));
+    ctx.lineTo(p2.x - 9*Math.cos(ang + .4), p2.y - 9*Math.sin(ang + .4));
+    ctx.closePath();
+    ctx.fillStyle = relColor(type);
+    ctx.fill();
+    // label
+    if (!hover || active) {
+      const mx = (p1.x + p2.x)/2, my = (p1.y + p2.y)/2;
+      ctx.font = "11px Inter, sans-serif";
+      const tw = ctx.measureText(label).width;
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = "#0d0f12";
+      ctx.fillRect(mx - tw/2 - 4, my - 9, tw + 8, 16);
+      ctx.fillStyle = relColor(type);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(label, mx, my);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // entities
+  for (const e of Object.values(ENTITIES)) {
+    const col = SERVICES[e.svc].color;
+    const faded = hover && hover !== e.name && !RELS.some(r =>
+      (r[0]===hover && r[1]===e.name) || (r[1]===hover && r[0]===e.name));
+    ctx.globalAlpha = faded ? 0.25 : 1;
+
+    // body
+    roundRect(e.x, e.y, e.w, e.h, 8);
+    ctx.fillStyle = "#15171c";
+    ctx.fill();
+    ctx.lineWidth = e.name === hover ? 2.5 : 1.2;
+    ctx.strokeStyle = col;
+    ctx.stroke();
+
+    // header
+    ctx.save();
+    roundRect(e.x, e.y, e.w, HEADER_H, 8, true);
+    ctx.clip();
+    ctx.fillStyle = col;
+    ctx.globalAlpha = faded ? 0.25 : 0.92;
+    ctx.fillRect(e.x, e.y, e.w, HEADER_H);
+    ctx.restore();
+    ctx.globalAlpha = faded ? 0.25 : 1;
+    ctx.fillStyle = "#0d0f12";
+    ctx.font = "700 13px Inter, sans-serif";
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(e.name, e.x + PAD, e.y + HEADER_H/2 + 1);
+
+    // fields
+    ctx.font = FONT + "px ui-monospace, Menlo, monospace";
+    e.fields.forEach((f, i) => {
+      const fy = e.y + HEADER_H + i*ROW_H + ROW_H/2 + 2;
+      const [fname, key] = f;
+      ctx.textAlign = "left"; ctx.fillStyle = "#e2e2e8";
+      ctx.fillText(fname, e.x + PAD, fy);
+      if (key) {
+        ctx.textAlign = "right";
+        ctx.font = "700 10.5px Inter, sans-serif";
+        ctx.fillStyle = key.includes("soft") ? "#ffb454"
+          : key.includes("PK") ? "#a078ff"
+          : key.includes("emb") ? "#7f8696" : "#7fd1ff";
+        ctx.fillText(key, e.x + e.w - PAD, fy);
+        ctx.font = FONT + "px ui-monospace, Menlo, monospace";
+      }
+    });
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r, topOnly) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  if (topOnly) { ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h); }
+  else { ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); }
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function hitBox(wx, wy) {
+  const arr = Object.values(ENTITIES);
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const e = arr[i];
+    if (wx >= e.x && wx <= e.x + e.w && wy >= e.y && wy <= e.y + e.h) return e;
+  }
+  return null;
+}
+
+wrap.addEventListener("mousedown", (ev) => {
+  const w = toWorld(ev.offsetX, ev.offsetY);
+  const box = hitBox(w.x, w.y);
+  if (box) { dragBox = box; dragOff = { x: w.x - box.x, y: w.y - box.y }; }
+  else { panning = true; panStart = { x: ev.offsetX, y: ev.offsetY, vx: view.x, vy: view.y }; wrap.style.cursor = "grabbing"; }
+});
+window.addEventListener("mousemove", (ev) => {
+  const rect = canvas.getBoundingClientRect();
+  const ox = ev.clientX - rect.left, oy = ev.clientY - rect.top;
+  if (dragBox) {
+    const w = toWorld(ox, oy);
+    dragBox.x = w.x - dragOff.x; dragBox.y = w.y - dragOff.y; draw();
+  } else if (panning) {
+    view.x = panStart.vx + (ox - panStart.x) / view.scale;
+    view.y = panStart.vy + (oy - panStart.y) / view.scale; draw();
+  } else {
+    const w = toWorld(ox, oy);
+    const box = hitBox(w.x, w.y);
+    const name = box ? box.name : null;
+    if (name !== hover) { hover = name; wrap.style.cursor = box ? "pointer" : "grab"; draw(); }
+  }
+});
+window.addEventListener("mouseup", () => { dragBox = null; panning = false; wrap.style.cursor = "grab"; });
+wrap.addEventListener("wheel", (ev) => {
+  ev.preventDefault();
+  const factor = ev.deltaY < 0 ? 1.1 : 0.9;
+  const before = toWorld(ev.offsetX, ev.offsetY);
+  view.scale = Math.min(2.5, Math.max(0.35, view.scale * factor));
+  const after = toWorld(ev.offsetX, ev.offsetY);
+  view.x += after.x - before.x; view.y += after.y - before.y;
+  draw();
+}, { passive: false });
+
+resize();
+</script>
+</body>
+</html>
