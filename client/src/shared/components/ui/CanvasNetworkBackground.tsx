@@ -54,11 +54,16 @@ export const CanvasNetworkBackground: React.FC = () => {
 
     let animationFrameId: number;
 
+    // Pull the network colour from the semantic design token so styling stays
+    // routed through index.css. Opacity is applied via ctx.globalAlpha rather
+    // than baked into colour literals.
+    const networkColor =
+      getComputedStyle(canvas).getPropertyValue("--color-primary").trim() ||
+      "currentColor";
+
     const render = () => {
       ctx.clearRect(0, 0, width, height);
-
-      // We use a light purple/cyan mix to represent the "network"
-      const r = 208, g = 188, b = 255;
+      ctx.globalAlpha = 1;
 
       // Update and draw particles
       for (let i = 0; i < particles.length; i++) {
@@ -72,7 +77,8 @@ export const CanvasNetworkBackground: React.FC = () => {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.3)`;
+        ctx.fillStyle = networkColor;
+        ctx.globalAlpha = 0.3;
         ctx.fill();
 
         // Connect particles to each other
@@ -86,7 +92,8 @@ export const CanvasNetworkBackground: React.FC = () => {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.15 - dist / 120 * 0.15})`;
+            ctx.strokeStyle = networkColor;
+            ctx.globalAlpha = 0.15 - (dist / 120) * 0.15;
             ctx.lineWidth = 0.6;
             ctx.stroke();
           }
@@ -101,7 +108,8 @@ export const CanvasNetworkBackground: React.FC = () => {
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(mouseX, mouseY);
-          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.4 - distm / 180 * 0.4})`;
+          ctx.strokeStyle = networkColor;
+          ctx.globalAlpha = 0.4 - (distm / 180) * 0.4;
           ctx.lineWidth = 1;
           ctx.stroke();
           
@@ -115,9 +123,10 @@ export const CanvasNetworkBackground: React.FC = () => {
       // Draw a soft glowing aura around the mouse cursor itself
       if (mouseX !== -1000) {
         const mouseGlow = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 200);
-        mouseGlow.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.08)`);
-        mouseGlow.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+        mouseGlow.addColorStop(0, networkColor);
+        mouseGlow.addColorStop(1, "transparent");
         ctx.fillStyle = mouseGlow;
+        ctx.globalAlpha = 0.08;
         ctx.beginPath();
         ctx.arc(mouseX, mouseY, 200, 0, Math.PI * 2);
         ctx.fill();

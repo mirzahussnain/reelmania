@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type TargetAndTransition } from "framer-motion";
 import { cn } from "../../utils/cn";
 
 type SheetVariant = "bottom" | "center";
@@ -15,7 +15,10 @@ interface SheetProps {
   children: React.ReactNode;
 }
 
-const PANEL_MOTION: Record<SheetVariant, { initial: object; animate: object; exit: object }> = {
+const PANEL_MOTION: Record<
+  SheetVariant,
+  { initial: TargetAndTransition; animate: TargetAndTransition; exit: TargetAndTransition }
+> = {
   bottom: {
     initial: { y: "100%" },
     animate: { y: 0 },
