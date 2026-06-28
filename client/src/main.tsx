@@ -29,6 +29,8 @@ createRoot(document.getElementById("root")!).render(
             <ToastContainer
               position="bottom-center"
               autoClose={3000}
+              hideProgressBar
+              closeButton={false}
               newestOnTop
               closeOnClick
               pauseOnHover
