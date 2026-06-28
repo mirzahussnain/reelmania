@@ -66,13 +66,14 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
         
         <div className="flex items-center gap-3 pointer-events-auto mb-2">
           {/* Reusable Avatar Connect Badge */}
-          <AvatarConnectBadge 
+          <AvatarConnectBadge
             username={video?.uploaded_by?.username || "Unknown"}
             avatarUrl={uploaderProfile?.data?.avatar_url}
             sizeClassName="w-12 h-12 text-lg"
             onConnect={handleConnect}
             isOwnProfile={isOwnProfile}
             isFollowing={isFollowing}
+            canConnect={Boolean(token && user?.id)}
           />
 
           <div className="flex flex-col justify-center">

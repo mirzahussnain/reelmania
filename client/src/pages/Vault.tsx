@@ -18,6 +18,7 @@ import { EmptyState } from "../shared/components/ui/EmptyState";
 import { VideoThumbnailCard } from "../shared/components/ui/VideoThumbnailCard";
 import { CollectionModal } from "../shared/components/collections/CollectionModal";
 import { MockCollection } from "../utils/store/features/collections/collectionsSlice";
+import { cn } from "../shared/utils/cn";
 
 const Vault: React.FC = () => {
   const navigate = useNavigate();
@@ -194,7 +195,7 @@ const Vault: React.FC = () => {
         </div>
 
         {/* 4. Content Grid */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 lg:gap-4">
           {activeTab === "Collections" ? (
             visibleCollections.length > 0 ? (
               visibleCollections.map((c) => (
@@ -203,25 +204,29 @@ const Vault: React.FC = () => {
                   onClick={() => setOpenCollection(c)}
                   className="card-solid relative aspect-9/16 rounded-md overflow-hidden group cursor-pointer flex flex-col justify-end border border-outline-variant/15 text-left"
                 >
-                  {/* Mosaic preview from the first items, or a gradient when empty */}
+                  {/* Mosaic preview — layout adapts to item count so it always fills */}
                   {c.items.length > 0 ? (
-                    <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
+                    <div
+                      className={cn(
+                        "absolute inset-0 grid gap-0.5",
+                        c.items.length === 1 ? "grid-cols-1 grid-rows-1"
+                          : c.items.length === 2 ? "grid-cols-2 grid-rows-1"
+                          : "grid-cols-2 grid-rows-2"
+                      )}
+                    >
                       {c.items.slice(0, 4).map((it) => (
                         <video key={it.id} src={it.video_url} muted playsInline className="w-full h-full object-cover" />
-                      ))}
-                      {Array.from({ length: Math.max(0, 4 - c.items.length) }).map((_, i) => (
-                        <div key={i} className="w-full h-full bg-surface-container" />
                       ))}
                     </div>
                   ) : (
                     <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-surface-container to-surface-container-low" />
                   )}
                   <div className="absolute inset-0 bg-linear-to-t from-scrim/90 via-scrim/20 to-transparent" />
-                  <div className="absolute top-3 left-3 bg-media-scrim backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-jetbrains font-bold text-on-media">
+                  <div className="absolute top-2 left-2 bg-media-scrim backdrop-blur-md px-2 py-0.5 rounded text-[9px] font-jetbrains font-bold text-on-media">
                     {c.items.length} items
                   </div>
-                  <div className="relative z-10 p-4">
-                    <h3 className="font-syne font-bold text-on-media text-lg line-clamp-2 drop-shadow-lg">{c.title}</h3>
+                  <div className="relative z-10 p-3">
+                    <h3 className="font-syne font-bold text-on-media text-sm line-clamp-2 drop-shadow-lg">{c.title}</h3>
                   </div>
                 </button>
               ))

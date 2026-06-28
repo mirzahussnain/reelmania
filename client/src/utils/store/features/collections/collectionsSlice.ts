@@ -29,7 +29,7 @@ interface CollectionsState {
 }
 
 const initialState: CollectionsState = {
-  items: [{ id: "c-neon", title: "Neon Circle", items: [], createdAt: Date.now() }],
+  items: [],
 };
 
 const collectionsSlice = createSlice({
