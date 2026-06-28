@@ -127,7 +127,7 @@ const VideoInfo = () => {
                 <span className="font-semibold text-on-surface">{formatNumber(videoComments?.length || 0)}</span>
               </div>
               <CurateButton
-                videoId={videoState.id}
+                video={videoState}
                 label="Save"
                 className="ml-auto gap-2 px-3 py-1.5 rounded-full border border-outline-variant/30 text-sm font-semibold text-on-surface-variant hover:text-on-surface hover:border-primary/50"
               />

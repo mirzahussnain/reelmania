@@ -2,14 +2,25 @@ import { createSlice, PayloadAction, nanoid } from "@reduxjs/toolkit";
 
 /**
  * Session-only mock of the curation domain (curation-service `Collection` /
- * `CollectionItem`). NOT persisted — it's a UI stand-in until curation-service
+ * `CollectionItem`). NOT persisted — a UI stand-in until curation-service
  * exists; swap the data source for RTK Query hooks later without touching the
  * components.
+ *
+ * We store a lightweight video snapshot per item (not just the id) so previews
+ * and the collection modal can render without a separate lookup. The real
+ * service will keep only `videoId` and resolve display fields at read time.
  */
+export interface MockCollectionItem {
+  id: string; // → videos.id
+  title: string;
+  video_url: string;
+  username?: string;
+}
+
 export interface MockCollection {
   id: string;
   title: string;
-  videoIds: string[]; // soft refs → videos.id (mirrors CollectionItem.videoId)
+  items: MockCollectionItem[];
   createdAt: number;
 }
 
@@ -18,7 +29,7 @@ interface CollectionsState {
 }
 
 const initialState: CollectionsState = {
-  items: [{ id: "c-neon", title: "Neon Circle", videoIds: [], createdAt: Date.now() }],
+  items: [{ id: "c-neon", title: "Neon Circle", items: [], createdAt: Date.now() }],
 };
 
 const collectionsSlice = createSlice({
@@ -30,18 +41,18 @@ const collectionsSlice = createSlice({
         state.items.unshift(action.payload);
       },
       prepare: (title: string) => ({
-        payload: { id: nanoid(), title: title.trim(), videoIds: [] as string[], createdAt: Date.now() },
+        payload: { id: nanoid(), title: title.trim(), items: [] as MockCollectionItem[], createdAt: Date.now() },
       }),
     },
     toggleVideoInCollection: (
       state,
-      action: PayloadAction<{ collectionId: string; videoId: string }>
+      action: PayloadAction<{ collectionId: string; item: MockCollectionItem }>
     ) => {
       const collection = state.items.find((c) => c.id === action.payload.collectionId);
       if (!collection) return;
-      const idx = collection.videoIds.indexOf(action.payload.videoId);
-      if (idx >= 0) collection.videoIds.splice(idx, 1);
-      else collection.videoIds.push(action.payload.videoId);
+      const idx = collection.items.findIndex((i) => i.id === action.payload.item.id);
+      if (idx >= 0) collection.items.splice(idx, 1);
+      else collection.items.push(action.payload.item);
     },
     deleteCollection: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter((c) => c.id !== action.payload);

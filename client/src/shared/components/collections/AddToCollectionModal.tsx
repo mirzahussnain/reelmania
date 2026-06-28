@@ -4,18 +4,26 @@ import { FiX, FiPlus, FiCheck } from "react-icons/fi";
 import { useAppDispatch, useAppSelector } from "../../../utils/hooks/storeHooks";
 import { RootState } from "../../../utils/store/store";
 import { createCollection, toggleVideoInCollection } from "../../../utils/store/features/collections/collectionsSlice";
+import { VideoType } from "../../../types";
 import { Button } from "../ui/Button";
 
 interface AddToCollectionModalProps {
-  videoId: string;
+  video: VideoType;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({ videoId, isOpen, onClose }) => {
+export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({ video, isOpen, onClose }) => {
   const dispatch = useAppDispatch();
   const collections = useAppSelector((s: RootState) => s.collections.items);
   const [newTitle, setNewTitle] = useState("");
+
+  const item = {
+    id: video?.id as string,
+    title: video?.title ?? "Untitled",
+    video_url: video?.video_url ?? "",
+    username: video?.uploaded_by?.username,
+  };
 
   const handleCreate = () => {
     const title = newTitle.trim();
@@ -56,16 +64,16 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({ vide
                 <p className="text-sm text-on-surface-variant py-4 text-center">No collections yet — create one below.</p>
               )}
               {collections.map((c) => {
-                const included = c.videoIds.includes(videoId);
+                const included = c.items.some((i) => i.id === item.id);
                 return (
                   <button
                     key={c.id}
-                    onClick={() => dispatch(toggleVideoInCollection({ collectionId: c.id, videoId }))}
+                    onClick={() => dispatch(toggleVideoInCollection({ collectionId: c.id, item }))}
                     className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-container-high transition-colors text-left"
                   >
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm font-semibold text-on-surface truncate">{c.title}</span>
-                      <span className="text-[11px] font-jetbrains text-on-surface-variant">{c.videoIds.length} items</span>
+                      <span className="text-[11px] font-jetbrains text-on-surface-variant">{c.items.length} items</span>
                     </div>
                     <span className={`w-6 h-6 shrink-0 rounded-md border flex items-center justify-center transition-colors ${included ? "bg-primary border-primary text-on-primary" : "border-outline-variant/40 text-transparent"}`}>
                       <FiCheck className="text-sm" />

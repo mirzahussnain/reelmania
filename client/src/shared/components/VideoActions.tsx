@@ -1,13 +1,15 @@
 import React from "react";
 import { FaHeart } from "react-icons/fa";
-import { BiCommentDetail, BiSolidCommentDetail, BiShareAlt, BiBookmark } from "react-icons/bi";
+import { BiCommentDetail, BiSolidCommentDetail, BiShareAlt } from "react-icons/bi";
 import { toast } from "react-toastify";
 import Share from "../../components/Share";
-import { VideoLikes, userType } from "../../types";
+import { VideoLikes, userType, VideoType } from "../../types";
 import { cn } from "../utils/cn";
 import { Button } from "./ui/Button";
+import { CurateButton } from "./collections/CurateButton";
 
 interface VideoActionsProps {
+  video: VideoType;
   videoId: string;
   likes: VideoLikes[] | undefined;
   commentsLength: number;
@@ -21,7 +23,7 @@ interface VideoActionsProps {
 }
 
 export const VideoActions: React.FC<VideoActionsProps> = ({
-  videoId, likes, commentsLength, handleLikes,
+  video, videoId, likes, commentsLength, handleLikes,
   pending, user, token, setIsModalOpen, openShareModel, setOpenShareModel,
 }) => {
   return (
@@ -90,16 +92,11 @@ export const VideoActions: React.FC<VideoActionsProps> = ({
         )}
       </div>
 
-      {/* Bookmark Button */}
-      <Button
-        variant="unstyled"
-        className="flex flex-col items-center group transition-transform hover:scale-105"
-        onClick={() => toast.info("Bookmark feature coming soon!")}
-      >
-        <div className="action-circle bg-media-scrim-lg group-hover:scale-110">
-          <BiBookmark className="text-[24px] text-on-media drop-shadow-sm" />
-        </div>
-      </Button>
+      {/* Curate (add to collection) */}
+      <CurateButton
+        video={video}
+        className="action-circle bg-media-scrim-lg hover:scale-110 text-[22px] text-on-media drop-shadow-sm"
+      />
 
     </div>
   );

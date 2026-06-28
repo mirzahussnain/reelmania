@@ -88,7 +88,7 @@ export const VideoThumbnailCard: React.FC<VideoThumbnailCardProps> = ({
 
       {/* Curate (add to collection) — applies to any video, not just assets */}
       <CurateButton
-        videoId={video?.id}
+        video={video}
         className="absolute top-3 left-3 w-7 h-7 md:w-8 md:h-8 rounded-lg bg-media-scrim backdrop-blur-md border border-hairline/20 text-on-media hover:text-primary pointer-events-auto z-10 text-[13px]"
       />
       
