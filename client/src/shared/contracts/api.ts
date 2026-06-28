@@ -66,10 +66,11 @@ export type UpdateLikesResponse = ApiResponse<{
   updatedLikes: VideoLikes[];
 }>;
 
-/** Pre-signed upload URL. */
+/** Pre-signed upload URL (+ the public URL the file resolves to post-upload). */
 export type GenerateUploadUrlResponse = ApiResponse<{
   signedUrl: string;
   fileName: string;
+  publicUrl: string;
 }>;
 
 /** Metadata persisted alongside a freshly uploaded file. */

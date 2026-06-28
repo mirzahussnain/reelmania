@@ -296,8 +296,12 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
         const uniqueName = `${uuidv4()}-${fileName}`;
         const storageProvider = StorageFactory.getProvider();
         const signedUrl = await storageProvider.generateSignedUploadUrl(uniqueName, contentType);
+        // Public read URL the file will live at once the PUT completes. Returned
+        // so non-video uploaders (e.g. collection cover images) can persist it
+        // directly without a second round-trip through createVideo.
+        const publicUrl = storageProvider.getPublicUrl(uniqueName);
 
-        ok(res, { signedUrl, fileName: uniqueName }, undefined, "Upload URL generated");
+        ok(res, { signedUrl, fileName: uniqueName, publicUrl }, undefined, "Upload URL generated");
         return;
     } catch (err: unknown) {
         fail(res, 500, "Failed to generate upload URL", err);

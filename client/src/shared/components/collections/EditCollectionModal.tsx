@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { FiX, FiTrash2, FiLock, FiGlobe } from "react-icons/fi";
+import React, { useRef, useState } from "react";
+import { FiX, FiTrash2, FiLock, FiGlobe, FiImage } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { Button } from "../ui/Button";
 import { Sheet } from "../ui/Sheet";
@@ -8,7 +8,10 @@ import {
   useUpdateCollectionMutation,
   useDeleteCollectionMutation,
 } from "../../../utils/store/features/collections/curationApi";
+import { useGenerateUploadUrlMutation } from "../../../utils/store/features/video/videoApi";
 import type { CollectionListItem } from "../../contracts/api";
+
+const MAX_COVER_BYTES = 5 * 1024 * 1024; // 5MB
 
 interface EditCollectionModalProps {
   collection: CollectionListItem | null;
@@ -33,11 +36,15 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
   const { token } = useCurrentUser();
   const [updateCollection, { isLoading: isSaving }] = useUpdateCollectionMutation();
   const [deleteCollection, { isLoading: isDeleting }] = useDeleteCollectionMutation();
+  const [generateUploadUrl] = useGenerateUploadUrlMutation();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // Re-seed the form whenever a different collection is opened.
   const [seededId, setSeededId] = useState<string | null>(null);
   if (collection && collection.id !== seededId) {
@@ -45,10 +52,39 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
     setTitle(collection.title);
     setDescription(collection.description ?? "");
     setIsPrivate(collection.isPrivate);
+    setCoverImageUrl(collection.coverImageUrl ?? "");
     setConfirmDelete(false);
   }
 
   if (!collection) return null;
+
+  const handleCoverSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = ""; // allow re-selecting the same file
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file");
+      return;
+    }
+    if (file.size > MAX_COVER_BYTES) {
+      toast.error("Cover image must be under 5MB");
+      return;
+    }
+    try {
+      setIsUploadingCover(true);
+      // Presign → direct PUT to storage → keep the public URL (same flow as
+      // video upload; the file lands in the shared media bucket).
+      const { data } = await generateUploadUrl({ fileName: file.name, contentType: file.type, token }).unwrap();
+      const put = await fetch(data.signedUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      if (!put.ok) throw new Error("upload failed");
+      setCoverImageUrl(data.publicUrl);
+      toast.success("Cover uploaded — save to apply");
+    } catch {
+      toast.error("Could not upload cover image");
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
 
   const handleSave = async () => {
     const trimmed = title.trim();
@@ -61,6 +97,7 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
         id: collection.id,
         title: trimmed,
         description: description.trim(),
+        coverImageUrl,
         isPrivate,
         token,
       }).unwrap();
@@ -97,6 +134,35 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
       </div>
 
       <div className="flex flex-col gap-4">
+        {/* Cover image */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] font-jetbrains uppercase tracking-wide text-on-surface-variant">Cover image</span>
+          <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-surface-container border border-outline-variant/20 flex items-center justify-center">
+            {coverImageUrl ? (
+              <img src={coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            ) : (
+              <div className="flex flex-col items-center gap-1 text-on-surface-variant">
+                <FiImage className="text-xl" />
+                <span className="text-xs">No cover — uses a video mosaic</span>
+              </div>
+            )}
+            {isUploadingCover && (
+              <div className="absolute inset-0 bg-scrim/50 flex items-center justify-center text-on-media text-sm">Uploading…</div>
+            )}
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverSelect} className="hidden" />
+            <div className="absolute bottom-2 right-2 flex gap-2">
+              {coverImageUrl && (
+                <Button variant="unstyled" onClick={() => setCoverImageUrl("")} className="px-2.5 py-1 rounded-full bg-media-scrim backdrop-blur-md text-on-media text-xs hover:bg-error hover:text-on-error transition-colors">
+                  Remove
+                </Button>
+              )}
+              <Button variant="unstyled" onClick={() => fileInputRef.current?.click()} disabled={isUploadingCover} className="px-2.5 py-1 rounded-full bg-media-scrim backdrop-blur-md text-on-media text-xs hover:bg-media-scrim-lg transition-colors">
+                {coverImageUrl ? "Change" : "Upload"}
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <label className="flex flex-col gap-1.5">
           <span className="text-[11px] font-jetbrains uppercase tracking-wide text-on-surface-variant">Title</span>
           <input
@@ -132,7 +198,7 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
           </span>
         </button>
 
-        <Button onClick={handleSave} loading={isSaving} fullWidth>
+        <Button onClick={handleSave} loading={isSaving} disabled={isUploadingCover} fullWidth>
           Save changes
         </Button>
 
