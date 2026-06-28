@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { BsBookmark, BsBookmarkFill } from "react-icons/bs";
+import { toast } from "react-toastify";
 import { useAppSelector } from "../../../utils/hooks/storeHooks";
 import { RootState } from "../../../utils/store/store";
 import { VideoType } from "../../../types";
 import { cn } from "../../utils/cn";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { AddToCollectionModal } from "./AddToCollectionModal";
 
 interface CurateButtonProps {
@@ -21,6 +23,7 @@ interface CurateButtonProps {
  */
 export const CurateButton: React.FC<CurateButtonProps> = ({ video, className, label }) => {
   const [open, setOpen] = useState(false);
+  const { isSignedIn } = useCurrentUser();
   const saved = useAppSelector((s: RootState) =>
     s.collections.items.some((c) => c.items.some((i) => i.id === video?.id))
   );
@@ -31,6 +34,10 @@ export const CurateButton: React.FC<CurateButtonProps> = ({ video, className, la
         aria-label="Add to collection"
         onClick={(e) => {
           e.stopPropagation();
+          if (!isSignedIn) {
+            toast.info("Sign in to curate videos");
+            return;
+          }
           setOpen(true);
         }}
         className={cn("flex items-center justify-center transition-colors", className)}

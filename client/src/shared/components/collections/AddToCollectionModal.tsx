@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { FiX, FiPlus, FiCheck } from "react-icons/fi";
 import { useAppDispatch, useAppSelector } from "../../../utils/hooks/storeHooks";
@@ -32,7 +33,7 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({ vide
     setNewTitle("");
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
@@ -100,7 +101,8 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({ vide
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

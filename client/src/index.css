@@ -320,3 +320,28 @@ body {
 .animate-circle-fill {
   animation: circleFill 1500ms ease-in-out forwards;
 }
+
+/* ═══════════════════════════════════════════════════════
+   Toast theming (react-toastify) — match the app's dark/glass vibe.
+   The container uses theme="dark", so toasts read the *-dark variables.
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --toastify-color-dark: var(--color-surface-container-high);
+  --toastify-text-color-dark: var(--color-on-surface);
+  --toastify-font-family: var(--font-inter);
+  --toastify-toast-bd-radius: 14px;
+  --toastify-color-info: var(--color-primary);
+  --toastify-color-success: var(--color-secondary-container);
+  --toastify-color-warning: var(--color-tertiary-container);
+  --toastify-color-error: var(--color-error-container);
+  --toastify-color-progress-dark: var(--color-primary);
+  --toastify-spinner-color: var(--color-primary);
+}
+
+.kinetix-toast {
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 45%, transparent);
+  background: color-mix(in srgb, var(--color-surface-container-high) 88%, transparent) !important;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+  font-weight: 500;
+}

@@ -8,6 +8,7 @@ import { store } from "./utils/store/store.ts";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import {ToastContainer} from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { SocketProvider } from "./shared/providers/SocketProvider";
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const persisttor = persistStore(store);
@@ -23,7 +24,15 @@ createRoot(document.getElementById("root")!).render(
         <PersistGate persistor={persisttor}>
           <SocketProvider>
             <App />
-            <ToastContainer/>
+            <ToastContainer
+              position="bottom-center"
+              autoClose={3000}
+              newestOnTop
+              closeOnClick
+              pauseOnHover
+              theme="dark"
+              toastClassName="kinetix-toast"
+            />
           </SocketProvider>
         </PersistGate>
       </Provider>
