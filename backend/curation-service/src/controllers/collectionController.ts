@@ -4,7 +4,10 @@ import prisma from "../utils/dbconnection.config";
 import { ok, fail } from "../utils/http";
 import { getUserId } from "../middlewares/authMiddleware";
 import { slugify, randomSuffix } from "../utils/slug";
+import { fetchVideosByIds } from "../utils/videoClient";
 import { logger } from "../utils/logger";
+
+const PREVIEW_LIMIT = 4; // videos shown in a collection's mosaic thumbnail
 
 /**
  * Generate a slug that is unique for this owner. The base is derived from the
@@ -88,7 +91,11 @@ export const listCollections = async (req: Request, res: Response) => {
     const [collections, total] = await Promise.all([
       prisma.collection.findMany({
         where,
-        include: { _count: { select: { items: true } } },
+        include: {
+          _count: { select: { items: true } },
+          // First few items per collection drive the mosaic thumbnail.
+          items: { orderBy: [{ position: "asc" }, { createdAt: "asc" }], take: PREVIEW_LIMIT },
+        },
         orderBy: { updatedAt: "desc" },
         skip,
         take: limit,
@@ -96,7 +103,19 @@ export const listCollections = async (req: Request, res: Response) => {
       prisma.collection.count({ where }),
     ]);
 
-    ok(res, collections, { page, limit, total }, "Collections fetched");
+    // Hydrate the preview videoIds in ONE batched, fail-soft call (dedup across
+    // collections). On video-service failure the map is empty → previews: [].
+    const previewIds = collections.flatMap((c) => c.items.map((i) => i.videoId));
+    const videoMap = await fetchVideosByIds(previewIds);
+
+    const withPreviews = collections.map(({ items, ...c }) => ({
+      ...c,
+      previews: items
+        .map((i) => videoMap.get(i.videoId))
+        .filter((v): v is NonNullable<typeof v> => Boolean(v)),
+    }));
+
+    ok(res, withPreviews, { page, limit, total }, "Collections fetched");
   } catch (err: unknown) {
     logger.error({ err }, "listCollections failed");
     fail(res, 500, "Could not fetch collections", err);
@@ -126,10 +145,45 @@ export const getCollectionBySlug = async (req: Request, res: Response) => {
       return;
     }
 
-    ok(res, collection, undefined, "Collection fetched");
+    // Hydrate each item with its video details via one batched, fail-soft call.
+    // Orphaned/deleted videos resolve to `video: null` so the grid still renders.
+    const videoMap = await fetchVideosByIds(collection.items.map((i) => i.videoId));
+    const hydrated = {
+      ...collection,
+      items: collection.items.map((i) => ({ ...i, video: videoMap.get(i.videoId) ?? null })),
+    };
+
+    ok(res, hydrated, undefined, "Collection fetched");
   } catch (err: unknown) {
     logger.error({ err }, "getCollectionBySlug failed");
     fail(res, 500, "Could not fetch collection", err);
+  }
+};
+
+// GET /api/curation/collections/curated-ids — flat, distinct set of every
+// videoId the caller has curated (authenticated). Powers the feed's instant
+// "saved" bookmark state (useIsCurated) without N per-card lookups.
+export const getCuratedIds = async (req: Request, res: Response) => {
+  try {
+    const ownerId = getUserId(req);
+    if (!ownerId) {
+      fail(res, 401, "Authentication required");
+      return;
+    }
+
+    // addedById = the curator. While collections are single-owner this equals
+    // "saved in my collections". Indexed (@@index([addedById])); distinct dedupes
+    // a video curated into more than one of the caller's collections.
+    const rows = await prisma.collectionItem.findMany({
+      where: { addedById: ownerId },
+      select: { videoId: true },
+      distinct: ["videoId"],
+    });
+
+    ok(res, rows.map((r) => r.videoId), undefined, "Curated ids fetched");
+  } catch (err: unknown) {
+    logger.error({ err }, "getCuratedIds failed");
+    fail(res, 500, "Could not fetch curated ids", err);
   }
 };
 

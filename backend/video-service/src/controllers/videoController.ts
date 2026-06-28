@@ -92,6 +92,44 @@ export const getVideos = async (req: Request, res: Response) => {
     }
 };
 
+// POST /api/videos/batch — resolve many videos by id in one call.
+// Internal sync-resolution endpoint (messaging-contract §1): other services
+// (e.g. curation-service) hold soft `videoId` refs and hydrate display fields
+// through this batched lookup instead of N per-id requests.
+const OBJECT_ID = /^[a-fA-F0-9]{24}$/;
+const BATCH_MAX = 100;
+
+export const getVideosBatch = async (req: Request, res: Response) => {
+    try {
+        const ids = req?.body?.ids;
+        if (!Array.isArray(ids)) {
+            fail(res, 400, "Body must be { ids: string[] }");
+            return;
+        }
+        // Drop malformed ids (a non-ObjectId would make the Mongo query throw)
+        // and cap the batch so this can't be turned into a heavy scan. Order is
+        // NOT guaranteed — callers map results back by id.
+        const validIds = [...new Set(ids)].filter(
+            (id): id is string => typeof id === "string" && OBJECT_ID.test(id)
+        );
+        if (validIds.length === 0) {
+            ok(res, [], undefined, "No valid ids provided");
+            return;
+        }
+        if (validIds.length > BATCH_MAX) {
+            fail(res, 400, `Too many ids (max ${BATCH_MAX})`);
+            return;
+        }
+
+        const videos = await prisma.videos.findMany({ where: { id: { in: validIds } } });
+        const formatted = videos.map((v) => ({ ...v, uploaded_at: v.uploaded_at.toISOString() }));
+        ok(res, formatted, undefined, `${formatted.length} videos resolved`);
+    } catch (err: unknown) {
+        logger.error({ err }, "getVideosBatch failed");
+        fail(res, 500, "Operation Failed", err);
+    }
+};
+
 export const getVideoById=async(req:Request,res:Response)=>{
     try{
         const videoId=req?.params?.videoId

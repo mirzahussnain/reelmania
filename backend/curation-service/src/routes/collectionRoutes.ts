@@ -3,6 +3,7 @@ import {
   createCollection,
   listCollections,
   getCollectionBySlug,
+  getCuratedIds,
   updateCollection,
   deleteCollection,
 } from "../controllers/collectionController";
@@ -13,6 +14,10 @@ const collectionRouter = express.Router();
 
 // Items live under a collection: /collections/:collectionId/items
 collectionRouter.use("/:collectionId/items", itemRouter);
+
+// Caller's flat set of curated videoIds (feed "saved" state). Static path —
+// declared before dynamic routes.
+collectionRouter.get("/curated-ids", authMiddleware, getCuratedIds);
 
 // Shareable read URL (public; private collections gated to owner in controller).
 collectionRouter.get("/owner/:ownerId/slug/:slug", getCollectionBySlug);

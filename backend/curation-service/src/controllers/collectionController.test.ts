@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Request, Response } from "express";
 
-const { prismaMock, authMock } = vi.hoisted(() => ({
+const { prismaMock, authMock, videoMapMock } = vi.hoisted(() => ({
   prismaMock: {
     collection: {
       findUnique: vi.fn(),
@@ -11,16 +11,23 @@ const { prismaMock, authMock } = vi.hoisted(() => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    collectionItem: { findMany: vi.fn() },
   },
   authMock: { userId: null as string | null },
+  videoMapMock: { map: new Map<string, unknown>() },
 }));
 vi.mock("../utils/dbconnection.config", () => ({ default: prismaMock }));
 vi.mock("@clerk/express", () => ({ getAuth: () => ({ userId: authMock.userId }) }));
+// Hydration is fail-soft and tested separately; default to the configurable map.
+vi.mock("../utils/videoClient", () => ({
+  fetchVideosByIds: vi.fn(async () => videoMapMock.map),
+}));
 
 import {
   createCollection,
   listCollections,
   getCollectionBySlug,
+  getCuratedIds,
   updateCollection,
   deleteCollection,
 } from "./collectionController";
@@ -38,6 +45,7 @@ const mockRes = () => {
 beforeEach(() => {
   vi.clearAllMocks();
   authMock.userId = null;
+  videoMapMock.map = new Map();
 });
 
 describe("createCollection", () => {
@@ -154,6 +162,67 @@ describe("getCollectionBySlug", () => {
     expect((res as { body?: any }).body).toEqual(
       expect.objectContaining({ success: true, data: expect.objectContaining({ id: "c1" }) })
     );
+  });
+});
+
+describe("listCollections previews", () => {
+  it("embeds hydrated preview videos and strips raw items", async () => {
+    authMock.userId = "user_1";
+    prismaMock.collection.findMany.mockResolvedValue([
+      { id: "c1", ownerId: "user_1", items: [{ videoId: "v1" }, { videoId: "v2" }] },
+    ]);
+    prismaMock.collection.count.mockResolvedValue(1);
+    videoMapMock.map = new Map([["v1", { id: "v1", title: "One" }]]); // v2 missing/orphan
+    const res = mockRes();
+
+    await listCollections({ query: {} } as unknown as Request, res);
+
+    const data = (res as { body?: any }).body.data;
+    expect(data[0].previews).toEqual([{ id: "v1", title: "One" }]); // missing v2 dropped
+    expect(data[0].items).toBeUndefined(); // raw items not leaked
+  });
+});
+
+describe("getCollectionBySlug hydration", () => {
+  it("attaches video details per item, null for orphans", async () => {
+    prismaMock.collection.findUnique.mockResolvedValue({
+      id: "c1",
+      ownerId: "user_2",
+      isPrivate: false,
+      items: [{ videoId: "v1" }, { videoId: "gone" }],
+    });
+    videoMapMock.map = new Map([["v1", { id: "v1", title: "One" }]]);
+    const res = mockRes();
+
+    await getCollectionBySlug(
+      { params: { ownerId: "user_2", slug: "vault" } } as unknown as Request,
+      res
+    );
+
+    const items = (res as { body?: any }).body.data.items;
+    expect(items[0].video).toEqual({ id: "v1", title: "One" });
+    expect(items[1].video).toBeNull();
+  });
+});
+
+describe("getCuratedIds", () => {
+  it("401s when unauthenticated", async () => {
+    const res = mockRes();
+    await getCuratedIds({} as Request, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it("returns a flat distinct array of curated videoIds", async () => {
+    authMock.userId = "user_1";
+    prismaMock.collectionItem.findMany.mockResolvedValue([{ videoId: "v1" }, { videoId: "v2" }]);
+    const res = mockRes();
+    await getCuratedIds({} as Request, res);
+
+    const args = prismaMock.collectionItem.findMany.mock.calls[0][0];
+    expect(args).toEqual(
+      expect.objectContaining({ where: { addedById: "user_1" }, distinct: ["videoId"] })
+    );
+    expect((res as { body?: any }).body.data).toEqual(["v1", "v2"]);
   });
 });
 
