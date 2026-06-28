@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useCurrentUser } from "./useCurrentUser";
+import { AUTH_REQUIRED } from "../constants/messages";
 import {
   useCheckUserFollowerQuery,
   useUpdateUserFollowerMutation,
@@ -27,7 +28,7 @@ export const useFollow = (targetUserId: string | undefined) => {
 
   const handleFollow = async () => {
     if (!token) {
-      toast.error("User is not authenticated.");
+      toast.info(AUTH_REQUIRED.follow);
       return;
     }
     if (!currentUser?.id || !targetUserId) {

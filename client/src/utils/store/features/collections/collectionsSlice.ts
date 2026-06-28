@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction, nanoid } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, nanoid, createSelector } from "@reduxjs/toolkit";
+import type { RootState } from "../../store";
 
 /**
  * Session-only mock of the curation domain (curation-service `Collection` /
@@ -61,4 +62,15 @@ const collectionsSlice = createSlice({
 });
 
 export const { createCollection, toggleVideoInCollection, deleteCollection } = collectionsSlice.actions;
+
+/**
+ * Memoized set of every videoId that lives in any collection. Recomputes only
+ * when collections change (not on every dispatch), so `useIsCurated` is an O(1)
+ * `.has()` lookup per card instead of an O(collections × items) scan.
+ */
+export const selectSavedVideoIds = createSelector(
+  (state: RootState) => state.collections.items,
+  (items) => new Set(items.flatMap((c) => c.items.map((i) => i.id)))
+);
+
 export default collectionsSlice.reducer;

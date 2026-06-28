@@ -9,6 +9,7 @@ import { Button } from "./ui/Button";
 import { useGetUserProfileQuery, useUpdateUserFollowerMutation, useCheckUserFollowerQuery } from "../../utils/store/features/user/userApi";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { toast } from "react-toastify";
+import { AUTH_REQUIRED } from "../constants/messages";
 
 interface VideoInfoOverlayProps {
   video: VideoType;
@@ -43,7 +44,7 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
   const handleConnect = async () => {
     try {
       if (!token || !user?.id) {
-        toast.error("Please sign in to connect with creators.");
+        toast.info(AUTH_REQUIRED.follow);
         return;
       }
       if (!video?.uploaded_by?.id) return;
