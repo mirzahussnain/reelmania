@@ -7,6 +7,7 @@ import { getRedisClient } from "../utils/redis";
 import { shuffleArray } from "../utils/shuffleArray";
 import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
+import { rabbitMQService, VIDEO_EXCHANGE } from "../utils/rabbitmq";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
@@ -323,6 +324,13 @@ export const deleteVideo = async (req: Request, res: Response) => {
         if (deleted) {
             const deleteResult = await prisma.videos.delete({ where: { id: videoId } });
             if (deleteResult) {
+                // Notify other services to clean up their soft references to this
+                // video (curation removes CollectionItems, marketplace unlinks
+                // AssetVideoLinks). Fire-and-forget: a publish failure must not
+                // fail the delete the user already succeeded at.
+                rabbitMQService
+                    .publish(VIDEO_EXCHANGE, "video.deleted", { videoId })
+                    .catch((err) => logger.error({ err }, "publish video.deleted failed"));
                 ok(res, null, undefined, "Video Deleted Successfully.");
                 return;
             }

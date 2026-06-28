@@ -173,7 +173,7 @@ Build order:
    Stripe webhook handler; **curation-service publisher — DONE**
    (`collection.item.added` / `collection.item.removed` on `curation.events`).
 
-> **Prerequisite still open:** video-service does not yet *publish* `video.deleted` to the
-> `video.events` topic exchange. curation-service's consumer is built to the contract and
-> will drain those events as soon as video-service emits them; until then the queue simply
-> stays empty.
+> **`video.deleted` now wired end-to-end:** video-service publishes `video.deleted` to the
+> `video.events` topic exchange from `deleteVideo` (`backend/video-service/src/utils/rabbitmq.ts`
+> `publish` + `videoController.deleteVideo`), and curation-service drains it. marketplace-service's
+> `video.deleted` unlink consumer is still pending its own implementation.

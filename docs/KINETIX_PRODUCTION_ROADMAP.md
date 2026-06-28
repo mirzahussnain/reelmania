@@ -293,10 +293,10 @@ Tracked gaps from standing up `curation-service` ahead of its dependencies:
    `marketplace.events:subscription.updated` (cache tier) or a sync REST tier-check at
    create/update time. Until then, `isPrivate` is effectively ungated — **never ship
    paid gating on this without the check** (messaging-contract §6).
-2. **`video.deleted` not emitted** — curation-service's `video.events:video.deleted`
-   consumer is live, but **video-service does not publish the event yet**, so deleting a
-   video leaves orphaned `CollectionItem` rows. Close in **Phase A/B** by adding a
-   `video.events` topic publish to video-service `deleteVideo` (messaging-contract §9).
+2. ~~**`video.deleted` not emitted**~~ — **DONE.** video-service now publishes
+   `video.deleted` to the `video.events` topic exchange from `deleteVideo`, and
+   curation-service unlinks the orphaned `CollectionItem` rows. (marketplace-service's
+   own `video.deleted` unlink consumer still pending — messaging-contract §5.)
 
 ---
 
