@@ -1,10 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { FiX } from "react-icons/fi";
+import { FiX, FiTrash2 } from "react-icons/fi";
+import { toast } from "react-toastify";
 import { Button } from "../ui/Button";
 import { Sheet } from "../ui/Sheet";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
-import { useGetCollectionBySlugQuery } from "../../../utils/store/features/collections/curationApi";
+import {
+  useGetCollectionBySlugQuery,
+  useRemoveItemMutation,
+} from "../../../utils/store/features/collections/curationApi";
 import type { CollectionListItem } from "../../contracts/api";
 import Loader from "../../../components/Loader";
 
@@ -22,6 +26,17 @@ interface CollectionModalProps {
 export const CollectionModal: React.FC<CollectionModalProps> = ({ collection, isOpen, onClose }) => {
   const navigate = useNavigate();
   const { token } = useCurrentUser();
+  const [removeItem] = useRemoveItemMutation();
+
+  const handleRemove = async (videoId: string) => {
+    if (!collection) return;
+    try {
+      await removeItem({ collectionId: collection.id, videoId, token }).unwrap();
+      toast.success("Removed from collection");
+    } catch {
+      toast.error("Could not remove video");
+    }
+  };
 
   const { data, isLoading } = useGetCollectionBySlugQuery(
     { ownerId: collection?.ownerId as string, slug: collection?.slug as string, token },
@@ -60,26 +75,37 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({ collection, is
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {items.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onClose();
-                  navigate(`/videos/${item.videoId}`);
-                }}
-                className="card-solid relative aspect-9/16 rounded-md overflow-hidden group text-left"
-              >
-                {item.video?.video_url ? (
-                  <video src={item.video.video_url} muted playsInline className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                ) : (
-                  // Video deleted/unavailable — keep the slot, don't break the grid.
-                  <div className="w-full h-full bg-surface-container-high" />
-                )}
-                <div className="absolute inset-0 bg-linear-to-t from-scrim/90 via-transparent to-transparent" />
-                <div className="absolute bottom-2 left-2 right-2">
-                  <p className="text-on-media font-bold text-xs line-clamp-1">{item.video?.title ?? "Unavailable"}</p>
-                  {item.video?.uploaded_by?.username && <p className="text-on-media-dim text-[10px] font-jetbrains">@{item.video.uploaded_by.username}</p>}
-                </div>
-              </button>
+              <div key={item.id} className="relative group aspect-9/16">
+                <button
+                  onClick={() => {
+                    onClose();
+                    navigate(`/videos/${item.videoId}`);
+                  }}
+                  className="card-solid w-full h-full relative rounded-md overflow-hidden text-left"
+                >
+                  {item.video?.video_url ? (
+                    <video src={item.video.video_url} muted playsInline className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  ) : (
+                    // Video deleted/unavailable — keep the slot, don't break the grid.
+                    <div className="w-full h-full bg-surface-container-high" />
+                  )}
+                  <div className="absolute inset-0 bg-linear-to-t from-scrim/90 via-transparent to-transparent" />
+                  <div className="absolute bottom-2 left-2 right-2">
+                    <p className="text-on-media font-bold text-xs line-clamp-1">{item.video?.title ?? "Unavailable"}</p>
+                    {item.video?.uploaded_by?.username && <p className="text-on-media-dim text-[10px] font-jetbrains">@{item.video.uploaded_by.username}</p>}
+                  </div>
+                </button>
+                {/* Remove this video from the collection. Visible on mobile
+                    (no hover), hover-revealed on desktop (md+). */}
+                <Button
+                  variant="unstyled"
+                  aria-label="Remove from collection"
+                  onClick={(e) => { e.stopPropagation(); handleRemove(item.videoId); }}
+                  className="absolute top-2 right-2 z-20 w-7 h-7 flex items-center justify-center rounded-full bg-media-scrim backdrop-blur-md text-on-media text-sm hover:bg-error hover:text-on-error transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
+                >
+                  <FiTrash2 />
+                </Button>
+              </div>
             ))}
           </div>
         )}

@@ -17,8 +17,10 @@ import { Button } from "../shared/components/ui/Button";
 import { EmptyState } from "../shared/components/ui/EmptyState";
 import { VideoThumbnailCard } from "../shared/components/ui/VideoThumbnailCard";
 import { CollectionModal } from "../shared/components/collections/CollectionModal";
+import { EditCollectionModal } from "../shared/components/collections/EditCollectionModal";
 import { useGetMyCollectionsQuery } from "../utils/store/features/collections/curationApi";
 import type { CollectionListItem } from "../shared/contracts/api";
+import { FiMoreVertical } from "react-icons/fi";
 import { cn } from "../shared/utils/cn";
 
 const Vault: React.FC = () => {
@@ -42,6 +44,7 @@ const Vault: React.FC = () => {
   const [activeTab, setActiveTab] = useState("My Uploads");
   const [vaultSearch, setVaultSearch] = useState("");
   const [openCollection, setOpenCollection] = useState<CollectionListItem | null>(null);
+  const [editingCollection, setEditingCollection] = useState<CollectionListItem | null>(null);
 
   // Scoped search: filters only the active tab's items (the user's own
   // library), not a global search. Liked/Collections are placeholders until
@@ -204,10 +207,10 @@ const Vault: React.FC = () => {
           {activeTab === "Collections" ? (
             visibleCollections.length > 0 ? (
               visibleCollections.map((c) => (
+                <div key={c.id} className="relative group aspect-9/16">
                 <button
-                  key={c.id}
                   onClick={() => setOpenCollection(c)}
-                  className="card-solid relative aspect-9/16 rounded-md overflow-hidden group cursor-pointer flex flex-col justify-end border border-outline-variant/15 text-left"
+                  className="card-solid w-full h-full relative rounded-md overflow-hidden cursor-pointer flex flex-col justify-end border border-outline-variant/15 text-left"
                 >
                   {/* Mosaic preview — cover image if set, else a video mosaic */}
                   {c.coverImageUrl ? (
@@ -236,6 +239,16 @@ const Vault: React.FC = () => {
                     <h3 className="font-syne font-bold text-on-media text-sm line-clamp-2 drop-shadow-lg">{c.title}</h3>
                   </div>
                 </button>
+                {/* Owner-only manage affordance (every Vault card is the caller's own) */}
+                <Button
+                  variant="unstyled"
+                  aria-label="Manage collection"
+                  onClick={(e) => { e.stopPropagation(); setEditingCollection(c); }}
+                  className="absolute top-2 right-2 z-20 w-7 h-7 flex items-center justify-center rounded-full bg-media-scrim backdrop-blur-md text-on-media opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-media-scrim-lg"
+                >
+                  <FiMoreVertical className="text-sm" />
+                </Button>
+                </div>
               ))
             ) : (
               <EmptyState className="col-span-full" message={q ? `No collections match “${vaultSearch}”.` : "No collections yet — curate videos to build one."} />
@@ -264,6 +277,16 @@ const Vault: React.FC = () => {
         collection={openCollection}
         isOpen={!!openCollection}
         onClose={() => setOpenCollection(null)}
+      />
+
+      <EditCollectionModal
+        collection={editingCollection}
+        isOpen={!!editingCollection}
+        onClose={() => setEditingCollection(null)}
+        onDeleted={(id) => {
+          // If the deleted collection's detail modal is open, close it too.
+          if (openCollection?.id === id) setOpenCollection(null);
+        }}
       />
     </div>
   );
