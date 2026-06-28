@@ -124,3 +124,64 @@ export type FollowMutationResponse = ApiResponse<FollowerEdge | null>;
 
 /** Role update (`updateUserRole`). */
 export type UpdateRoleResponse = ApiResponse<userType>;
+
+/* ------------------------------------------------------------------ *
+ * curation-service
+ * ------------------------------------------------------------------ */
+
+/** A user-owned collection (the "Vault"). Cross-service refs are soft ids. */
+export interface CollectionEntity {
+  id: string;
+  ownerId: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  coverImageUrl: string | null;
+  isPrivate: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A collection in a LIST: counts + first-few hydrated videos for the mosaic.
+ * `containsVideo` is present only when listed with `?containsVideoId=`. */
+export interface CollectionListItem extends CollectionEntity {
+  _count?: { items: number };
+  previews: VideoType[];
+  containsVideo?: boolean;
+}
+
+/** A junction row (collection ↔ video); the service stores only `videoId`. */
+export interface CollectionItemEntity {
+  id: string;
+  collectionId: string;
+  videoId: string;
+  addedById: string;
+  note: string | null;
+  position: number;
+  createdAt: string;
+}
+
+/** A collection item hydrated with its video details (null if deleted/orphaned). */
+export interface HydratedCollectionItem extends CollectionItemEntity {
+  video: VideoType | null;
+}
+
+/** A single collection with its ordered, hydrated items (detail view). */
+export interface CollectionDetail extends CollectionEntity {
+  items: HydratedCollectionItem[];
+}
+
+/** Paginated list of collections (`getMyCollections` / by owner). */
+export type CollectionsListResponse = ApiResponse<CollectionListItem[]>;
+
+/** Single collection + hydrated items (`getCollectionBySlug`). */
+export type CollectionDetailResponse = ApiResponse<CollectionDetail>;
+
+/** Create/update collection result. */
+export type CollectionResponse = ApiResponse<CollectionEntity>;
+
+/** Add/update item result. */
+export type CollectionItemResponse = ApiResponse<CollectionItemEntity>;
+
+/** Flat distinct set of the caller's curated videoIds (`getCuratedIds`). */
+export type CuratedIdsResponse = ApiResponse<string[]>;

@@ -1,76 +1,50 @@
-import { createSlice, PayloadAction, nanoid, createSelector } from "@reduxjs/toolkit";
+import { createSlice, createSelector } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
+import { curationApi } from "./curationApi";
 
 /**
- * Session-only mock of the curation domain (curation-service `Collection` /
- * `CollectionItem`). NOT persisted — a UI stand-in until curation-service
- * exists; swap the data source for RTK Query hooks later without touching the
- * components.
+ * Curation client-state: the flat set of videoIds the user has curated.
  *
- * We store a lightweight video snapshot per item (not just the id) so previews
- * and the collection modal can render without a separate lookup. The real
- * service will keep only `videoId` and resolve display fields at read time.
+ * This is NOT a second source of truth — it's a denormalized projection of the
+ * curation-service `curated-ids` endpoint, kept in sync via RTK Query matchers.
+ * Holding it here lets `selectSavedVideoIds` stay an O(1) `Set.has()` lookup
+ * across every feed card without each card subscribing to the query (one
+ * app-level subscription in CurationProvider keeps it fresh; mutations
+ * invalidate the `CuratedIds` tag → refetch → this matcher updates the set).
  */
-export interface MockCollectionItem {
-  id: string; // → videos.id
-  title: string;
-  video_url: string;
-  username?: string;
-}
-
-export interface MockCollection {
-  id: string;
-  title: string;
-  items: MockCollectionItem[];
-  createdAt: number;
-}
-
 interface CollectionsState {
-  items: MockCollection[];
+  savedVideoIds: string[];
 }
 
 const initialState: CollectionsState = {
-  items: [],
+  savedVideoIds: [],
 };
 
 const collectionsSlice = createSlice({
   name: "collections",
   initialState,
-  reducers: {
-    createCollection: {
-      reducer: (state, action: PayloadAction<MockCollection>) => {
-        state.items.unshift(action.payload);
-      },
-      prepare: (title: string) => ({
-        payload: { id: nanoid(), title: title.trim(), items: [] as MockCollectionItem[], createdAt: Date.now() },
-      }),
-    },
-    toggleVideoInCollection: (
-      state,
-      action: PayloadAction<{ collectionId: string; item: MockCollectionItem }>
-    ) => {
-      const collection = state.items.find((c) => c.id === action.payload.collectionId);
-      if (!collection) return;
-      const idx = collection.items.findIndex((i) => i.id === action.payload.item.id);
-      if (idx >= 0) collection.items.splice(idx, 1);
-      else collection.items.push(action.payload.item);
-    },
-    deleteCollection: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter((c) => c.id !== action.payload);
-    },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder.addMatcher(curationApi.endpoints.getCuratedIds.matchFulfilled, (state, action) => {
+      state.savedVideoIds = action.payload.data ?? [];
+    });
+    // Optimistic add so the bookmark flips instantly; the CuratedIds refetch
+    // then reconciles. (Removal isn't mirrored optimistically: a video may live
+    // in another collection, so we let the refetch decide the true set.)
+    builder.addMatcher(curationApi.endpoints.addItem.matchFulfilled, (state, action) => {
+      const id = action.payload.data?.videoId;
+      if (id && !state.savedVideoIds.includes(id)) state.savedVideoIds.push(id);
+    });
   },
 });
 
-export const { createCollection, toggleVideoInCollection, deleteCollection } = collectionsSlice.actions;
+export default collectionsSlice.reducer;
 
 /**
- * Memoized set of every videoId that lives in any collection. Recomputes only
- * when collections change (not on every dispatch), so `useIsCurated` is an O(1)
- * `.has()` lookup per card instead of an O(collections × items) scan.
+ * Memoized set of every curated videoId. Recomputes only when the underlying
+ * array changes, so `useIsCurated` is an O(1) `.has()` per card.
  */
 export const selectSavedVideoIds = createSelector(
-  (state: RootState) => state.collections.items,
-  (items) => new Set(items.flatMap((c) => c.items.map((i) => i.id)))
+  (state: RootState) => state.collections.savedVideoIds,
+  (ids) => new Set(ids)
 );
-
-export default collectionsSlice.reducer;

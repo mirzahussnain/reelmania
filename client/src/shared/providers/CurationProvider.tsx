@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState } from "react";
 import { VideoType } from "../../types";
 import { AddToCollectionModal } from "../components/collections/AddToCollectionModal";
+import { useGetCuratedIdsQuery } from "../../utils/store/features/collections/curationApi";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 
 interface CurationContextValue {
   /** Open the single app-level "add to collection" modal for a video. */
@@ -17,6 +19,12 @@ const CurationContext = createContext<CurationContextValue | null>(null);
 export const CurationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [target, setTarget] = useState<VideoType | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const { token, isSignedIn } = useCurrentUser();
+
+  // One app-level subscription to the caller's curated ids. Keeps the
+  // collections slice (selectSavedVideoIds → useIsCurated) populated and fresh
+  // so feed cards don't each fetch; mutations invalidate CuratedIds → refetch.
+  useGetCuratedIdsQuery({ token }, { skip: !isSignedIn || !token });
 
   const open = (video: VideoType) => {
     setTarget(video);

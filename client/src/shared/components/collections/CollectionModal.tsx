@@ -3,20 +3,33 @@ import { useNavigate } from "react-router-dom";
 import { FiX } from "react-icons/fi";
 import { Button } from "../ui/Button";
 import { Sheet } from "../ui/Sheet";
-import { MockCollection } from "../../../utils/store/features/collections/collectionsSlice";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useGetCollectionBySlugQuery } from "../../../utils/store/features/collections/curationApi";
+import type { CollectionListItem } from "../../contracts/api";
+import Loader from "../../../components/Loader";
 
 interface CollectionModalProps {
-  collection: MockCollection | null;
+  collection: CollectionListItem | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 /**
- * Slide-up modal showing a collection's title + its items (videos). Tapping a
- * video opens it. Mock data today (snapshots from the collections slice).
+ * Slide-up modal showing a collection's title + its items. The grid card only
+ * has previews/counts, so we fetch the full hydrated item list (videos resolved
+ * by curation-service) by owner+slug when opened.
  */
 export const CollectionModal: React.FC<CollectionModalProps> = ({ collection, isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { token } = useCurrentUser();
+
+  const { data, isLoading } = useGetCollectionBySlugQuery(
+    { ownerId: collection?.ownerId as string, slug: collection?.slug as string, token },
+    { skip: !collection || !isOpen }
+  );
+  const items = data?.data?.items ?? [];
+  const total = data?.data?.items?.length ?? collection?._count?.items ?? 0;
+
   if (!collection) return null;
 
   return (
@@ -27,7 +40,7 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({ collection, is
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-syne font-bold text-2xl md:text-3xl text-on-surface">{collection.title}</h2>
-            <p className="text-sm font-jetbrains text-on-surface-variant mt-1">{collection.items.length} items</p>
+            <p className="text-sm font-jetbrains text-on-surface-variant mt-1">{total} items</p>
           </div>
           <Button variant="unstyled" aria-label="Close" onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high">
             <FiX className="text-lg" />
@@ -37,27 +50,34 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({ collection, is
 
       {/* Items */}
       <div className="flex-1 overflow-y-auto scrollbar-hide p-6">
-        {collection.items.length === 0 ? (
+        {isLoading ? (
+          <div className="h-full flex items-center justify-center"><Loader /></div>
+        ) : items.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center text-on-surface-variant">
             <p className="font-semibold">This collection is empty.</p>
             <p className="text-sm">Curate videos with the bookmark button to fill it.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {collection.items.map((item) => (
+            {items.map((item) => (
               <button
                 key={item.id}
                 onClick={() => {
                   onClose();
-                  navigate(`/videos/${item.id}`);
+                  navigate(`/videos/${item.videoId}`);
                 }}
                 className="card-solid relative aspect-9/16 rounded-md overflow-hidden group text-left"
               >
-                <video src={item.video_url} muted playsInline className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                {item.video?.video_url ? (
+                  <video src={item.video.video_url} muted playsInline className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                ) : (
+                  // Video deleted/unavailable — keep the slot, don't break the grid.
+                  <div className="w-full h-full bg-surface-container-high" />
+                )}
                 <div className="absolute inset-0 bg-linear-to-t from-scrim/90 via-transparent to-transparent" />
                 <div className="absolute bottom-2 left-2 right-2">
-                  <p className="text-on-media font-bold text-xs line-clamp-1">{item.title}</p>
-                  {item.username && <p className="text-on-media-dim text-[10px] font-jetbrains">@{item.username}</p>}
+                  <p className="text-on-media font-bold text-xs line-clamp-1">{item.video?.title ?? "Unavailable"}</p>
+                  {item.video?.uploaded_by?.username && <p className="text-on-media-dim text-[10px] font-jetbrains">@{item.video.uploaded_by.username}</p>}
                 </div>
               </button>
             ))}

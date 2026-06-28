@@ -6,6 +6,7 @@ import { videoApi } from "./features/video/videoApi";
 import authSlice from "./features/user/authSlice";
 import videoSlice from "./features/video/videoSlice";
 import collectionsSlice from "./features/collections/collectionsSlice";
+import { curationApi } from "./features/collections/curationApi";
 import storage from "redux-persist/lib/storage";
 import {
   FLUSH,
@@ -38,6 +39,7 @@ export const store = configureStore({
     collections: collectionsSlice,
     [userApi.reducerPath]: userApi.reducer,
     [videoApi.reducerPath]: videoApi.reducer,
+    [curationApi.reducerPath]: curationApi.reducer,
   },
   middleware(getDefaultMiddleware) {
     return getDefaultMiddleware({
@@ -47,7 +49,8 @@ export const store = configureStore({
       },
     })
       .concat(userApi.middleware)
-      .concat(videoApi.middleware);
+      .concat(videoApi.middleware)
+      .concat(curationApi.middleware);
   },
 });
 

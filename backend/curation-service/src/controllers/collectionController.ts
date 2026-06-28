@@ -108,11 +108,25 @@ export const listCollections = async (req: Request, res: Response) => {
     const previewIds = collections.flatMap((c) => c.items.map((i) => i.videoId));
     const videoMap = await fetchVideosByIds(previewIds);
 
+    // Optional: which of these collections already contain a given video. Powers
+    // the add-to-collection modal's per-collection checkmark in ONE indexed query
+    // instead of fetching each collection's full item list.
+    const containsVideoId = req.query.containsVideoId as string | undefined;
+    let containingIds = new Set<string>();
+    if (containsVideoId) {
+      const rows = await prisma.collectionItem.findMany({
+        where: { videoId: containsVideoId, collectionId: { in: collections.map((c) => c.id) } },
+        select: { collectionId: true },
+      });
+      containingIds = new Set(rows.map((r) => r.collectionId));
+    }
+
     const withPreviews = collections.map(({ items, ...c }) => ({
       ...c,
       previews: items
         .map((i) => videoMap.get(i.videoId))
         .filter((v): v is NonNullable<typeof v> => Boolean(v)),
+      ...(containsVideoId ? { containsVideo: containingIds.has(c.id) } : {}),
     }));
 
     ok(res, withPreviews, { page, limit, total }, "Collections fetched");

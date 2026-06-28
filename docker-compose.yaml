@@ -12,6 +12,7 @@ services:
           - VITE_SOCKET_URL=${VITE_SOCKET_URL:-http://localhost:8001}
           - VITE_VIDEO_SERVICE_URL=${VITE_VIDEO_SERVICE_URL:-http://localhost:8001}
           - VITE_USER_SERVICE_URL=${VITE_USER_SERVICE_URL:-http://localhost:8000}
+          - VITE_CURATION_SERVICE_URL=${VITE_CURATION_SERVICE_URL:-http://localhost:8002}
           - VITE_VIDEO_SERVICE_PORT=${VIDEO_SERVICE_PORT:-8001}
           - VITE_VIDEO_SHARE_BASE_URL=${VITE_VIDEO_SHARE_BASE_URL:-http://localhost}
     container_name: reelmania-client
@@ -25,6 +26,7 @@ services:
       - VITE_SOCKET_URL=${VITE_SOCKET_URL:-http://localhost:8001}
       - VITE_VIDEO_SERVICE_URL=${VITE_VIDEO_SERVICE_URL:-http://localhost:8001}
       - VITE_USER_SERVICE_URL=${VITE_USER_SERVICE_URL:-http://localhost:8000}
+      - VITE_CURATION_SERVICE_URL=${VITE_CURATION_SERVICE_URL:-http://localhost:8002}
       - VITE_VIDEO_SERVICE_PORT=${VIDEO_SERVICE_PORT:-8001}
       - VITE_VIDEO_SHARE_BASE_URL=${VITE_VIDEO_SHARE_BASE_URL:-http://localhost}
     networks:

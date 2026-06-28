@@ -181,6 +181,23 @@ describe("listCollections previews", () => {
     expect(data[0].previews).toEqual([{ id: "v1", title: "One" }]); // missing v2 dropped
     expect(data[0].items).toBeUndefined(); // raw items not leaked
   });
+
+  it("adds containsVideo per collection when ?containsVideoId is given", async () => {
+    authMock.userId = "user_1";
+    prismaMock.collection.findMany.mockResolvedValue([
+      { id: "c1", ownerId: "user_1", items: [] },
+      { id: "c2", ownerId: "user_1", items: [] },
+    ]);
+    prismaMock.collection.count.mockResolvedValue(2);
+    prismaMock.collectionItem.findMany.mockResolvedValue([{ collectionId: "c1" }]);
+    const res = mockRes();
+
+    await listCollections({ query: { containsVideoId: "v1" } } as unknown as Request, res);
+
+    const data = (res as { body?: any }).body.data;
+    expect(data.find((c: any) => c.id === "c1").containsVideo).toBe(true);
+    expect(data.find((c: any) => c.id === "c2").containsVideo).toBe(false);
+  });
 });
 
 describe("getCollectionBySlug hydration", () => {

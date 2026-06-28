@@ -17,7 +17,8 @@ import { Button } from "../shared/components/ui/Button";
 import { EmptyState } from "../shared/components/ui/EmptyState";
 import { VideoThumbnailCard } from "../shared/components/ui/VideoThumbnailCard";
 import { CollectionModal } from "../shared/components/collections/CollectionModal";
-import { MockCollection } from "../utils/store/features/collections/collectionsSlice";
+import { useGetMyCollectionsQuery } from "../utils/store/features/collections/curationApi";
+import type { CollectionListItem } from "../shared/contracts/api";
 import { cn } from "../shared/utils/cn";
 
 const Vault: React.FC = () => {
@@ -40,7 +41,7 @@ const Vault: React.FC = () => {
   const userVideos: VideoType[] = videosData?.data ?? [];
   const [activeTab, setActiveTab] = useState("My Uploads");
   const [vaultSearch, setVaultSearch] = useState("");
-  const [openCollection, setOpenCollection] = useState<MockCollection | null>(null);
+  const [openCollection, setOpenCollection] = useState<CollectionListItem | null>(null);
 
   // Scoped search: filters only the active tab's items (the user's own
   // library), not a global search. Liked/Collections are placeholders until
@@ -51,8 +52,12 @@ const Vault: React.FC = () => {
     ? activeVideos.filter((v) => v.title?.toLowerCase().includes(q))
     : activeVideos;
 
-  // Curated collections (session mock — curation-service later).
-  const collections = useAppSelector((state: RootState) => state.collections.items);
+  // Curated collections from curation-service (own collections, with previews).
+  const { data: collectionsData } = useGetMyCollectionsQuery(
+    { token },
+    { skip: !token }
+  );
+  const collections = collectionsData?.data ?? [];
   const visibleCollections = q
     ? collections.filter((c) => c.title.toLowerCase().includes(q))
     : collections;
@@ -204,17 +209,19 @@ const Vault: React.FC = () => {
                   onClick={() => setOpenCollection(c)}
                   className="card-solid relative aspect-9/16 rounded-md overflow-hidden group cursor-pointer flex flex-col justify-end border border-outline-variant/15 text-left"
                 >
-                  {/* Mosaic preview — layout adapts to item count so it always fills */}
-                  {c.items.length > 0 ? (
+                  {/* Mosaic preview — cover image if set, else a video mosaic */}
+                  {c.coverImageUrl ? (
+                    <img src={c.coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  ) : c.previews.length > 0 ? (
                     <div
                       className={cn(
                         "absolute inset-0 grid gap-0.5",
-                        c.items.length === 1 ? "grid-cols-1 grid-rows-1"
-                          : c.items.length === 2 ? "grid-cols-2 grid-rows-1"
+                        c.previews.length === 1 ? "grid-cols-1 grid-rows-1"
+                          : c.previews.length === 2 ? "grid-cols-2 grid-rows-1"
                           : "grid-cols-2 grid-rows-2"
                       )}
                     >
-                      {c.items.slice(0, 4).map((it) => (
+                      {c.previews.slice(0, 4).map((it) => (
                         <video key={it.id} src={it.video_url} muted playsInline className="w-full h-full object-cover" />
                       ))}
                     </div>
@@ -223,7 +230,7 @@ const Vault: React.FC = () => {
                   )}
                   <div className="absolute inset-0 bg-linear-to-t from-scrim/90 via-scrim/20 to-transparent" />
                   <div className="absolute top-2 left-2 bg-media-scrim backdrop-blur-md px-2 py-0.5 rounded text-[9px] font-jetbrains font-bold text-on-media">
-                    {c.items.length} items
+                    {c._count?.items ?? 0} items
                   </div>
                   <div className="relative z-10 p-3">
                     <h3 className="font-syne font-bold text-on-media text-sm line-clamp-2 drop-shadow-lg">{c.title}</h3>
