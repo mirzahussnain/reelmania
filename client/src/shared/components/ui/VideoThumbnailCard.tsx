@@ -4,6 +4,7 @@ import { VideoType } from "../../../types";
 import { cn } from "../../utils/cn";
 import { FiShoppingCart } from "react-icons/fi";
 import { Button } from "./Button";
+import { CurateButton } from "../collections/CurateButton";
 import { MOCK_VIDEO_METADATA } from "../../constants/mocks";
 
 // Card for REAL videos. `grid` is the Explore/discovery card (author overlay,
@@ -62,6 +63,8 @@ export const VideoThumbnailCard: React.FC<VideoThumbnailCardProps> = ({
 
   // variant === "grid"
   const mockData = MOCK_VIDEO_METADATA[index % 4];
+  // Only shorts with a linked DigitalAsset show format badges + a cart.
+  const asset = mockData.asset;
 
   return (
     <div
@@ -82,6 +85,12 @@ export const VideoThumbnailCard: React.FC<VideoThumbnailCardProps> = ({
       
       {/* Top Gradient for Duration */}
       <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-scrim/60 to-transparent pointer-events-none" />
+
+      {/* Curate (add to collection) — applies to any video, not just assets */}
+      <CurateButton
+        video={video}
+        className="absolute top-3 left-3 w-7 h-7 md:w-8 md:h-8 rounded-lg bg-media-scrim backdrop-blur-md border border-hairline/20 text-on-media hover:text-primary pointer-events-auto z-10 text-[13px]"
+      />
       
       {/* Duration Badge */}
       <div className="absolute top-3 right-3 bg-primary/10 border border-primary/20 backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-jetbrains font-bold text-primary flex items-center gap-1">
@@ -96,14 +105,16 @@ export const VideoThumbnailCard: React.FC<VideoThumbnailCardProps> = ({
           {video?.title || "UNTITLED_ASSET"}
         </h2>
         
-        {/* Software Tags */}
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {mockData.tags.map((tag, idx) => (
-            <span key={idx} className="bg-primary/10 backdrop-blur-sm border border-primary/20 px-1.5 py-0.5 rounded md:rounded-md text-[8px] md:text-[9px] font-jetbrains font-bold text-primary">
-              {tag}
-            </span>
-          ))}
-        </div>
+        {/* Asset format badges — only when this short has a linked asset. */}
+        {asset && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {asset.formats.map((tag, idx) => (
+              <span key={idx} className="bg-primary/10 backdrop-blur-sm border border-primary/20 px-1.5 py-0.5 rounded md:rounded-md text-[8px] md:text-[9px] font-jetbrains font-bold text-primary">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="w-full flex justify-between items-end">
           <div className="flex flex-col">
@@ -118,17 +129,24 @@ export const VideoThumbnailCard: React.FC<VideoThumbnailCardProps> = ({
               {mockData.views} views
             </span>
           </div>
-          
-          <Button 
-            variant="unstyled" 
-            className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/20 flex items-center justify-center transition-all pointer-events-auto group/btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              // Add to cart logic
-            }}
-          >
-            <FiShoppingCart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary transition-colors" />
-          </Button>
+
+          {/* Cart + price — only when a DigitalAsset is linked to this short. */}
+          {asset && (
+            <div className="flex items-center gap-1.5 pointer-events-auto">
+              <span className="text-[10px] md:text-xs font-jetbrains font-bold text-primary">${asset.priceUsd}</span>
+              <Button
+                variant="unstyled"
+                aria-label="Add asset to cart"
+                className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/20 flex items-center justify-center transition-all group/btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // TODO: deep-link to the asset in Marketplace / add to cart.
+                }}
+              >
+                <FiShoppingCart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary transition-colors" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

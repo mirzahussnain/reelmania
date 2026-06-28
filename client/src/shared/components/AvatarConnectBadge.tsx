@@ -13,6 +13,8 @@ interface AvatarConnectBadgeProps {
   sizeClassName?: string; // e.g., "w-12 h-12"
   isFollowing?: boolean;
   isOwnProfile?: boolean;
+  /** When false (e.g. signed-out), clicking only fires onConnect (toast) — no animation. */
+  canConnect?: boolean;
 }
 
 export const AvatarConnectBadge: React.FC<AvatarConnectBadgeProps> = ({
@@ -24,6 +26,7 @@ export const AvatarConnectBadge: React.FC<AvatarConnectBadgeProps> = ({
   sizeClassName = "w-12 h-12 text-lg",
   isFollowing = false,
   isOwnProfile = false,
+  canConnect = true,
 }) => {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "hidden">(
     isConnected || isFollowing || isOwnProfile ? "hidden" : "idle"
@@ -42,6 +45,12 @@ export const AvatarConnectBadge: React.FC<AvatarConnectBadgeProps> = ({
   const handleConnect = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Signed-out (or otherwise blocked): just surface the toast, no animation.
+    if (!canConnect) {
+      if (onConnect) onConnect();
+      return;
+    }
 
     setStatus("loading");
     if (onConnect) onConnect();

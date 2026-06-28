@@ -8,6 +8,7 @@ import {
 import { useSocket } from "../providers/SocketProvider";
 import { SOCKET_EVENTS, LikesChangedPayload } from "../constants/socketEvents";
 import { useCurrentUser } from "./useCurrentUser";
+import { AUTH_REQUIRED } from "../constants/messages";
 
 /**
  * Likes for a single video: initial load, the like/unlike toggle, and live
@@ -27,7 +28,7 @@ export const useVideoLikes = (videoId: string | undefined) => {
     e.preventDefault();
     try {
       if (!token || !user) {
-        toast.error("Sign In Required");
+        toast.info(AUTH_REQUIRED.like);
         return;
       }
       if (!videoId) {

@@ -7,6 +7,7 @@ import { VideoType } from "../types";
 import { useNavigate } from "react-router-dom";
 import { BiArrowBack } from "react-icons/bi";
 import { FaBell } from "react-icons/fa";
+import { SearchField } from "../shared/components/ui/SearchField";
 import Loader from "../components/Loader";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { toast } from "react-toastify";
@@ -15,6 +16,9 @@ import { StatBlock } from "../shared/components/ui/StatBlock";
 import { Button } from "../shared/components/ui/Button";
 import { EmptyState } from "../shared/components/ui/EmptyState";
 import { VideoThumbnailCard } from "../shared/components/ui/VideoThumbnailCard";
+import { CollectionModal } from "../shared/components/collections/CollectionModal";
+import { MockCollection } from "../utils/store/features/collections/collectionsSlice";
+import { cn } from "../shared/utils/cn";
 
 const Vault: React.FC = () => {
   const navigate = useNavigate();
@@ -35,6 +39,23 @@ const Vault: React.FC = () => {
   );
   const userVideos: VideoType[] = videosData?.data ?? [];
   const [activeTab, setActiveTab] = useState("My Uploads");
+  const [vaultSearch, setVaultSearch] = useState("");
+  const [openCollection, setOpenCollection] = useState<MockCollection | null>(null);
+
+  // Scoped search: filters only the active tab's items (the user's own
+  // library), not a global search. Liked/Collections are placeholders until
+  // those endpoints exist.
+  const activeVideos: VideoType[] = activeTab === "My Uploads" ? userVideos : [];
+  const q = vaultSearch.trim().toLowerCase();
+  const visibleVideos = q
+    ? activeVideos.filter((v) => v.title?.toLowerCase().includes(q))
+    : activeVideos;
+
+  // Curated collections (session mock — curation-service later).
+  const collections = useAppSelector((state: RootState) => state.collections.items);
+  const visibleCollections = q
+    ? collections.filter((c) => c.title.toLowerCase().includes(q))
+    : collections;
 
   if (profileLoading) return <Loader />;
 
@@ -126,7 +147,7 @@ const Vault: React.FC = () => {
                 onClick={() => navigate('/vault/network')}
               />
               <div className="divider-v"></div>
-              <StatBlock value={userVideos?.length || 0} label="Collections" />
+              <StatBlock value={collections?.length || 0} label="Collections" />
               <div className="divider-v"></div>
               {/* C-Score is not modelled yet — placeholder until the scoring job ships. */}
               <StatBlock value="soon" label="C-Score" highlight />
@@ -148,31 +169,76 @@ const Vault: React.FC = () => {
           </div>
         </div>
 
-        {/* 3. Tab Navigation */}
-        <div className="w-full mt-10 border-b border-hairline/10 flex items-center gap-8 px-2">
-          {['My Uploads', 'Liked', 'Collections'].map((tab) => (
-            <Button
-              key={tab}
-              variant="unstyled"
-              onClick={() => setActiveTab(tab)}
-              className={`pb-4 relative font-jetbrains text-sm font-semibold tracking-wide transition-colors ${activeTab === tab ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-            >
-              {tab}
-              {activeTab === tab && (
-                <div className="neon-bar absolute -bottom-[1px] left-0 w-full" />
-              )}
-            </Button>
-          ))}
+        {/* 3. Tab Navigation + scoped search */}
+        <div className="w-full mt-10 border-b border-hairline/10 flex items-center justify-between gap-4 px-2 flex-wrap">
+          <div className="flex items-center gap-8">
+            {['My Uploads', 'Liked', 'Collections'].map((tab) => (
+              <Button
+                key={tab}
+                variant="unstyled"
+                onClick={() => setActiveTab(tab)}
+                className={`pb-4 relative font-jetbrains text-sm font-semibold tracking-wide transition-colors ${activeTab === tab ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+              >
+                {tab}
+                {activeTab === tab && (
+                  <div className="neon-bar absolute -bottom-px left-0 w-full" />
+                )}
+              </Button>
+            ))}
+          </div>
+          <SearchField
+            value={vaultSearch}
+            onChange={setVaultSearch}
+            placeholder={`Search in ${activeTab}…`}
+            className="mb-2 w-full sm:w-64"
+          />
         </div>
 
-        {/* 4. Video Grid */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-          {isLoadingVideos ? (
+        {/* 4. Content Grid */}
+        <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 lg:gap-4">
+          {activeTab === "Collections" ? (
+            visibleCollections.length > 0 ? (
+              visibleCollections.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setOpenCollection(c)}
+                  className="card-solid relative aspect-9/16 rounded-md overflow-hidden group cursor-pointer flex flex-col justify-end border border-outline-variant/15 text-left"
+                >
+                  {/* Mosaic preview — layout adapts to item count so it always fills */}
+                  {c.items.length > 0 ? (
+                    <div
+                      className={cn(
+                        "absolute inset-0 grid gap-0.5",
+                        c.items.length === 1 ? "grid-cols-1 grid-rows-1"
+                          : c.items.length === 2 ? "grid-cols-2 grid-rows-1"
+                          : "grid-cols-2 grid-rows-2"
+                      )}
+                    >
+                      {c.items.slice(0, 4).map((it) => (
+                        <video key={it.id} src={it.video_url} muted playsInline className="w-full h-full object-cover" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-surface-container to-surface-container-low" />
+                  )}
+                  <div className="absolute inset-0 bg-linear-to-t from-scrim/90 via-scrim/20 to-transparent" />
+                  <div className="absolute top-2 left-2 bg-media-scrim backdrop-blur-md px-2 py-0.5 rounded text-[9px] font-jetbrains font-bold text-on-media">
+                    {c.items.length} items
+                  </div>
+                  <div className="relative z-10 p-3">
+                    <h3 className="font-syne font-bold text-on-media text-sm line-clamp-2 drop-shadow-lg">{c.title}</h3>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <EmptyState className="col-span-full" message={q ? `No collections match “${vaultSearch}”.` : "No collections yet — curate videos to build one."} />
+            )
+          ) : isLoadingVideos ? (
             <div className="col-span-full py-10 flex justify-center">
               <Loader />
             </div>
-          ) : (activeTab === 'My Uploads' ? userVideos : []).length > 0 ? (
-            (activeTab === 'My Uploads' ? userVideos : []).map((video, idx) => (
+          ) : visibleVideos.length > 0 ? (
+            visibleVideos.map((video, idx) => (
               <VideoThumbnailCard
                 key={video.id || idx}
                 video={video}
@@ -182,10 +248,16 @@ const Vault: React.FC = () => {
               />
             ))
           ) : (
-            <EmptyState className="col-span-full" message="No vaults archived yet." />
+            <EmptyState className="col-span-full" message={q ? `No results in ${activeTab} for “${vaultSearch}”.` : "No vaults archived yet."} />
           )}
         </div>
       </div>
+
+      <CollectionModal
+        collection={openCollection}
+        isOpen={!!openCollection}
+        onClose={() => setOpenCollection(null)}
+      />
     </div>
   );
 };

@@ -40,6 +40,7 @@ const PlayerCard = ({
         <VideoInfoOverlay video={video} />
         
         <VideoActions
+          video={video}
           videoId={video?.id as string}
           likes={likes}
           commentsLength={videoComments.length}

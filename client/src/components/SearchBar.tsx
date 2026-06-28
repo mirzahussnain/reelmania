@@ -27,7 +27,7 @@ export const SearchBar = ({
       <input
         type="text"
         className="w-full h-12 bg-surface-container-high/30 border border-outline-variant/30 rounded-full px-6 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/50 focus:border-outline-variant/60 focus:bg-surface-container-high/50 focus:outline-none transition-all"
-        placeholder="Search by tag, creator, or asset..."
+        placeholder="Search creators, tags, or videos..."
         value={searchText}
         onChange={(e) => setSearchText(e.target.value)}
       />

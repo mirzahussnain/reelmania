@@ -320,3 +320,61 @@ body {
 .animate-circle-fill {
   animation: circleFill 1500ms ease-in-out forwards;
 }
+
+/* ═══════════════════════════════════════════════════════
+   Toast theming (react-toastify) — dark "pill" with a glowing status dot.
+   The container uses theme="dark", so toasts read the *-dark variables.
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --toastify-color-dark: #1c1d22;
+  --toastify-text-color-dark: #f4f4f6;
+  --toastify-font-family: var(--font-inter);
+  --toastify-color-info: var(--color-primary);
+  --toastify-color-success: #34d399;
+  --toastify-color-warning: var(--color-tertiary-container);
+  --toastify-color-error: var(--color-error-container);
+  --toastify-color-progress-dark: var(--color-primary);
+  --toastify-spinner-color: var(--color-primary);
+}
+
+/* The pill */
+.kinetix-toast {
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 30%, transparent);
+  background: #1c1d22 !important;
+  border-radius: 9999px !important;
+  padding: 10px 20px !important;
+  min-height: 0 !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.kinetix-toast .Toastify__toast-body {
+  font-weight: 600;
+  font-size: 14.5px;
+  padding: 0;
+  margin: 0;
+}
+
+/* Default icon → glowing solid dot */
+.kinetix-toast .Toastify__toast-icon {
+  width: 12px;
+  min-width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  margin-inline-end: 14px;
+  background: var(--color-primary);
+  box-shadow: 0 0 10px 0 currentColor;
+  color: var(--color-primary);
+}
+.kinetix-toast .Toastify__toast-icon > svg { display: none; }
+
+.Toastify__toast--success.kinetix-toast .Toastify__toast-icon { background: #34d399; color: #34d399; }
+.Toastify__toast--error.kinetix-toast .Toastify__toast-icon { background: var(--color-error-container); color: var(--color-error-container); }
+.Toastify__toast--warning.kinetix-toast .Toastify__toast-icon { background: var(--color-tertiary-container); color: var(--color-tertiary-container); }
+.Toastify__toast--info.kinetix-toast .Toastify__toast-icon { background: var(--color-primary); color: var(--color-primary); }
+
+/* Trim the close button so the pill stays clean */
+.kinetix-toast .Toastify__close-button {
+  align-self: center;
+  opacity: 0.5;
+}
+.kinetix-toast .Toastify__close-button:hover { opacity: 1; }

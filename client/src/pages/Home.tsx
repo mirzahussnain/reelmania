@@ -46,7 +46,7 @@ const Home = () => {
       {videos?.length === 0 ? (
         <div className="text-xl tracking-wide w-full h-full flex flex-col justify-center items-center text-on-surface-variant">
           <span className="text-5xl mb-3">🔒</span>
-          <span className="font-semibold text-center">Please sign in to build your customized Algorithm!<br/>Click "Explore" to view trending videos.</span>
+          <span className="font-semibold text-center">Please sign in to build your customized Algorithm!<br/>Visit "Discover" to view trending videos.</span>
         </div>
       ) : (
         videos.map((video, index) => {
