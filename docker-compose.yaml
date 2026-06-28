@@ -82,6 +82,28 @@ services:
     networks:
       - reelmania-network
 
+  curation-service:
+    build:
+      context: ./backend/curation-service
+      dockerfile: Dockerfile
+    container_name: reelmania-curation-service
+    ports:
+      - "8002:8002"
+    environment:
+      # The `curation` database is auto-created by `prisma db push` on start
+      # (it lives in the shared Postgres instance alongside `users`).
+      - CURATION_DATABASE_URL=${CURATION_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/curation?schema=public}
+      - CURATION_SERVICE_PORT=${CURATION_SERVICE_PORT:-8002}
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://rabbitmq:5672}
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - reelmania-network
+
   # Infrastructure Services
   postgres:
     image: postgres:15-alpine
