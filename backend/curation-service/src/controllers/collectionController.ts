@@ -5,6 +5,7 @@ import { ok, fail } from "../utils/http";
 import { getUserId } from "../middlewares/authMiddleware";
 import { slugify, randomSuffix } from "../utils/slug";
 import { fetchVideosByIds } from "../utils/videoClient";
+import { presignCoverUpload, deleteCoverByUrl } from "../utils/coverStorage";
 import { logger } from "../utils/logger";
 
 const PREVIEW_LIMIT = 4; // videos shown in a collection's mosaic thumbnail
@@ -174,6 +175,33 @@ export const getCollectionBySlug = async (req: Request, res: Response) => {
   }
 };
 
+// POST /api/curation/collections/cover-upload-url — presign a cover image
+// upload to curation-service's OWN bucket (authenticated). The client PUTs the
+// file directly, then persists the returned publicUrl via create/updateCollection.
+export const getCoverUploadUrl = async (req: Request, res: Response) => {
+  try {
+    const ownerId = getUserId(req);
+    if (!ownerId) {
+      fail(res, 401, "Authentication required");
+      return;
+    }
+    const { fileName, contentType } = req.body ?? {};
+    if (!fileName || !contentType) {
+      fail(res, 400, "fileName and contentType are required");
+      return;
+    }
+    if (!String(contentType).startsWith("image/")) {
+      fail(res, 400, "Cover must be an image");
+      return;
+    }
+    const data = await presignCoverUpload(String(fileName), String(contentType));
+    ok(res, data, undefined, "Cover upload URL generated");
+  } catch (err: unknown) {
+    logger.error({ err }, "getCoverUploadUrl failed");
+    fail(res, 500, "Could not generate cover upload URL", err);
+  }
+};
+
 // GET /api/curation/collections/curated-ids — flat, distinct set of every
 // videoId the caller has curated (authenticated). Powers the feed's instant
 // "saved" bookmark state (useIsCurated) without N per-card lookups.
@@ -229,6 +257,17 @@ export const updateCollection = async (req: Request, res: Response) => {
     if (isPrivate !== undefined) data.isPrivate = Boolean(isPrivate);
 
     const updated = await prisma.collection.update({ where: { id }, data });
+
+    // Cover changed (replaced or removed) → delete the now-orphaned old object
+    // from our bucket. Fire-and-forget: never fail the update over cleanup.
+    if (
+      coverImageUrl !== undefined &&
+      existing.coverImageUrl &&
+      existing.coverImageUrl !== coverImageUrl
+    ) {
+      void deleteCoverByUrl(existing.coverImageUrl);
+    }
+
     ok(res, updated, undefined, "Collection updated");
   } catch (err: unknown) {
     logger.error({ err }, "updateCollection failed");
@@ -258,6 +297,8 @@ export const deleteCollection = async (req: Request, res: Response) => {
     }
 
     await prisma.collection.delete({ where: { id } });
+    // Items cascade in the DB; the cover object does not — clean it up.
+    if (existing.coverImageUrl) void deleteCoverByUrl(existing.coverImageUrl);
     ok(res, null, undefined, "Collection deleted");
   } catch (err: unknown) {
     logger.error({ err }, "deleteCollection failed");

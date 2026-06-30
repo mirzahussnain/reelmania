@@ -9,6 +9,7 @@ import { EXPLORE_TAGS, EXPLORE_HERO, EXPLORE_NETWORK_LEADERBOARD } from "../shar
 import { Button } from "../shared/components/ui/Button";
 import { FiFolder, FiTag, FiUserPlus, FiAlertTriangle, FiRefreshCcw, FiUser } from "react-icons/fi";
 import { BsLightningFill } from "react-icons/bs";
+import { COLLECTION_UNIT } from "../shared/constants/curation";
 
 const Discover = () => {
   const navigateTo = useNavigate();
@@ -138,7 +139,7 @@ const Discover = () => {
         {/* Grid Section */}
         <div className="w-full">
           <h2 className="text-xl md:text-2xl font-syne font-bold text-on-surface mb-6">
-            Trending Shorts
+            Trending {COLLECTION_UNIT}s
           </h2>
           
           {isFetching ? (

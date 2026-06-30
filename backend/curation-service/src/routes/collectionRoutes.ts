@@ -4,6 +4,7 @@ import {
   listCollections,
   getCollectionBySlug,
   getCuratedIds,
+  getCoverUploadUrl,
   updateCollection,
   deleteCollection,
 } from "../controllers/collectionController";
@@ -18,6 +19,9 @@ collectionRouter.use("/:collectionId/items", itemRouter);
 // Caller's flat set of curated videoIds (feed "saved" state). Static path —
 // declared before dynamic routes.
 collectionRouter.get("/curated-ids", authMiddleware, getCuratedIds);
+
+// Presign a cover-image upload to curation-service's own bucket.
+collectionRouter.post("/cover-upload-url", authMiddleware, getCoverUploadUrl);
 
 // Shareable read URL (public; private collections gated to owner in controller).
 collectionRouter.get("/owner/:ownerId/slug/:slug", getCollectionBySlug);

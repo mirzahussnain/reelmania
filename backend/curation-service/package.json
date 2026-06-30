@@ -18,6 +18,8 @@
   "license": "ISC",
   "description": "Curation bounded context — user-owned Collections (the Vault) of curated videos.",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1075.0",
+    "@aws-sdk/s3-request-presigner": "^3.1075.0",
     "@clerk/express": "^1.3.31",
     "@prisma/client": "^6.1.0",
     "@types/amqplib": "^0.10.8",

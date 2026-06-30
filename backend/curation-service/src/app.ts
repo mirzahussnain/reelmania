@@ -6,6 +6,7 @@ import { pinoHttp } from "pino-http";
 import { logger } from "./utils/logger";
 import collectionRouter from "./routes/collectionRoutes";
 import { startCurationWorker } from "./workers/videoWorker";
+import { ensureCoverBucket } from "./utils/coverStorage";
 
 dotenv.config();
 
@@ -37,4 +38,5 @@ app.use("/api/curation/collections", collectionRouter);
 app.listen(port, () => {
   logger.info(`Curation service running at port:${port}`);
   startCurationWorker().catch((err) => logger.error({ err }, "Worker failed to start"));
+  ensureCoverBucket().catch((err) => logger.error({ err }, "Cover bucket ensure failed"));
 });

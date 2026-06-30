@@ -7,9 +7,10 @@ import { useCurrentUser } from "../../hooks/useCurrentUser";
 import {
   useUpdateCollectionMutation,
   useDeleteCollectionMutation,
+  useGetCoverUploadUrlMutation,
 } from "../../../utils/store/features/collections/curationApi";
-import { useGenerateUploadUrlMutation } from "../../../utils/store/features/video/videoApi";
 import type { CollectionListItem } from "../../contracts/api";
+import { COLLECTION_NOUN } from "../../constants/curation";
 
 const MAX_COVER_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -36,7 +37,7 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
   const { token } = useCurrentUser();
   const [updateCollection, { isLoading: isSaving }] = useUpdateCollectionMutation();
   const [deleteCollection, { isLoading: isDeleting }] = useDeleteCollectionMutation();
-  const [generateUploadUrl] = useGenerateUploadUrlMutation();
+  const [getCoverUploadUrl] = useGetCoverUploadUrlMutation();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -72,9 +73,9 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
     }
     try {
       setIsUploadingCover(true);
-      // Presign → direct PUT to storage → keep the public URL (same flow as
-      // video upload; the file lands in the shared media bucket).
-      const { data } = await generateUploadUrl({ fileName: file.name, contentType: file.type, token }).unwrap();
+      // Presign → direct PUT to storage → keep the public URL. Covers live in
+      // curation-service's own bucket; old objects are cleaned up server-side.
+      const { data } = await getCoverUploadUrl({ fileName: file.name, contentType: file.type, token }).unwrap();
       const put = await fetch(data.signedUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
       if (!put.ok) throw new Error("upload failed");
       setCoverImageUrl(data.publicUrl);
@@ -101,21 +102,21 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
         isPrivate,
         token,
       }).unwrap();
-      toast.success("Collection updated");
+      toast.success(`${COLLECTION_NOUN} updated`);
       onClose();
     } catch {
-      toast.error("Could not update collection");
+      toast.error(`Could not update ${COLLECTION_NOUN}`);
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteCollection({ id: collection.id, token }).unwrap();
-      toast.success("Collection deleted");
+      toast.success(`${COLLECTION_NOUN} deleted`);
       onDeleted?.(collection.id);
       onClose();
     } catch {
-      toast.error("Could not delete collection");
+      toast.error(`Could not delete ${COLLECTION_NOUN}`);
     }
   };
 
@@ -127,7 +128,7 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
       className="w-full max-w-sm bg-surface-container-low border border-outline-variant/20 rounded-2xl shadow-2xl p-5"
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-syne font-bold text-lg text-on-surface">Edit collection</h2>
+        <h2 className="font-syne font-bold text-lg text-on-surface">Edit {COLLECTION_NOUN}</h2>
         <Button variant="unstyled" aria-label="Close" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high">
           <FiX />
         </Button>
@@ -179,7 +180,7 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            placeholder="What's this collection about?"
+            placeholder={`What's this ${COLLECTION_NOUN} about?`}
             className="bg-surface-container rounded-lg px-3 py-2.5 border border-outline-variant/20 outline-none text-sm text-on-surface placeholder:text-on-surface-variant font-inter resize-none focus:border-primary/50"
           />
         </label>
@@ -224,7 +225,7 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
               onClick={() => setConfirmDelete(true)}
               className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-error hover:bg-error/10 rounded-full transition-colors"
             >
-              <FiTrash2 /> Delete collection
+              <FiTrash2 /> Delete {COLLECTION_NOUN}
             </Button>
           )}
         </div>

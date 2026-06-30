@@ -1,5 +1,6 @@
 import { rabbitMQService } from "../utils/rabbitmq";
 import prisma from "../utils/dbconnection.config";
+import { deleteCoverByUrl } from "../utils/coverStorage";
 import { logger } from "../utils/logger";
 
 const MAX_RETRIES = 5;
@@ -91,7 +92,14 @@ export const startCurationWorker = async () => {
     async (data) => {
       const ownerId = data?.id ?? data?.userId;
       if (!ownerId) throw new Error("user.deleted event missing user id");
+      // Collect cover URLs first so we can clean their storage objects (the DB
+      // cascade can't reach the bucket), then delete the collections.
+      const owned = await prisma.collection.findMany({
+        where: { ownerId },
+        select: { coverImageUrl: true },
+      });
       const { count } = await prisma.collection.deleteMany({ where: { ownerId } });
+      for (const c of owned) if (c.coverImageUrl) void deleteCoverByUrl(c.coverImageUrl);
       logger.info({ ownerId, count }, "[CurationWorker] Deleted collections for removed user");
     }
   );

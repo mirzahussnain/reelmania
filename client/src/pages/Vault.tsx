@@ -18,10 +18,10 @@ import { EmptyState } from "../shared/components/ui/EmptyState";
 import { VideoThumbnailCard } from "../shared/components/ui/VideoThumbnailCard";
 import { CollectionModal } from "../shared/components/collections/CollectionModal";
 import { EditCollectionModal } from "../shared/components/collections/EditCollectionModal";
+import { CollectionCard } from "../shared/components/collections/CollectionCard";
 import { useGetMyCollectionsQuery } from "../utils/store/features/collections/curationApi";
 import type { CollectionListItem } from "../shared/contracts/api";
-import { FiMoreVertical } from "react-icons/fi";
-import { cn } from "../shared/utils/cn";
+import { COLLECTION_UNIT, COLLECTION_NOUN_PLURAL } from "../shared/constants/curation";
 
 const Vault: React.FC = () => {
   const navigate = useNavigate();
@@ -155,7 +155,7 @@ const Vault: React.FC = () => {
                 onClick={() => navigate('/vault/network')}
               />
               <div className="divider-v"></div>
-              <StatBlock value={collections?.length || 0} label="Collections" />
+              <StatBlock value={collections?.length || 0} label={COLLECTION_NOUN_PLURAL} />
               <div className="divider-v"></div>
               {/* C-Score is not modelled yet — placeholder until the scoring job ships. */}
               <StatBlock value="soon" label="C-Score" highlight />
@@ -180,7 +180,7 @@ const Vault: React.FC = () => {
         {/* 3. Tab Navigation + scoped search */}
         <div className="w-full mt-10 border-b border-hairline/10 flex items-center justify-between gap-4 px-2 flex-wrap">
           <div className="flex items-center gap-8">
-            {['My Uploads', 'Liked', 'Collections'].map((tab) => (
+            {['My Uploads', 'Liked', COLLECTION_NOUN_PLURAL].map((tab) => (
               <Button
                 key={tab}
                 variant="unstyled"
@@ -204,54 +204,18 @@ const Vault: React.FC = () => {
 
         {/* 4. Content Grid */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 lg:gap-4">
-          {activeTab === "Collections" ? (
+          {activeTab === COLLECTION_NOUN_PLURAL ? (
             visibleCollections.length > 0 ? (
               visibleCollections.map((c) => (
-                <div key={c.id} className="relative group aspect-9/16">
-                <button
-                  onClick={() => setOpenCollection(c)}
-                  className="card-solid w-full h-full relative rounded-md overflow-hidden cursor-pointer flex flex-col justify-end border border-outline-variant/15 text-left"
-                >
-                  {/* Mosaic preview — cover image if set, else a video mosaic */}
-                  {c.coverImageUrl ? (
-                    <img src={c.coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                  ) : c.previews.length > 0 ? (
-                    <div
-                      className={cn(
-                        "absolute inset-0 grid gap-0.5",
-                        c.previews.length === 1 ? "grid-cols-1 grid-rows-1"
-                          : c.previews.length === 2 ? "grid-cols-2 grid-rows-1"
-                          : "grid-cols-2 grid-rows-2"
-                      )}
-                    >
-                      {c.previews.slice(0, 4).map((it) => (
-                        <video key={it.id} src={it.video_url} muted playsInline className="w-full h-full object-cover" />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-surface-container to-surface-container-low" />
-                  )}
-                  <div className="absolute inset-0 bg-linear-to-t from-scrim/90 via-scrim/20 to-transparent" />
-                  <div className="absolute top-2 left-2 bg-media-scrim backdrop-blur-md px-2 py-0.5 rounded text-[9px] font-jetbrains font-bold text-on-media">
-                    {c._count?.items ?? 0} items
-                  </div>
-                  <div className="relative z-10 p-3">
-                    <h3 className="font-syne font-bold text-on-media text-sm line-clamp-2 drop-shadow-lg">{c.title}</h3>
-                  </div>
-                </button>
-                {/* Owner-only manage affordance (every Vault card is the caller's own) */}
-                <Button
-                  variant="unstyled"
-                  aria-label="Manage collection"
-                  onClick={(e) => { e.stopPropagation(); setEditingCollection(c); }}
-                  className="absolute top-2 right-2 z-20 w-7 h-7 flex items-center justify-center rounded-full bg-media-scrim backdrop-blur-md text-on-media opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-media-scrim-lg"
-                >
-                  <FiMoreVertical className="text-sm" />
-                </Button>
-                </div>
+                <CollectionCard
+                  key={c.id}
+                  collection={c}
+                  onOpen={setOpenCollection}
+                  onManage={setEditingCollection}
+                />
               ))
             ) : (
-              <EmptyState className="col-span-full" message={q ? `No collections match “${vaultSearch}”.` : "No collections yet — curate videos to build one."} />
+              <EmptyState className="col-span-full" message={q ? `No ${COLLECTION_NOUN_PLURAL} match “${vaultSearch}”.` : `No ${COLLECTION_NOUN_PLURAL} yet — curate ${COLLECTION_UNIT}s to build one.`} />
             )
           ) : isLoadingVideos ? (
             <div className="col-span-full py-10 flex justify-center">
@@ -277,6 +241,7 @@ const Vault: React.FC = () => {
         collection={openCollection}
         isOpen={!!openCollection}
         onClose={() => setOpenCollection(null)}
+        canManage
       />
 
       <EditCollectionModal

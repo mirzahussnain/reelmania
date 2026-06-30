@@ -5,6 +5,7 @@ import type {
   CollectionResponse,
   CollectionItemResponse,
   CuratedIdsResponse,
+  GenerateUploadUrlResponse,
   MessageResponse,
 } from "../../../../shared/contracts/api";
 
@@ -41,6 +42,13 @@ export const curationApi = createApi({
       providesTags: ["Collections"],
     }),
 
+    // Another user's PUBLIC collections (no token needed; server returns
+    // public-only for a non-owner). Powers the public profile's Scopes section.
+    getPublicCollections: builder.query<CollectionsListResponse, { ownerId: string }>({
+      query: ({ ownerId }) => ({ url: `/collections?ownerId=${ownerId}`, method: "GET" }),
+      providesTags: ["Collections"],
+    }),
+
     // Public shareable read: a collection by owner + slug, items hydrated.
     getCollectionBySlug: builder.query<
       CollectionDetailResponse,
@@ -58,6 +66,19 @@ export const curationApi = createApi({
     getCuratedIds: builder.query<CuratedIdsResponse, { token: string | null }>({
       query: ({ token }) => ({ url: "/collections/curated-ids", method: "GET", headers: auth(token) }),
       providesTags: ["CuratedIds"],
+    }),
+
+    // Presign a cover-image upload to curation-service's own bucket.
+    getCoverUploadUrl: builder.mutation<
+      GenerateUploadUrlResponse,
+      { fileName: string; contentType: string; token: string | null }
+    >({
+      query: ({ token, ...body }) => ({
+        url: "/collections/cover-upload-url",
+        method: "POST",
+        headers: auth(token),
+        body,
+      }),
     }),
 
     createCollection: builder.mutation<
@@ -133,8 +154,10 @@ export const curationApi = createApi({
 
 export const {
   useGetMyCollectionsQuery,
+  useGetPublicCollectionsQuery,
   useGetCollectionBySlugQuery,
   useGetCuratedIdsQuery,
+  useGetCoverUploadUrlMutation,
   useCreateCollectionMutation,
   useUpdateCollectionMutation,
   useDeleteCollectionMutation,

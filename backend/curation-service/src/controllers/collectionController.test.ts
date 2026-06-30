@@ -22,12 +22,18 @@ vi.mock("@clerk/express", () => ({ getAuth: () => ({ userId: authMock.userId }) 
 vi.mock("../utils/videoClient", () => ({
   fetchVideosByIds: vi.fn(async () => videoMapMock.map),
 }));
+const coverMock = vi.hoisted(() => ({
+  presignCoverUpload: vi.fn(async () => ({ signedUrl: "s", fileName: "f", publicUrl: "p" })),
+  deleteCoverByUrl: vi.fn(),
+}));
+vi.mock("../utils/coverStorage", () => coverMock);
 
 import {
   createCollection,
   listCollections,
   getCollectionBySlug,
   getCuratedIds,
+  getCoverUploadUrl,
   updateCollection,
   deleteCollection,
 } from "./collectionController";
@@ -240,6 +246,71 @@ describe("getCuratedIds", () => {
       expect.objectContaining({ where: { addedById: "user_1" }, distinct: ["videoId"] })
     );
     expect((res as { body?: any }).body.data).toEqual(["v1", "v2"]);
+  });
+});
+
+describe("getCoverUploadUrl", () => {
+  it("401s when unauthenticated", async () => {
+    const res = mockRes();
+    await getCoverUploadUrl({ body: { fileName: "a.png", contentType: "image/png" } } as Request, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it("400s on a non-image content type", async () => {
+    authMock.userId = "user_1";
+    const res = mockRes();
+    await getCoverUploadUrl({ body: { fileName: "a.mp4", contentType: "video/mp4" } } as Request, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(coverMock.presignCoverUpload).not.toHaveBeenCalled();
+  });
+
+  it("returns a presigned cover upload for an image", async () => {
+    authMock.userId = "user_1";
+    const res = mockRes();
+    await getCoverUploadUrl({ body: { fileName: "a.png", contentType: "image/png" } } as Request, res);
+    expect(coverMock.presignCoverUpload).toHaveBeenCalledWith("a.png", "image/png");
+    expect((res as { body?: any }).body.data).toEqual({ signedUrl: "s", fileName: "f", publicUrl: "p" });
+  });
+});
+
+describe("cover cleanup", () => {
+  it("deletes the old cover object when the cover is replaced", async () => {
+    authMock.userId = "user_1";
+    prismaMock.collection.findUnique.mockResolvedValue({ id: "c1", ownerId: "user_1", coverImageUrl: "old-url" });
+    prismaMock.collection.update.mockResolvedValue({ id: "c1", coverImageUrl: "new-url" });
+    const res = mockRes();
+
+    await updateCollection(
+      { params: { id: "c1" }, body: { coverImageUrl: "new-url" } } as unknown as Request,
+      res
+    );
+
+    expect(coverMock.deleteCoverByUrl).toHaveBeenCalledWith("old-url");
+  });
+
+  it("does not delete when the cover is unchanged", async () => {
+    authMock.userId = "user_1";
+    prismaMock.collection.findUnique.mockResolvedValue({ id: "c1", ownerId: "user_1", coverImageUrl: "same" });
+    prismaMock.collection.update.mockResolvedValue({ id: "c1", coverImageUrl: "same" });
+    const res = mockRes();
+
+    await updateCollection(
+      { params: { id: "c1" }, body: { coverImageUrl: "same" } } as unknown as Request,
+      res
+    );
+
+    expect(coverMock.deleteCoverByUrl).not.toHaveBeenCalled();
+  });
+
+  it("deletes the cover object when the collection is deleted", async () => {
+    authMock.userId = "user_1";
+    prismaMock.collection.findUnique.mockResolvedValue({ id: "c1", ownerId: "user_1", coverImageUrl: "old-url" });
+    prismaMock.collection.delete.mockResolvedValue({ id: "c1" });
+    const res = mockRes();
+
+    await deleteCollection({ params: { id: "c1" } } as unknown as Request, res);
+
+    expect(coverMock.deleteCoverByUrl).toHaveBeenCalledWith("old-url");
   });
 });
 
