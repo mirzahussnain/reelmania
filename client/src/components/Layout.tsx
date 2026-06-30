@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import { Sidebar } from "../shared/components/layout/Sidebar";
 import { Topbar } from "../shared/components/layout/Topbar";
+import { CanvasNetworkBackground } from "../shared/components/ui/CanvasNetworkBackground";
 import useScreenWidth from "../utils/hooks/useScreenWidth";
 import { isStandaloneRoute, routeHasTopbar } from "../app/routes.config";
 
@@ -18,9 +19,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isStandalonePage = isStandaloneRoute(location.pathname);
 
   if (isStandalonePage) {
+    // body has `overflow: hidden`, so the wrapper must own the scroll itself —
+    // otherwise long standalone pages (public profile/network) get clipped.
     return (
-      <div className="w-full min-h-screen relative bg-background font-inter">
-        {children}
+      <div className="w-full h-[100dvh] overflow-y-auto overflow-x-hidden relative bg-background font-inter">
+        <CanvasNetworkBackground />
+        <div className="relative z-10">{children}</div>
       </div>
     );
   }
@@ -28,10 +32,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   if (isMobile) {
     return (
       <div className="w-full h-[100dvh] overflow-hidden relative bg-background flex flex-col">
+        <CanvasNetworkBackground />
         {/* Scrollable content area. Full-height feed pages (Home) manage their
             own internal scroll and stay h-full; normal long pages (Discover,
             Marketplace) scroll here. */}
-        <div className="flex-1 w-full min-h-0 relative overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 w-full min-h-0 relative z-10 overflow-y-auto overflow-x-hidden">
           {children}
         </div>
         <Navbar /> {/* Mobile Navbar at bottom */}
@@ -42,6 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Desktop Cinematic Layout
   return (
     <div className="flex w-full h-[100dvh] bg-background text-on-background overflow-hidden relative">
+      <CanvasNetworkBackground />
       {/* Fixed Left Sidebar */}
       <Sidebar />
       

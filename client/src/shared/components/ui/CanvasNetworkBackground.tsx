@@ -148,7 +148,7 @@ export const CanvasNetworkBackground: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full z-0 pointer-events-none"
+      className="fixed inset-0 w-full h-full z-0 pointer-events-none"
     />
   );
 };
