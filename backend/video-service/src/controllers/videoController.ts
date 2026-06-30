@@ -7,6 +7,7 @@ import { getRedisClient } from "../utils/redis";
 import { shuffleArray } from "../utils/shuffleArray";
 import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
+import { rabbitMQService, VIDEO_EXCHANGE } from "../utils/rabbitmq";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
@@ -88,6 +89,44 @@ export const getVideos = async (req: Request, res: Response) => {
         logger.error({ err });
         fail(res, 500, "Operation Failed", err);
         return;
+    }
+};
+
+// POST /api/videos/batch — resolve many videos by id in one call.
+// Internal sync-resolution endpoint (messaging-contract §1): other services
+// (e.g. curation-service) hold soft `videoId` refs and hydrate display fields
+// through this batched lookup instead of N per-id requests.
+const OBJECT_ID = /^[a-fA-F0-9]{24}$/;
+const BATCH_MAX = 100;
+
+export const getVideosBatch = async (req: Request, res: Response) => {
+    try {
+        const ids = req?.body?.ids;
+        if (!Array.isArray(ids)) {
+            fail(res, 400, "Body must be { ids: string[] }");
+            return;
+        }
+        // Drop malformed ids (a non-ObjectId would make the Mongo query throw)
+        // and cap the batch so this can't be turned into a heavy scan. Order is
+        // NOT guaranteed — callers map results back by id.
+        const validIds = [...new Set(ids)].filter(
+            (id): id is string => typeof id === "string" && OBJECT_ID.test(id)
+        );
+        if (validIds.length === 0) {
+            ok(res, [], undefined, "No valid ids provided");
+            return;
+        }
+        if (validIds.length > BATCH_MAX) {
+            fail(res, 400, `Too many ids (max ${BATCH_MAX})`);
+            return;
+        }
+
+        const videos = await prisma.videos.findMany({ where: { id: { in: validIds } } });
+        const formatted = videos.map((v) => ({ ...v, uploaded_at: v.uploaded_at.toISOString() }));
+        ok(res, formatted, undefined, `${formatted.length} videos resolved`);
+    } catch (err: unknown) {
+        logger.error({ err }, "getVideosBatch failed");
+        fail(res, 500, "Operation Failed", err);
     }
 };
 
@@ -257,8 +296,12 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
         const uniqueName = `${uuidv4()}-${fileName}`;
         const storageProvider = StorageFactory.getProvider();
         const signedUrl = await storageProvider.generateSignedUploadUrl(uniqueName, contentType);
+        // Public read URL the file will live at once the PUT completes. Returned
+        // so non-video uploaders (e.g. collection cover images) can persist it
+        // directly without a second round-trip through createVideo.
+        const publicUrl = storageProvider.getPublicUrl(uniqueName);
 
-        ok(res, { signedUrl, fileName: uniqueName }, undefined, "Upload URL generated");
+        ok(res, { signedUrl, fileName: uniqueName, publicUrl }, undefined, "Upload URL generated");
         return;
     } catch (err: unknown) {
         fail(res, 500, "Failed to generate upload URL", err);
@@ -323,6 +366,13 @@ export const deleteVideo = async (req: Request, res: Response) => {
         if (deleted) {
             const deleteResult = await prisma.videos.delete({ where: { id: videoId } });
             if (deleteResult) {
+                // Notify other services to clean up their soft references to this
+                // video (curation removes CollectionItems, marketplace unlinks
+                // AssetVideoLinks). Fire-and-forget: a publish failure must not
+                // fail the delete the user already succeeded at.
+                rabbitMQService
+                    .publish(VIDEO_EXCHANGE, "video.deleted", { videoId })
+                    .catch((err) => logger.error({ err }, "publish video.deleted failed"));
                 ok(res, null, undefined, "Video Deleted Successfully.");
                 return;
             }

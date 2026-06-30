@@ -14,7 +14,10 @@ vi.mock("../utils/dbconnection.config", () => ({ default: prismaMock }));
 vi.mock("../utils/redis", () => ({ getRedisClient: vi.fn() }));
 vi.mock("../providers/StorageFactory", () => ({ StorageFactory: { getProvider: vi.fn() } }));
 
-import { updateLikes, getUserVideos } from "./videoController";
+import { updateLikes, getUserVideos, getVideosBatch } from "./videoController";
+
+const HEX24 = "a".repeat(24);
+const HEX24_B = "b".repeat(24);
 
 const mockRes = () => {
   const res = {} as Response & { body?: unknown };
@@ -69,6 +72,47 @@ describe("updateLikes", () => {
     await updateLikes({ params: { videoId: "v1" }, body: {} } as unknown as Request, res);
     expect(res.status).toHaveBeenCalledWith(400);
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
+  });
+});
+
+describe("getVideosBatch", () => {
+  it("400s when ids is not an array", async () => {
+    const res = mockRes();
+    await getVideosBatch({ body: {} } as unknown as Request, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(prismaMock.videos.findMany).not.toHaveBeenCalled();
+  });
+
+  it("returns [] without querying when no valid ObjectIds are given", async () => {
+    const res = mockRes();
+    await getVideosBatch({ body: { ids: ["not-an-id", 123] } } as unknown as Request, res);
+    expect(prismaMock.videos.findMany).not.toHaveBeenCalled();
+    expect((res as { body?: any }).body.data).toEqual([]);
+  });
+
+  it("dedupes + filters to valid ids and returns formatted videos", async () => {
+    prismaMock.videos.findMany.mockResolvedValue([
+      { id: HEX24, title: "One", uploaded_at: new Date("2024-01-01") },
+    ]);
+    const res = mockRes();
+    await getVideosBatch(
+      { body: { ids: [HEX24, HEX24, "bad", HEX24_B] } } as unknown as Request,
+      res
+    );
+
+    const where = prismaMock.videos.findMany.mock.calls[0][0].where;
+    expect(where.id.in).toEqual([HEX24, HEX24_B]); // deduped, malformed dropped
+    const body = (res as { body?: any }).body;
+    expect(body.success).toBe(true);
+    expect(body.data[0].uploaded_at).toBe(new Date("2024-01-01").toISOString());
+  });
+
+  it("400s when the batch exceeds the cap", async () => {
+    const ids = Array.from({ length: 101 }, (_, i) => i.toString(16).padStart(24, "0"));
+    const res = mockRes();
+    await getVideosBatch({ body: { ids } } as unknown as Request, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(prismaMock.videos.findMany).not.toHaveBeenCalled();
   });
 });
 

@@ -163,10 +163,17 @@ money lives in its own service.
 
 ## 9. Status
 
-Design complete; **not yet implemented.** The `user.events` fan-out exchange and the DLQ
-work are also prerequisites tracked in IMPLEMENTATION_PLAN §2.1–§2.2. Build order:
+Build order:
 1. `user.events` / `video.events` exchanges + DLQs (foundation).
 2. marketplace-service consumers (`video.deleted` unlink, `user.deleted` anonymize);
-   curation-service consumers (`video.deleted` unlink, `user.deleted` cleanup).
+   **curation-service consumers — DONE** (`video.deleted` unlink, `user.deleted` cleanup;
+   `curation.video-events.q` / `curation.user-events.q`, each with a paired `.dlq`,
+   bounded retries — `backend/curation-service/src/workers/videoWorker.ts`).
 3. marketplace-service publishers (`order.paid`, `subscription.updated`) alongside the
-   Stripe webhook handler; curation-service publisher (`collection.item.added`).
+   Stripe webhook handler; **curation-service publisher — DONE**
+   (`collection.item.added` / `collection.item.removed` on `curation.events`).
+
+> **`video.deleted` now wired end-to-end:** video-service publishes `video.deleted` to the
+> `video.events` topic exchange from `deleteVideo` (`backend/video-service/src/utils/rabbitmq.ts`
+> `publish` + `videoController.deleteVideo`), and curation-service drains it. marketplace-service's
+> `video.deleted` unlink consumer is still pending its own implementation.

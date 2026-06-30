@@ -143,6 +143,40 @@ body {
   overflow: hidden;
 }
 
+/* ─── Custom Scrollbar (app-wide) ───
+   Thin, rounded track-less bar tinted with the primary accent. Firefox uses
+   scrollbar-width/color; WebKit/Blink use the ::-webkit-scrollbar pseudos.
+   Opt out anywhere with the `scrollbar-hide` utility. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-primary) 35%, transparent) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* ═══════════════════════════════════════════════════════
    SEMANTIC UTILITY CLASSES
    Each utility is a fully self-contained design decision.

@@ -1,12 +1,18 @@
 import amqp from "amqplib";
 import { randomUUID } from "crypto";
+import { logger } from "./logger";
 
 /**
- * video-service OWNS and publishes to the `video.events` topic exchange
- * (docs/messaging-contract.md §2). Consumers (curation-service, marketplace-service)
- * bind their own queues to it for orphan cleanup on `video.deleted`.
+ * RabbitMQ access for curation-service.
+ *
+ * Follows the broker topology in docs/messaging-contract.md §2: a single shared
+ * broker with per-service TOPIC exchanges (`<domain>.events`). curation-service:
+ *   · OWNS and publishes to   → `curation.events`     (collection.item.added/removed)
+ *   · CONSUMES (own queues)    → `video.events` (video.deleted), `user.events` (user.deleted)
+ *
+ * A service owns exactly one exchange and its own consumer queues (+ paired DLQ).
  */
-export const VIDEO_EXCHANGE = "video.events";
+export const CURATION_EXCHANGE = "curation.events";
 
 class RabbitMQService {
   private connection: any = null;
@@ -20,14 +26,14 @@ class RabbitMQService {
     this.isConnecting = true;
     try {
       const rabbitUrl = process.env.RABBITMQ_URL || "amqp://localhost:5672";
-      console.log(`Connecting to RabbitMQ at ${rabbitUrl}...`);
+      logger.info(`[RabbitMQ] Connecting at ${rabbitUrl}...`);
 
       this.connection = await amqp.connect(rabbitUrl);
       this.channel = await this.connection.createChannel();
 
-      console.log("Successfully connected to RabbitMQ");
+      logger.info("[RabbitMQ] Connected");
     } catch (error) {
-      console.error("Failed to connect to RabbitMQ:", error);
+      logger.error({ err: error }, "[RabbitMQ] Connection failed, retrying in 5s");
       setTimeout(() => this.connect(), 5000); // Retry after 5s
     } finally {
       this.isConnecting = false;
@@ -53,7 +59,7 @@ class RabbitMQService {
     };
     const buffer = Buffer.from(JSON.stringify(event));
     this.channel.publish(exchange, routingKey, buffer, { persistent: true });
-    console.log(`[RabbitMQ] Published ${routingKey} to ${exchange} (${event.eventId})`);
+    logger.info({ exchange, routingKey, eventId: event.eventId }, "[RabbitMQ] Published event");
   }
 
   getChannel() {

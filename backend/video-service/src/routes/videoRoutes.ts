@@ -1,6 +1,6 @@
 import express from "express";
 
-import {addNewComment, createVideo, deleteVideo, getCommentsByVideoId, getLikesByVideoId, getUserVideos, getVideoById, getVideos, updateLikes, generateUploadUrl} from "../controllers/videoController";
+import {addNewComment, createVideo, deleteVideo, getCommentsByVideoId, getLikesByVideoId, getUserVideos, getVideoById, getVideos, getVideosBatch, updateLikes, generateUploadUrl} from "../controllers/videoController";
 import { authMiddleware } from "../middelwares/authMiddleware";
 
 import { getForYouFeed } from "../controllers/feedController";
@@ -14,6 +14,8 @@ videoRouter.get("/foryou", authMiddleware, getForYouFeed)
 videoRouter.get("/generate-upload-url", (req, res) => { res.status(405).json({ error: "Method Not Allowed - Use POST" }); });
 videoRouter.post("/generate-upload-url", authMiddleware, generateUploadUrl);
 videoRouter.post("/video", authMiddleware, createVideo); // save metadata after upload
+// Internal batch resolution for other services holding soft videoId refs.
+videoRouter.post("/batch", getVideosBatch);
 
 // DYNAMIC ROUTES
 videoRouter.get("/user/:userId",getUserVideos) // get videos of a user

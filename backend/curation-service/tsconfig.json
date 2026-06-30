@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "rootDir": "./",
+    "baseUrl": "./",
+    "paths": {
+      "@/routes/*": ["./src/routes/*"],
+      "@/controllers/*": ["./src/controllers/*"],
+      "@/middlewares/*": ["./src/middlewares/*"],
+      "@/workers/*": ["./src/workers/*"],
+      "@/utils/*": ["./src/utils/*"]
+    },
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "vitest.config.ts"]
+}

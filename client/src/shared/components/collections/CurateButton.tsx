@@ -3,6 +3,7 @@ import { BsBookmark, BsBookmarkFill } from "react-icons/bs";
 import { VideoType } from "../../../types";
 import { cn } from "../../utils/cn";
 import { useCuration, useIsCurated } from "../../hooks/useCuration";
+import { COLLECTION_NOUN } from "../../constants/curation";
 
 interface CurateButtonProps {
   video: VideoType;
@@ -23,7 +24,7 @@ export const CurateButton: React.FC<CurateButtonProps> = ({ video, className, la
 
   return (
     <button
-      aria-label="Add to collection"
+      aria-label={`Add to ${COLLECTION_NOUN}`}
       onClick={(e) => {
         e.stopPropagation();
         openCurate(video);

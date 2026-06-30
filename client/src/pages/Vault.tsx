@@ -17,8 +17,11 @@ import { Button } from "../shared/components/ui/Button";
 import { EmptyState } from "../shared/components/ui/EmptyState";
 import { VideoThumbnailCard } from "../shared/components/ui/VideoThumbnailCard";
 import { CollectionModal } from "../shared/components/collections/CollectionModal";
-import { MockCollection } from "../utils/store/features/collections/collectionsSlice";
-import { cn } from "../shared/utils/cn";
+import { EditCollectionModal } from "../shared/components/collections/EditCollectionModal";
+import { CollectionCard } from "../shared/components/collections/CollectionCard";
+import { useGetMyCollectionsQuery } from "../utils/store/features/collections/curationApi";
+import type { CollectionListItem } from "../shared/contracts/api";
+import { COLLECTION_UNIT, COLLECTION_NOUN_PLURAL } from "../shared/constants/curation";
 
 const Vault: React.FC = () => {
   const navigate = useNavigate();
@@ -40,7 +43,8 @@ const Vault: React.FC = () => {
   const userVideos: VideoType[] = videosData?.data ?? [];
   const [activeTab, setActiveTab] = useState("My Uploads");
   const [vaultSearch, setVaultSearch] = useState("");
-  const [openCollection, setOpenCollection] = useState<MockCollection | null>(null);
+  const [openCollection, setOpenCollection] = useState<CollectionListItem | null>(null);
+  const [editingCollection, setEditingCollection] = useState<CollectionListItem | null>(null);
 
   // Scoped search: filters only the active tab's items (the user's own
   // library), not a global search. Liked/Collections are placeholders until
@@ -51,8 +55,12 @@ const Vault: React.FC = () => {
     ? activeVideos.filter((v) => v.title?.toLowerCase().includes(q))
     : activeVideos;
 
-  // Curated collections (session mock — curation-service later).
-  const collections = useAppSelector((state: RootState) => state.collections.items);
+  // Curated collections from curation-service (own collections, with previews).
+  const { data: collectionsData } = useGetMyCollectionsQuery(
+    { token },
+    { skip: !token }
+  );
+  const collections = collectionsData?.data ?? [];
   const visibleCollections = q
     ? collections.filter((c) => c.title.toLowerCase().includes(q))
     : collections;
@@ -147,7 +155,7 @@ const Vault: React.FC = () => {
                 onClick={() => navigate('/vault/network')}
               />
               <div className="divider-v"></div>
-              <StatBlock value={collections?.length || 0} label="Collections" />
+              <StatBlock value={collections?.length || 0} label={COLLECTION_NOUN_PLURAL} />
               <div className="divider-v"></div>
               {/* C-Score is not modelled yet — placeholder until the scoring job ships. */}
               <StatBlock value="soon" label="C-Score" highlight />
@@ -172,7 +180,7 @@ const Vault: React.FC = () => {
         {/* 3. Tab Navigation + scoped search */}
         <div className="w-full mt-10 border-b border-hairline/10 flex items-center justify-between gap-4 px-2 flex-wrap">
           <div className="flex items-center gap-8">
-            {['My Uploads', 'Liked', 'Collections'].map((tab) => (
+            {['My Uploads', 'Liked', COLLECTION_NOUN_PLURAL].map((tab) => (
               <Button
                 key={tab}
                 variant="unstyled"
@@ -196,42 +204,18 @@ const Vault: React.FC = () => {
 
         {/* 4. Content Grid */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 lg:gap-4">
-          {activeTab === "Collections" ? (
+          {activeTab === COLLECTION_NOUN_PLURAL ? (
             visibleCollections.length > 0 ? (
               visibleCollections.map((c) => (
-                <button
+                <CollectionCard
                   key={c.id}
-                  onClick={() => setOpenCollection(c)}
-                  className="card-solid relative aspect-9/16 rounded-md overflow-hidden group cursor-pointer flex flex-col justify-end border border-outline-variant/15 text-left"
-                >
-                  {/* Mosaic preview — layout adapts to item count so it always fills */}
-                  {c.items.length > 0 ? (
-                    <div
-                      className={cn(
-                        "absolute inset-0 grid gap-0.5",
-                        c.items.length === 1 ? "grid-cols-1 grid-rows-1"
-                          : c.items.length === 2 ? "grid-cols-2 grid-rows-1"
-                          : "grid-cols-2 grid-rows-2"
-                      )}
-                    >
-                      {c.items.slice(0, 4).map((it) => (
-                        <video key={it.id} src={it.video_url} muted playsInline className="w-full h-full object-cover" />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-surface-container to-surface-container-low" />
-                  )}
-                  <div className="absolute inset-0 bg-linear-to-t from-scrim/90 via-scrim/20 to-transparent" />
-                  <div className="absolute top-2 left-2 bg-media-scrim backdrop-blur-md px-2 py-0.5 rounded text-[9px] font-jetbrains font-bold text-on-media">
-                    {c.items.length} items
-                  </div>
-                  <div className="relative z-10 p-3">
-                    <h3 className="font-syne font-bold text-on-media text-sm line-clamp-2 drop-shadow-lg">{c.title}</h3>
-                  </div>
-                </button>
+                  collection={c}
+                  onOpen={setOpenCollection}
+                  onManage={setEditingCollection}
+                />
               ))
             ) : (
-              <EmptyState className="col-span-full" message={q ? `No collections match “${vaultSearch}”.` : "No collections yet — curate videos to build one."} />
+              <EmptyState className="col-span-full" message={q ? `No ${COLLECTION_NOUN_PLURAL} match “${vaultSearch}”.` : `No ${COLLECTION_NOUN_PLURAL} yet — curate ${COLLECTION_UNIT}s to build one.`} />
             )
           ) : isLoadingVideos ? (
             <div className="col-span-full py-10 flex justify-center">
@@ -257,6 +241,17 @@ const Vault: React.FC = () => {
         collection={openCollection}
         isOpen={!!openCollection}
         onClose={() => setOpenCollection(null)}
+        canManage
+      />
+
+      <EditCollectionModal
+        collection={editingCollection}
+        isOpen={!!editingCollection}
+        onClose={() => setEditingCollection(null)}
+        onDeleted={(id) => {
+          // If the deleted collection's detail modal is open, close it too.
+          if (openCollection?.id === id) setOpenCollection(null);
+        }}
       />
     </div>
   );

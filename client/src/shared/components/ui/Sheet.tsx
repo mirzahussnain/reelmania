@@ -3,15 +3,18 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, type TargetAndTransition } from "framer-motion";
 import { cn } from "../../utils/cn";
 
-type SheetVariant = "bottom" | "center";
+type SheetVariant = "bottom" | "center" | "right";
 
 interface SheetProps {
   isOpen: boolean;
   onClose: () => void;
-  /** "bottom" slides up from the bottom edge; "center" scales in centered. */
+  /** "bottom" slides up from the bottom edge; "center" scales in centered;
+   *  "right" slides in from the right edge (full-height). */
   variant?: SheetVariant;
   /** Classes for the panel (bg, size, radius, padding, layout). */
   className?: string;
+  /** Hide the dimmed backdrop (e.g. for a full-screen panel). */
+  hideBackdrop?: boolean;
   children: React.ReactNode;
 }
 
@@ -29,6 +32,17 @@ const PANEL_MOTION: Record<
     animate: { opacity: 1, scale: 1, y: 0 },
     exit: { opacity: 0, scale: 0.95, y: 12 },
   },
+  right: {
+    initial: { x: "100%" },
+    animate: { x: 0 },
+    exit: { x: "100%" },
+  },
+};
+
+const CONTAINER_CLASS: Record<SheetVariant, string> = {
+  bottom: "items-end",
+  center: "items-center justify-center p-4",
+  right: "justify-end",
 };
 
 /**
@@ -36,25 +50,27 @@ const PANEL_MOTION: Record<
  * overflow), with a dimmed backdrop and an animated panel. The single home for
  * the app's modals/sheets so the scaffolding isn't re-implemented per modal.
  */
-export const Sheet: React.FC<SheetProps> = ({ isOpen, onClose, variant = "center", className, children }) => {
+export const Sheet: React.FC<SheetProps> = ({ isOpen, onClose, variant = "center", className, hideBackdrop, children }) => {
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className={cn("fixed inset-0 z-[70] flex", variant === "bottom" ? "items-end" : "items-center justify-center p-4")}>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-scrim/60 backdrop-blur-sm"
-          />
+        <div className={cn("fixed inset-0 z-70 flex", CONTAINER_CLASS[variant])}>
+          {!hideBackdrop && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="absolute inset-0 bg-scrim/60 backdrop-blur-sm"
+            />
+          )}
           <motion.div
             initial={PANEL_MOTION[variant].initial}
             animate={PANEL_MOTION[variant].animate}
             exit={PANEL_MOTION[variant].exit}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
             onClick={(e) => e.stopPropagation()}
-            className={cn("relative", variant === "bottom" && "w-full", className)}
+            className={cn("relative", variant === "bottom" && "w-full", variant === "right" && "h-full", className)}
           >
             {children}
           </motion.div>

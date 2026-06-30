@@ -284,6 +284,20 @@ The UI ring already exists (PublicNetwork). Make the number real and persisted.
 - Enterprise tier ($500/mo) for studio recruiting access.
 - **Outcome:** B2B revenue layered on the creator economy.
 
+### Known implementation debt (curation-service scaffold)
+Tracked gaps from standing up `curation-service` ahead of its dependencies:
+
+1. **Private-collection PRO gating bypass** — `createCollection`/`updateCollection`
+   accept `isPrivate` straight from the request body with no tier check. Tier lives in
+   marketplace-service, so this can only be closed in **Phase D**: consume
+   `marketplace.events:subscription.updated` (cache tier) or a sync REST tier-check at
+   create/update time. Until then, `isPrivate` is effectively ungated — **never ship
+   paid gating on this without the check** (messaging-contract §6).
+2. ~~**`video.deleted` not emitted**~~ — **DONE.** video-service now publishes
+   `video.deleted` to the `video.events` topic exchange from `deleteVideo`, and
+   curation-service unlinks the orphaned `CollectionItem` rows. (marketplace-service's
+   own `video.deleted` unlink consumer still pending — messaging-contract §5.)
+
 ---
 
 ## 7. Pre-Launch Checklist (the unglamorous, mandatory parts)
