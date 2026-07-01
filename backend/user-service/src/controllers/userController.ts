@@ -4,6 +4,32 @@ import prisma from "../utils/dbconnection.config";
 import { UserService } from "../services/userService";
 import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
+import { isValidRole } from "@/constants/roles";
+import { deriveBadges } from "@/constants/badges";
+
+/**
+ * Attach the derived badge set to a fetched profile. `following_idTousers` is
+ * this user's follower count (people following them). Single place that maps a
+ * user row → badge inputs so the two profile endpoints stay DRY.
+ */
+const withBadges = <
+  T extends {
+    is_founding_member: boolean;
+    is_verified: boolean;
+    c_score: number;
+    _count?: { followers_followers_following_idTousers?: number };
+  }
+>(
+  user: T
+) => ({
+  ...user,
+  badges: deriveBadges({
+    is_founding_member: user.is_founding_member,
+    is_verified: user.is_verified,
+    c_score: user.c_score,
+    followerCount: user._count?.followers_followers_following_idTousers ?? 0,
+  }),
+});
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
@@ -55,7 +81,7 @@ export const getUser = async (req: Request, res: Response) => {
       return;
     }
 
-    ok(res, user, undefined, "User Found Successfully");
+    ok(res, withBadges(user), undefined, "User Found Successfully");
     return;
   } catch (err: unknown) {
     logger.error({ err });
@@ -91,7 +117,7 @@ export const getUserByUsername = async (req: Request, res: Response) => {
       return;
     }
 
-    ok(res, user, undefined, "User Found Successfully");
+    ok(res, withBadges(user), undefined, "User Found Successfully");
     return;
   } catch (err: unknown) {
     logger.error({ err });
@@ -128,13 +154,15 @@ export const updateUser = async (req: Request, res: Response) => {
 export const updateUserRole = async (req: Request, res: Response) => {
   try {
     const username = req?.params?.username;
-    const newRole = req?.body?.newRole
+    const newRole = req?.body?.newRole;
     if (!username) {
       fail(res, 401, "User name is missing");
       return;
     }
-    if (!newRole) {
-      fail(res, 401, "User Role is missing");
+    // Reject anything outside the Role enum before it reaches the column —
+    // O(1) membership check via the single source of truth.
+    if (!isValidRole(newRole)) {
+      fail(res, 400, "Invalid role");
       return;
     }
     const result = await prisma.users.update({
@@ -142,11 +170,9 @@ export const updateUserRole = async (req: Request, res: Response) => {
         username: username,
       },
       data: {
-        role: {
-          set: newRole
-        }
-      }
-    })
+        role: { set: newRole },
+      },
+    });
 
     ok(res, result, undefined, "USER ROLE UPDATED SUCCESSFULLY");
     return;

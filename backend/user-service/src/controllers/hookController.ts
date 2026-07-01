@@ -2,6 +2,7 @@ import { Webhook } from "svix";
 import { Request, Response } from "express";
 import dotenv from "dotenv";
 import { userType } from "@/utils/types";
+import { normalizeRole } from "@/constants/roles";
 import { rabbitMQService } from "../utils/rabbitmq";
 import { logger } from "../utils/logger";
 
@@ -66,8 +67,9 @@ export const userManagement = async (req: Request, res: Response) => {
       email: email_addresses[0]?.email_address,
       created_at: email_addresses[0]?.created_at,
       // Every new user is a Curator by default; Creator is derived once they
-      // upload (use the Studio). See client shared/constants/roles.ts.
-      role: process.env.DEFAULT_USER_ROLE || "Curator",
+      // upload (use the Studio). normalizeRole guards against a bad env value.
+      // Single source of truth: src/constants/roles.ts.
+      role: normalizeRole(process.env.DEFAULT_USER_ROLE),
     };
 
     await rabbitMQService.publishToExchange("user_events", {
