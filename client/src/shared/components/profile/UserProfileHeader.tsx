@@ -3,6 +3,11 @@ import { userType } from "../../../types";
 import { HiOutlineUserAdd, HiOutlineUserRemove } from "react-icons/hi";
 import { StatBlock } from "../ui/StatBlock";
 import { Button } from "../ui/Button";
+import { BadgeRow } from "../ui/Badge";
+import { COLLECTION_UNIT } from "../../constants/curation";
+
+// Fallback copy when a user hasn't written a bio yet.
+const DEFAULT_BIO = "Curating on Kinetix.";
 
 interface UserProfileHeaderProps {
   userProfile: userType;
@@ -23,9 +28,7 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
   handleFollow,
   className = "pt-8 md:pt-16"
 }) => {
-  // Bio and C-Score are not modelled in the DB yet. Bio uses placeholder copy;
-  // C-Score shows "soon" until the scoring job ships (no fabricated number).
-  const bio = "Curating the finest cuts of neo-tokyo drift and digital melancholy. Syncing timelines since 2024.";
+  const bio = userProfile.bio?.trim() || DEFAULT_BIO;
 
   return (
 
@@ -46,6 +49,10 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
       <h1 className="text-2xl md:text-6xl lg:text-7xl font-syne font-black uppercase tracking-wider text-on-surface mt-8 text-center">
         {userProfile.first_name}_{userProfile.last_name}
       </h1>
+
+      {/* Earned badges — server-derived, client only renders */}
+      <BadgeRow badges={userProfile.badges} size={26} className="justify-center mt-4" />
+
       <div className="w-full flex justify-center px-4 mt-4">
         <p className="text-on-surface-variant text-sm md:text-base w-[90%] max-w-[500px] text-center leading-relaxed font-mono">
           {bio}
@@ -56,10 +63,10 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
       <div className="card-glass flex items-center gap-8 md:gap-16 px-8 md:px-16 py-6 mt-10">
         <StatBlock value={followerCount.toLocaleString()} label="Network" tone="primary" align="center" />
         <div className="divider-v"></div>
-        <StatBlock value={videoCount} label="Archives" align="center" />
+        <StatBlock value={videoCount} label={`${COLLECTION_UNIT}s`} align="center" />
         <div className="divider-v"></div>
-        {/* C-Score not modelled yet — placeholder until the scoring job ships. */}
-        <StatBlock value="soon" label="C-Score" tone="secondary" align="center" />
+        {/* C-Score reads the persisted percentile; 0 until the scoring job runs. */}
+        <StatBlock value={userProfile.c_score ?? 0} label="C-Score" tone="secondary" align="center" />
       </div>
 
       {/* Connect Button */}

@@ -13,6 +13,7 @@ import { CopyToClipboard } from "react-copy-to-clipboard";
 import { toast } from "react-toastify";
 import { Avatar } from "../shared/components/ui/Avatar";
 import { StatBlock } from "../shared/components/ui/StatBlock";
+import { BadgeRow } from "../shared/components/ui/Badge";
 import { Button } from "../shared/components/ui/Button";
 import { EmptyState } from "../shared/components/ui/EmptyState";
 import { VideoThumbnailCard } from "../shared/components/ui/VideoThumbnailCard";
@@ -143,9 +144,12 @@ const Vault: React.FC = () => {
             </h1>
             <h2 className="text-primary font-medium mt-1 mb-4">@{userProfile?.username}</h2>
 
-            <p className="text-on-surface-variant text-sm lg:text-base max-w-2xl leading-relaxed mb-6">
-              Digital curator & Motion designer. Exploring the intersection of lofi aesthetics and high-octane anime narratives. Founding member of the Neon Circle.
+            <p className="text-on-surface-variant text-sm lg:text-base max-w-2xl leading-relaxed mb-4">
+              {userProfile?.bio?.trim() || "Curating on Kinetix."}
             </p>
+
+            {/* Earned badges — server-derived */}
+            <BadgeRow badges={userProfile?.badges} size={24} className="justify-center lg:justify-start mb-6" />
 
             {/* Stats Block */}
             <div className="flex items-center justify-center lg:justify-start gap-8 lg:gap-12">
@@ -157,8 +161,8 @@ const Vault: React.FC = () => {
               <div className="divider-v"></div>
               <StatBlock value={collections?.length || 0} label={COLLECTION_NOUN_PLURAL} />
               <div className="divider-v"></div>
-              {/* C-Score is not modelled yet — placeholder until the scoring job ships. */}
-              <StatBlock value="soon" label="C-Score" highlight />
+              {/* C-Score reads the persisted percentile; 0 until the scoring job runs. */}
+              <StatBlock value={userProfile?.c_score ?? 0} label="C-Score" highlight />
             </div>
           </div>
 

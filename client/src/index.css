@@ -146,35 +146,50 @@ body {
 /* ─── Custom Scrollbar (app-wide) ───
    Thin, rounded track-less bar tinted with the primary accent. Firefox uses
    scrollbar-width/color; WebKit/Blink use the ::-webkit-scrollbar pseudos.
-   Opt out anywhere with the `scrollbar-hide` utility. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-primary) 35%, transparent) transparent;
-}
+   MUST live in @layer base so the `scrollbar-hide` utility (utilities layer)
+   still wins where opted out — unlayered CSS would override it everywhere. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-primary) 35%, transparent) transparent;
+  }
 
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-*::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
-  border-radius: 9999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
+  *::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-primary) 30%, transparent);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
 
-*::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--color-primary) 55%, transparent);
-  background-clip: padding-box;
-}
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--color-primary) 55%, transparent);
+    background-clip: padding-box;
+  }
 
-*::-webkit-scrollbar-corner {
-  background: transparent;
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Mobile: hide scrollbars entirely (content stays scrollable). Touch devices
+     show transient overlay scrollbars while scrolling; suppress them so the feed
+     and pages read clean, matching the app's 1016px mobile breakpoint. */
+  @media (max-width: 1016px) {
+    * {
+      scrollbar-width: none;
+    }
+    *::-webkit-scrollbar {
+      display: none;
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════

@@ -1,4 +1,5 @@
 import type { Role } from './shared/constants/roles'
+import type { BadgeItem } from './shared/constants/badges'
 
 // Canonical role type (single source of truth in shared/constants/roles.ts).
 export type Roles = Role
@@ -21,6 +22,15 @@ export type userType = {
   last_name: string,
   role: string;
   username: string;
+  bio?: string | null,
+  is_founding_member?: boolean,
+  is_verified?: boolean,
+  // Persisted C-Score (0–100 percentile). Written by the nightly scoring job;
+  // 0 until that ships. The client only ever reads it.
+  c_score?: number,
+  // Derived server-side (user-service deriveBadges) and returned in the profile
+  // payload; the client only renders them (see shared/components/ui/Badge).
+  badges?: BadgeItem[],
   // The API returns denormalized follower/following counts under `_count`
   // (Prisma relation aggregate), not an inlined follower array. Align the type
   // with the actual payload (IMPLEMENTATION_PLAN 8.3).
