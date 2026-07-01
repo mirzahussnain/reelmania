@@ -4,8 +4,8 @@ import prisma from "../utils/dbconnection.config";
 import { UserService } from "../services/userService";
 import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
-import { isValidRole } from "@/constants/roles";
-import { deriveBadges } from "@/constants/badges";
+import { isValidRole } from "../constants/roles";
+import { deriveBadges } from "../constants/badges";
 
 /**
  * Attach the derived badge set to a fetched profile. `following_idTousers` is

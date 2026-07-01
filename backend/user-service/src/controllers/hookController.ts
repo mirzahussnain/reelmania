@@ -2,7 +2,7 @@ import { Webhook } from "svix";
 import { Request, Response } from "express";
 import dotenv from "dotenv";
 import { userType } from "@/utils/types";
-import { normalizeRole } from "@/constants/roles";
+import { normalizeRole } from "../constants/roles";
 import { rabbitMQService } from "../utils/rabbitmq";
 import { logger } from "../utils/logger";
 

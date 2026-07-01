@@ -1,6 +1,6 @@
 import prisma from "../utils/dbconnection.config";
 import { userType } from "@/utils/types";
-import { normalizeRole } from "@/constants/roles";
+import { normalizeRole } from "../constants/roles";
 
 // Fields a user may set on their OWN profile. Everything else — role,
 // is_founding_member, is_verified, is_active, c_score(_raw/_updated_at) — is
