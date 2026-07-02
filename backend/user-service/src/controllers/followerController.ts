@@ -31,6 +31,12 @@ export const getFollowers = async (req: Request, res: Response) => {
             avatar_url: true,
             first_name: true,
             last_name: true,
+            // Per-node network metrics for the relations grid. c_score is the
+            // persisted percentile (0 until the scoring job runs); the flags let
+            // the client badge verified/founding connections.
+            c_score: true,
+            is_verified: true,
+            is_founding_member: true,
           },
         },
       },

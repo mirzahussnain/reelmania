@@ -94,9 +94,9 @@ const NetworkRelations: React.FC = () => {
           const node = f.users_followers_follower_idTousers;
           if (!node) return null;
 
-          // Per-node metrics are not modelled yet. Placeholder until backed by
-          // real data (previously Math.random, which flickered on every render).
-          const cScore = "—";
+          // c_score is real (persisted percentile; 0 until the scoring job runs).
+          // reach/views/sales stay placeholders until marketplace/analytics exist.
+          const cScore = node.c_score ?? 0;
           const reach  = "—";
           const views  = "—";
           const sales  = "—";

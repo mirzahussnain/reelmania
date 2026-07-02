@@ -104,6 +104,11 @@ export interface FollowerNode {
   avatar_url: string;
   first_name: string;
   last_name: string;
+  // Per-node network metrics (see getFollowers select). c_score is 0 until the
+  // scoring job runs; reach/views/sales stay unmodelled until marketplace.
+  c_score: number;
+  is_verified: boolean;
+  is_founding_member: boolean;
 }
 
 /** A follower relationship row, including the following user's details. */
