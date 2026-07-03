@@ -1,16 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import Loader from "../components/Loader";
 import { useUserProfile } from "../shared/hooks/useUserProfile";
 import { UserProfileHeader } from "../shared/components/profile/UserProfileHeader";
-import { UserVideoGrid, VideoCard } from "../shared/components/profile/UserVideoGrid";
-import { Carousel } from "../shared/components/ui/Carousel";
-import useScreenWidth from "../utils/hooks/useScreenWidth";
+import { ProfileFeatured } from "../shared/components/profile/ProfileFeatured";
 import { Link } from "react-router-dom";
 import { BRAND } from "../shared/constants/brand";
-import { useGetPublicCollectionsQuery } from "../utils/store/features/collections/curationApi";
-import { CollectionCard } from "../shared/components/collections/CollectionCard";
-import { CollectionModal } from "../shared/components/collections/CollectionModal";
-import type { CollectionListItem } from "../shared/contracts/api";
 
 const PublicProfile: React.FC = () => {
   const {
@@ -20,19 +14,8 @@ const PublicProfile: React.FC = () => {
     followerCount,
     followStatus,
     handleFollow,
-    isLoading
+    isLoading,
   } = useUserProfile();
-
-  const isMobile = useScreenWidth() <= 640;
-  const [openScope, setOpenScope] = useState<CollectionListItem | null>(null);
-  // The profile owner's PUBLIC Scopes (server returns public-only to non-owners).
-  const { data: scopesData } = useGetPublicCollectionsQuery(
-    { ownerId: userProfile?.id as string },
-    { skip: !userProfile?.id }
-  );
-  const scopes = scopesData?.data ?? [];
-  const hasCreations = (userVideos?.length ?? 0) > 0;
-  const hasCurations = scopes.length > 0;
 
   if (isLoading) return <Loader />;
 
@@ -72,61 +55,11 @@ const PublicProfile: React.FC = () => {
           className="pt-2"
         />
 
-        {/* Featured — Creations (their Kines) + Curations (their Scopes).
-            The whole section hides when both are empty; each sub-section hides
-            when its own content is empty. */}
-        {(hasCreations || hasCurations) && (
-          <section className="w-full mt-12 z-10">
-            <div className="w-full max-w-6xl mx-auto px-4">
-              <h3 className="font-syne font-bold text-2xl md:text-3xl text-on-surface mb-8">
-                Featured
-              </h3>
-            </div>
-
-            {hasCreations && (
-              <div className="mb-12">
-                <div className="w-full max-w-6xl mx-auto px-4">
-                  <h4 className="font-syne font-semibold text-base md:text-lg text-on-surface-variant mb-4">
-                    Popular Creations
-                  </h4>
-                </div>
-                {/* Mobile: carousel when more than one card; otherwise the grid. */}
-                {isMobile && userVideos.length > 1 ? (
-                  <Carousel>
-                    {userVideos.slice(0, 3).map((v) => (
-                      <VideoCard key={v.id} video={v} />
-                    ))}
-                  </Carousel>
-                ) : (
-                  <UserVideoGrid userVideos={userVideos.slice(0, 3)} heading={null} className="mt-0 pb-0" />
-                )}
-              </div>
-            )}
-
-            {/* Same container + grid as UserVideoGrid so Scope cards match
-                Kine cards in size and alignment. */}
-            {hasCurations && (
-              <div className="w-full max-w-6xl mx-auto px-4">
-                <h4 className="font-syne font-semibold text-base md:text-lg text-on-surface-variant mb-4">
-                  Popular Curations
-                </h4>
-                {isMobile && scopes.length > 1 ? (
-                  <Carousel>
-                    {scopes.map((c) => (
-                      <CollectionCard key={c.id} collection={c} onOpen={setOpenScope} />
-                    ))}
-                  </Carousel>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {scopes.map((c) => (
-                      <CollectionCard key={c.id} collection={c} onOpen={setOpenScope} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
-        )}
+        <ProfileFeatured
+          userProfile={userProfile}
+          userVideos={userVideos || []}
+          isCurrentUser={isCurrentUser}
+        />
       </div>
 
       {/* Closing CTA. The Connect/Disconnect action lives in the profile header;
@@ -157,14 +90,6 @@ const PublicProfile: React.FC = () => {
           </Link>
         </div>
       )}
-
-      {/* Read-only Scope viewer (non-owners can't manage) */}
-      <CollectionModal
-        collection={openScope}
-        isOpen={!!openScope}
-        onClose={() => setOpenScope(null)}
-        canManage={isCurrentUser}
-      />
     </div>
   );
 };
