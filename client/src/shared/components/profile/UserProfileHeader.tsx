@@ -5,6 +5,7 @@ import { StatBlock } from "../ui/StatBlock";
 import { Button } from "../ui/Button";
 import { BadgeRow } from "../ui/Badge";
 import { COLLECTION_UNIT } from "../../constants/curation";
+import { NETWORK } from "../../constants/network";
 
 // Fallback copy when a user hasn't written a bio yet.
 const DEFAULT_BIO = "Curating on Kinetix.";
@@ -82,12 +83,12 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
           {followStatus ? (
             <>
               <HiOutlineUserRemove className="text-xl" />
-              Disconnect
+              {NETWORK.DESYNC}
             </>
           ) : (
             <>
               <HiOutlineUserAdd className="text-xl" />
-              Connect
+              {NETWORK.SYNC}
             </>
           )}
         </Button>

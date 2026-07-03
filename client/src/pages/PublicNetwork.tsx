@@ -9,6 +9,7 @@ import Loader from "../components/Loader";
 import { Button } from "../shared/components/ui/Button";
 import { Carousel } from "../shared/components/ui/Carousel";
 import { BRAND } from "../shared/constants/brand";
+import { NETWORK } from "../shared/constants/network";
 import { CScoreRing, MetricCard, NodeCard } from "../shared/components/network/NetworkView";
 
 /**
@@ -59,22 +60,22 @@ const PublicNetwork: React.FC = () => {
   // Viewer-aware CTA (signed-out → Join · connected → View Profile · else Connect).
   const cta = !currentUser
     ? {
-        heading: `Join ${userProfile.first_name}'s Network`,
-        sub: `Sign in to ${BRAND} to connect with ${userProfile.first_name}, explore their curated Scopes, and grow your own network.`,
+        heading: `Sync with ${userProfile.first_name}`,
+        sub: `Join ${BRAND} to sync with ${userProfile.first_name}, explore their curated Scopes, and grow your own network.`,
         label: "Join the Network",
         onClick: () => navigate("/sign-up"),
       }
     : followStatus
       ? {
-          heading: "You're Connected",
-          sub: `You're part of ${userProfile.first_name}'s network. Explore their profile to see their latest creations and Scopes.`,
+          heading: `You're Synced with ${userProfile.first_name}`,
+          sub: `Their latest creations and Scopes surface in your feed. Explore their profile for more.`,
           label: "View Profile",
           onClick: () => navigate(`/users/@${userProfile.username}`),
         }
       : {
-          heading: `Connect with ${userProfile.first_name}`,
-          sub: `Follow ${userProfile.first_name} to add them to your network and surface their creations in your feed.`,
-          label: "Connect",
+          heading: `Sync with ${userProfile.first_name}`,
+          sub: `Sync ${userProfile.first_name} to add them to your network and surface their creations in your feed.`,
+          label: NETWORK.SYNC,
           onClick: handleFollow,
         };
 
@@ -166,7 +167,7 @@ const PublicNetwork: React.FC = () => {
               onClick={cta.onClick}
               className="mt-8 flex items-center gap-2 border border-secondary/50 bg-transparent hover:bg-secondary/10 text-secondary text-sm md:text-base font-bold px-10 py-3 rounded-full transition-all duration-300"
             >
-              {cta.label === "Connect" && <HiOutlineUserAdd className="text-lg" />}
+              {cta.label === NETWORK.SYNC && <HiOutlineUserAdd className="text-lg" />}
               {cta.label}
             </Button>
           </div>

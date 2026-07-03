@@ -6,11 +6,12 @@ import type { userType } from "../../../types";
 import type { FollowerEdge } from "../../contracts/api";
 import { BadgeRow } from "../ui/Badge";
 import { Button } from "../ui/Button";
+import { NETWORK } from "../../constants/network";
 
 // Real, functional tabs — not decorative. "Recent"/"High Resonance" sort the
-// fetched followers client-side; "Mutuals" swaps to a separately-fetched list
-// (follows-back), passed in via props.
-const NETWORK_TABS = ["Recent", "High Resonance", "Mutuals"] as const;
+// fetched followers client-side; "In Sync" (mutuals) swaps to a separately-
+// fetched follows-back list, passed in via props.
+const NETWORK_TABS = ["Recent", "High Resonance", NETWORK.MUTUAL] as const;
 type NetworkTab = (typeof NETWORK_TABS)[number];
 
 /* ─── C-Score ring — reads the real persisted percentile (0 until the job runs) ─── */
@@ -152,7 +153,7 @@ export const NetworkView: React.FC<NetworkViewProps> = ({ userProfile, followers
   // "Recent" keeps API order (created_at desc); "High Resonance" ranks by each
   // node's real c_score; "Mutuals" uses the separately-fetched follows-back list.
   const nodes = useMemo(() => {
-    if (tab === "Mutuals") return mutuals ?? [];
+    if (tab === NETWORK.MUTUAL) return mutuals ?? [];
     if (tab === "High Resonance") {
       return [...followers].sort(
         (a, b) =>
