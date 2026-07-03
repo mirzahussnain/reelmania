@@ -76,11 +76,13 @@ services:
       - SOCKET_PATH=${SOCKET_PATH:-/socket.io/}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - RABBITMQ_URL=${RABBITMQ_URL:-amqp://rabbitmq:5672}
+      - USER_SERVICE_INTERNAL_URL=${USER_SERVICE_INTERNAL_URL:-http://user-service:8000}
     depends_on:
       - mongodb
       - minio
       - redis
       - rabbitmq
+      - user-service
     networks:
       - reelmania-network
 

@@ -108,6 +108,31 @@ export const getMutuals = async (req: Request, res: Response) => {
   }
 };
 
+// Internal sync-resolution endpoint (messaging-contract §1): returns the flat
+// set of creator ids this user follows. video-service reads this to build the
+// Following feed (videos where uploaded_by.id ∈ this set) — it can't query the
+// follow graph directly because that lives in the user-service database.
+export const getFollowingIds = async (req: Request, res: Response) => {
+  try {
+    const userId = req?.params?.userId;
+    if (!userId) {
+      fail(res, 400, "User Id is missing");
+      return;
+    }
+
+    const following = await prisma.followers.findMany({
+      where: { follower_id: userId },
+      select: { following_id: true },
+    });
+
+    ok(res, following.map((f) => f.following_id), undefined, "Following ids fetched");
+    return;
+  } catch (err: unknown) {
+    fail(res, 500, "Operation Failed", err);
+    return;
+  }
+};
+
 export const updateFollower = async (req: Request, res: Response) => {
   try {
     const follower_id: string = req?.body?.followerId;

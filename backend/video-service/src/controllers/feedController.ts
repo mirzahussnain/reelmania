@@ -4,6 +4,7 @@ import prisma from "../utils/dbconnection.config";
 import { getAuth } from "@clerk/express";
 import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
+import { fetchFollowingIds } from "../utils/userClient";
 
 const TRENDING_KEY = "trending:videoIds";
 const TRENDING_TTL = 300; // 5 minutes
@@ -137,6 +138,58 @@ const generateFeedForUser = async (userId: string, redisClient: any, feedKey: st
         } catch (err) {
             logger.error({ err }, "Feed lock release error");
         }
+    }
+};
+
+/**
+ * Following feed — reverse-chronological videos from the creators the signed-in
+ * user follows. Unlike For You (Redis-queued, algorithmic), this is a simple,
+ * predictable "latest from people I sync with" feed, so it's a direct
+ * cursor-paginated query backed by the @@index([uploaded_by.id, uploaded_at]).
+ *
+ * The follow graph lives in user-service, so the followed-id set is resolved via
+ * the internal (fail-soft) userClient. No follows / no videos → empty list, and
+ * the client shows an honest empty state.
+ */
+export const getFollowingFeed = async (req: Request, res: Response) => {
+    try {
+        const auth = getAuth(req);
+        const userId = auth.userId;
+        if (!userId) {
+            fail(res, 401, "Unauthorized");
+            return;
+        }
+
+        const limit = parseInt(req.query.limit as string) || 10;
+        const cursor = req.query.cursor as string | undefined;
+
+        const followingIds = await fetchFollowingIds(userId);
+        if (followingIds.length === 0) {
+            ok(res, [], { nextCursor: null }, "Not following anyone yet");
+            return;
+        }
+
+        const videos = await prisma.videos.findMany({
+            where: { uploaded_by: { is: { id: { in: followingIds } } } },
+            orderBy: { uploaded_at: "desc" },
+            take: limit,
+            skip: cursor ? 1 : 0,
+            cursor: cursor ? { id: cursor } : undefined,
+        });
+
+        const formattedVideos = videos.map((video: any) => ({
+            ...video,
+            uploaded_at: video.uploaded_at.toISOString(),
+        }));
+
+        const nextCursor = videos.length === limit ? videos[videos.length - 1].id : null;
+
+        ok(res, formattedVideos, { nextCursor }, "Following Feed");
+        return;
+    } catch (err: unknown) {
+        logger.error({ err }, "getFollowingFeed error");
+        fail(res, 500, "Operation Failed", err);
+        return;
     }
 };
 
