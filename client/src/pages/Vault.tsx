@@ -134,7 +134,7 @@ const Vault: React.FC = () => {
             size="xl"
             shape="2xl"
             ring
-            verified
+            verified={!!userProfile?.is_verified}
           />
 
           {/* User Info */}
@@ -149,7 +149,7 @@ const Vault: React.FC = () => {
             </p>
 
             {/* Earned badges — server-derived */}
-            <BadgeRow badges={userProfile?.badges} size={24} className="justify-center lg:justify-start mb-6" />
+            <BadgeRow badges={userProfile?.badges} size={80} className="justify-center lg:justify-start mb-6" />
 
             {/* Stats Block */}
             <div className="flex items-center justify-center lg:justify-start gap-8 lg:gap-12">

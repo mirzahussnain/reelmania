@@ -51,7 +51,7 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
       </h1>
 
       {/* Earned badges — server-derived, client only renders */}
-      <BadgeRow badges={userProfile.badges} size={26} className="justify-center mt-4" />
+      <BadgeRow badges={userProfile.badges} size={84} className="justify-center mt-4" />
 
       <div className="w-full flex justify-center px-4 mt-4">
         <p className="text-on-surface-variant text-sm md:text-base w-[90%] max-w-[500px] text-center leading-relaxed font-mono">

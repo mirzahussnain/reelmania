@@ -1,6 +1,8 @@
-import React from "react";
-import { MdVerified } from "react-icons/md";
+import React, { useState } from "react";
 import { cn } from "../../utils/cn";
+import { BADGE_ASSETS } from "../../constants/badges";
+import { BadgeModal } from "./Badge";
+import { Button } from "./Button";
 
 type AvatarSize = "sm" | "md" | "lg" | "xl";
 
@@ -35,6 +37,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   className,
 }) => {
   const radius = shape === "full" ? "rounded-full" : "rounded-2xl";
+  const [badgeOpen, setBadgeOpen] = useState(false);
   return (
     <div className={cn("relative shrink-0 inline-flex", SIZE[size], className)}>
       <div
@@ -54,9 +57,31 @@ export const Avatar: React.FC<AvatarProps> = ({
       </div>
 
       {verified && (
-        <div className="absolute -bottom-1 -right-1 w-1/4 h-1/4 min-w-[20px] min-h-[20px] rounded-full bg-primary flex items-center justify-center border-[3px] border-surface-container">
-          <MdVerified className="text-on-primary w-2/3 h-2/3" />
-        </div>
+        <>
+          <Button
+            variant="unstyled"
+            title="Verified"
+            aria-label="Verified"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setBadgeOpen(true);
+            }}
+            className="absolute -bottom-3 -right-4 w-2/5 h-2/5 min-w-[36px] min-h-[36px] flex items-center justify-center transition-transform hover:scale-110 focus:outline-none"
+          >
+            <img
+              src={BADGE_ASSETS.verified}
+              alt="Verified"
+              className="w-full h-full object-contain scale-125 drop-shadow-[0_0_5px_rgba(208,188,255,0.5)]"
+            />
+          </Button>
+          <BadgeModal
+            badge={{ id: "verified", label: "Verified" }}
+            src={BADGE_ASSETS.verified}
+            isOpen={badgeOpen}
+            onClose={() => setBadgeOpen(false)}
+          />
+        </>
       )}
       {online && !verified && (
         <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-tertiary border-2 border-surface" />

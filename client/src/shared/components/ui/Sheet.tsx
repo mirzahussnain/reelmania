@@ -54,7 +54,13 @@ export const Sheet: React.FC<SheetProps> = ({ isOpen, onClose, variant = "center
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className={cn("fixed inset-0 z-70 flex", CONTAINER_CLASS[variant])}>
+        // stopPropagation: React portals bubble events through the React tree, so
+        // without this a click inside the modal would reach an ancestor <Link>
+        // (e.g. a badge modal opened from inside a node card) and navigate away.
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className={cn("fixed inset-0 z-70 flex", CONTAINER_CLASS[variant])}
+        >
           {!hideBackdrop && (
             <motion.div
               initial={{ opacity: 0 }}
