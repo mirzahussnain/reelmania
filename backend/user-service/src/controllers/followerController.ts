@@ -4,6 +4,19 @@ import { Prisma } from "@prisma/client";
 import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
 
+// Single projection for a follower/mutual node so both endpoints stay in sync.
+// c_score is the persisted percentile; the flags let the client badge nodes.
+const FOLLOWER_NODE_SELECT = {
+  id: true,
+  username: true,
+  avatar_url: true,
+  first_name: true,
+  last_name: true,
+  c_score: true,
+  is_verified: true,
+  is_founding_member: true,
+} satisfies Prisma.usersSelect;
+
 export const getFollowers = async (req: Request, res: Response) => {
   try {
     const userId = req?.params?.userId;
@@ -24,21 +37,7 @@ export const getFollowers = async (req: Request, res: Response) => {
       },
       include: {
         // Fetch the user data of the person doing the following
-        users_followers_follower_idTousers: {
-          select: {
-            id: true,
-            username: true,
-            avatar_url: true,
-            first_name: true,
-            last_name: true,
-            // Per-node network metrics for the relations grid. c_score is the
-            // persisted percentile (0 until the scoring job runs); the flags let
-            // the client badge verified/founding connections.
-            c_score: true,
-            is_verified: true,
-            is_founding_member: true,
-          },
-        },
+        users_followers_follower_idTousers: { select: FOLLOWER_NODE_SELECT },
       },
       orderBy: { created_at: "desc" },
       skip,
@@ -50,6 +49,58 @@ export const getFollowers = async (req: Request, res: Response) => {
     });
 
     ok(res, result, { page, limit, total: totalFollowers }, "Followers Fetched Successfully");
+    return;
+  } catch (err: unknown) {
+    fail(res, 500, "Operation Failed", err);
+    return;
+  }
+};
+
+// Mutuals = users who follow this user AND whom this user follows back.
+// Two-step: fetch the ids this user follows, then the follower edges among them.
+// O(following) load + one indexed IN query (same node projection as followers).
+export const getMutuals = async (req: Request, res: Response) => {
+  try {
+    const userId = req?.params?.userId;
+    if (!userId) {
+      fail(res, 401, "User Id is missing");
+      return;
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    // Ids this user follows.
+    const following = await prisma.followers.findMany({
+      where: { follower_id: userId },
+      select: { following_id: true },
+    });
+    const followingIds = following.map((f) => f.following_id);
+
+    if (followingIds.length === 0) {
+      ok(res, [], { page, limit, total: 0 }, "Mutuals Fetched Successfully");
+      return;
+    }
+
+    // Followers of this user who are also in the followed set = mutuals.
+    const where: Prisma.followersWhereInput = {
+      following_id: userId,
+      follower_id: { in: followingIds },
+    };
+
+    const [result, total] = await Promise.all([
+      prisma.followers.findMany({
+        where,
+        include: { users_followers_follower_idTousers: { select: FOLLOWER_NODE_SELECT } },
+        orderBy: { created_at: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.followers.count({ where }),
+    ]);
+
+    ok(res, result, { page, limit, total }, "Mutuals Fetched Successfully");
     return;
   } catch (err: unknown) {
     fail(res, 500, "Operation Failed", err);

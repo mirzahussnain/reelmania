@@ -28,14 +28,14 @@ enum Role {
 }
 
 model users {
-  id                                      String      @id
-  first_name                              String
-  last_name                               String
-  role                                    Role        @default(Curator)
-  bio                                     String?
-  avatar_url                              String
-  email                                   String      @unique
-  username                                String      @unique
+  id         String  @id
+  first_name String
+  last_name  String
+  role       Role    @default(Curator)
+  bio        String?
+  avatar_url String
+  email      String  @unique
+  username   String  @unique
 
   // ── Platform status ──
   // Three distinct axes — never conflate them:
@@ -52,26 +52,26 @@ model users {
   // ── C-Score (written by the nightly worker; the ring only reads c_score) ──
   c_score            Int       @default(0) // percentile ring value 0–100
   c_score_raw        Float     @default(0) // un-normalized score; seeds next run's iteration
-  c_score_updated_at DateTime?             // last nightly calculation
+  c_score_updated_at DateTime? // last nightly calculation
 
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  updated_at DateTime  @updatedAt
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt
 
   external_metrics                        user_external_metrics?
-  followers_followers_follower_idTousers  followers[] @relation("followers_follower_idTousers")
-  followers_followers_following_idTousers followers[] @relation("followers_following_idTousers")
+  followers_followers_follower_idTousers  followers[]            @relation("followers_follower_idTousers")
+  followers_followers_following_idTousers followers[]            @relation("followers_following_idTousers")
 }
 
 // Kept in its own 1:1 table so the hot `users` row stays lean. Populated by the
 // (future) external-sync job; only YouTube at launch — TikTok/IG deferred.
 model user_external_metrics {
-  id                 String   @id @default(uuid())
-  user_id            String   @unique
-  user               users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  user_id String @unique
+  user    users  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  youtube_channel_id String?  @unique
-  youtube_followers  Int      @default(0) // subscriber count → externalPrior input
-  youtube_view_count BigInt   @default(0)
+  youtube_channel_id String? @unique
+  youtube_followers  Int     @default(0) // subscriber count → externalPrior input
+  youtube_view_count BigInt  @default(0)
 
-  last_synced_at     DateTime @default(now())
+  last_synced_at DateTime @default(now())
 }
