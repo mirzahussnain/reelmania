@@ -1,5 +1,6 @@
 import { rabbitMQService } from "../utils/rabbitmq";
 import prisma from "../utils/dbconnection.config";
+import { getRedisClient } from "../utils/redis";
 
 /**
  * Keeps the video-service's denormalized copies of user identity (the embedded
@@ -38,6 +39,8 @@ export const startUserEventsWorker = async () => {
 
       if (eventType === "user.updated") {
         await syncUpdatedUser(data);
+      } else if (eventType === "follow.changed") {
+        await bustFollowingCache(data);
       }
       // user.created: nothing to backfill (the user has no video content yet).
       // user.deleted: intentionally a no-op for now — whether to delete or
@@ -65,6 +68,14 @@ export const startUserEventsWorker = async () => {
       }
     }
   });
+};
+
+// A user followed/unfollowed someone → their cached following-set (used by the
+// Following feed) is stale. Drop the key so the next feed read repopulates it.
+const bustFollowingCache = async (data: any) => {
+  const followerId = data?.followerId;
+  if (!followerId) return;
+  await getRedisClient().del(`user:${followerId}:following`);
 };
 
 const syncUpdatedUser = async (data: any) => {

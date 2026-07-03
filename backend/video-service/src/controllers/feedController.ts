@@ -141,15 +141,55 @@ const generateFeedForUser = async (userId: string, redisClient: any, feedKey: st
     }
 };
 
+// Following-set cache. The follow graph lives in user-service and changes
+// rarely, so caching it here removes a cross-service HTTP call on EVERY
+// infinite-scroll page. Invalidation is event-driven: user-service emits
+// `follow.changed` on follow/unfollow and the userEventsWorker busts this key.
+// The TTL is only a safety net for a missed event, not the primary mechanism.
+const FOLLOWING_KEY = (userId: string) => `user:${userId}:following`;
+const FOLLOWING_TTL = 3600; // 1h safety net
+
+// Guardrail against pathological follow counts (power-users following tens of
+// thousands): cap the $in so a single feed read can't turn into a huge query +
+// in-memory merge-sort (Mongo's 32MB sort limit). getFollowingIds returns
+// most-recently-followed first, so the cap keeps the freshest connections.
+const FOLLOWING_FANOUT_CAP = 1000;
+
+const getFollowingIdsCached = async (userId: string, redisClient: any): Promise<string[]> => {
+    const key = FOLLOWING_KEY(userId);
+    try {
+        const cached = await redisClient.get(key);
+        if (cached) return JSON.parse(cached);
+    } catch (err) {
+        logger.error({ err }, "Following cache read error");
+    }
+
+    const ids = await fetchFollowingIds(userId);
+
+    try {
+        // Cache even an empty set — "follows nobody" is a valid, cacheable answer
+        // and avoids hammering user-service for brand-new accounts on every scroll.
+        await redisClient.setEx(key, FOLLOWING_TTL, JSON.stringify(ids));
+    } catch (err) {
+        logger.error({ err }, "Following cache write error");
+    }
+
+    return ids;
+};
+
 /**
  * Following feed — reverse-chronological videos from the creators the signed-in
  * user follows. Unlike For You (Redis-queued, algorithmic), this is a simple,
  * predictable "latest from people I sync with" feed, so it's a direct
- * cursor-paginated query backed by the @@index([uploaded_by.id, uploaded_at]).
+ * cursor-paginated query backed by the @@index([uploaded_at desc, id]).
  *
  * The follow graph lives in user-service, so the followed-id set is resolved via
- * the internal (fail-soft) userClient. No follows / no videos → empty list, and
- * the client shows an honest empty state.
+ * the internal (fail-soft) userClient, cached in Redis. No follows / no videos →
+ * empty list, and the client shows an honest empty state.
+ *
+ * NOTE(scale): this is fan-out-on-READ — cheap at typical follow counts but it
+ * degrades for power-users + a huge corpus. The endgame is fan-out-on-WRITE
+ * (per-follower precomputed feeds, celebrity hybrid); see the production roadmap.
  */
 export const getFollowingFeed = async (req: Request, res: Response) => {
     try {
@@ -163,15 +203,20 @@ export const getFollowingFeed = async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 10;
         const cursor = req.query.cursor as string | undefined;
 
-        const followingIds = await fetchFollowingIds(userId);
-        if (followingIds.length === 0) {
+        const redisClient = getRedisClient();
+        const allFollowingIds = await getFollowingIdsCached(userId, redisClient);
+        if (allFollowingIds.length === 0) {
             ok(res, [], { nextCursor: null }, "Not following anyone yet");
             return;
         }
+        const followingIds = allFollowingIds.slice(0, FOLLOWING_FANOUT_CAP);
 
         const videos = await prisma.videos.findMany({
             where: { uploaded_by: { is: { id: { in: followingIds } } } },
-            orderBy: { uploaded_at: "desc" },
+            // Composite sort: uploaded_at isn't unique, so id is the tiebreaker.
+            // Without it, ties across page boundaries skip/duplicate items. Backed
+            // by @@index([uploaded_at desc, id]).
+            orderBy: [{ uploaded_at: "desc" }, { id: "desc" }],
             take: limit,
             skip: cursor ? 1 : 0,
             cursor: cursor ? { id: cursor } : undefined,

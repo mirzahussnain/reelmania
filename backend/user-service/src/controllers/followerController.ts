@@ -3,6 +3,17 @@ import prisma from "../utils/dbconnection.config";
 import { Prisma } from "@prisma/client";
 import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
+import { rabbitMQService } from "../utils/rabbitmq";
+
+// Tell downstream services the follower's follow-set changed so they can bust
+// any cached copy (video-service caches it for the Following feed). Fire-and-
+// forget on the shared `user_events` fanout — a publish blip must never fail the
+// follow/unfollow the user already succeeded at.
+const emitFollowChanged = (followerId: string) => {
+  rabbitMQService
+    .publishToExchange("user_events", { eventType: "follow.changed", data: { followerId } })
+    .catch((err) => logger.error({ err }, "publish follow.changed failed"));
+};
 
 // Single projection for a follower/mutual node so both endpoints stay in sync.
 // c_score is the persisted percentile; the flags let the client badge nodes.
@@ -120,9 +131,12 @@ export const getFollowingIds = async (req: Request, res: Response) => {
       return;
     }
 
+    // Most-recently-followed first so a downstream fan-out cap (video-service
+    // Following feed) keeps the freshest connections rather than an arbitrary slice.
     const following = await prisma.followers.findMany({
       where: { follower_id: userId },
       select: { following_id: true },
+      orderBy: { created_at: "desc" },
     });
 
     ok(res, following.map((f) => f.following_id), undefined, "Following ids fetched");
@@ -151,6 +165,7 @@ export const updateFollower = async (req: Request, res: Response) => {
           following_id,
         },
       });
+      emitFollowChanged(follower_id);
       ok(res, result, undefined, "Follower Added Successfully");
       return;
     } catch (createErr: unknown) {
@@ -165,6 +180,7 @@ export const updateFollower = async (req: Request, res: Response) => {
             },
           },
         });
+        emitFollowChanged(follower_id);
         ok(res, null, undefined, "Unfollowed");
         return;
       }
