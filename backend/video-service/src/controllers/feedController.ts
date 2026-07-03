@@ -5,7 +5,7 @@ import { getAuth } from "@clerk/express";
 import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
 import { fetchFollowingIds } from "../utils/userClient";
-import { shuffleArray } from "../utils/shuffleArray";
+import { interleaveByCreator } from "../utils/interleaveByCreator";
 
 const TRENDING_KEY = "trending:videoIds";
 const TRENDING_TTL = 300; // 5 minutes
@@ -228,14 +228,16 @@ export const getFollowingFeed = async (req: Request, res: Response) => {
             uploaded_at: video.uploaded_at.toISOString(),
         }));
 
-        // Compute the cursor from the RECENCY-ORDERED page (the last chronological
-        // item) BEFORE shuffling, so pagination stays correct while the delivered
-        // page is varied. Recency wins at page granularity ("new priority"); within
-        // a page we shuffle so a creator who batch-uploaded doesn't dominate the run
-        // in a fixed order (mirrors the Explore feed — getVideos).
+        // Cursor is taken from the RECENCY-ORDERED page (its last, oldest item)
+        // BEFORE interleaving, so pagination stays correct: each page fully consumes
+        // a contiguous recency window. Recency wins at page granularity ("new
+        // priority"); within the page we round-robin by creator so a batch-uploader
+        // is spaced out instead of appearing as one long run. (Cross-page: a creator
+        // dominating the very newest videos can still lead consecutive pages — that's
+        // correct for a recency feed and only fully solved by fan-out-on-write.)
         const nextCursor = videos.length === limit ? videos[videos.length - 1].id : null;
 
-        ok(res, shuffleArray(formattedVideos), { nextCursor }, "Following Feed");
+        ok(res, interleaveByCreator(formattedVideos), { nextCursor }, "Following Feed");
         return;
     } catch (err: unknown) {
         logger.error({ err }, "getFollowingFeed error");
