@@ -49,6 +49,11 @@ model users {
   is_verified        Boolean @default(false)
   is_active          Boolean @default(true) // soft-disable; bounds the C-Score pool
 
+  // ── Creator signal (kept fresh from video.events; see videoEventsWorker) ──
+  // Creator badge = video_count > 0; Top Creator ranks by magnitude. A single
+  // counter serves both — no separate has_uploaded boolean to drift from it.
+  video_count Int @default(0)
+
   // ── C-Score (written by the nightly worker; the ring only reads c_score) ──
   c_score            Int       @default(0) // percentile ring value 0–100
   c_score_raw        Float     @default(0) // un-normalized score; seeds next run's iteration
@@ -74,4 +79,12 @@ model user_external_metrics {
   youtube_view_count BigInt  @default(0)
 
   last_synced_at DateTime @default(now())
+}
+
+// Idempotency ledger for consumed domain events (messaging-contract §3). A
+// consumer records event_id before applying the effect, in the same transaction,
+// so an at-least-once redelivery is a harmless no-op instead of a double-count.
+model processed_events {
+  event_id     String   @id
+  processed_at DateTime @default(now())
 }

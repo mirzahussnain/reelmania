@@ -17,6 +17,7 @@ const withBadges = <
     is_founding_member: boolean;
     is_verified: boolean;
     c_score: number;
+    video_count: number;
     _count?: { followers_followers_following_idTousers?: number };
   }
 >(
@@ -27,6 +28,7 @@ const withBadges = <
     is_founding_member: user.is_founding_member,
     is_verified: user.is_verified,
     c_score: user.c_score,
+    video_count: user.video_count,
     followerCount: user._count?.followers_followers_following_idTousers ?? 0,
   }),
 });

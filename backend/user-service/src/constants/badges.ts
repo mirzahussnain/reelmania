@@ -12,10 +12,12 @@
 export const BADGES = {
   FOUNDING_MEMBER: "founding_member",
   VERIFIED: "verified",
+  CREATOR: "creator",
   TOP_CURATOR: "top_curator",
   CONNECTED: "connected",
-  // v2 (marketplace-service): CREATOR/SELLER (has payout account),
-  // BESTSELLER (sales milestone), RISING (c_score growth — needs score history).
+  // Not emitted yet — need ranking / marketplace data:
+  //  TOP_CREATOR (percentile of creator popularity, needs the scoring job),
+  //  SELLER / TOP_SELLER (payout account + sales, marketplace-service).
 } as const;
 
 export type BadgeId = (typeof BADGES)[keyof typeof BADGES];
@@ -28,6 +30,7 @@ export interface Badge {
 const LABELS: Record<BadgeId, string> = {
   [BADGES.FOUNDING_MEMBER]: "Founding Member",
   [BADGES.VERIFIED]: "Verified",
+  [BADGES.CREATOR]: "Creator",
   [BADGES.TOP_CURATOR]: "Top Curator",
   [BADGES.CONNECTED]: "Connected",
 };
@@ -41,6 +44,8 @@ export interface BadgeInputs {
   is_verified: boolean;
   c_score: number;
   followerCount: number;
+  /** Uploaded Kine count (kept fresh by videoEventsWorker). */
+  video_count: number;
 }
 
 /** Derive the badge set for a user from facts already on the profile payload. */
@@ -49,6 +54,7 @@ export const deriveBadges = (u: BadgeInputs): Badge[] => {
 
   if (u.is_founding_member) ids.push(BADGES.FOUNDING_MEMBER);
   if (u.is_verified) ids.push(BADGES.VERIFIED);
+  if (u.video_count > 0) ids.push(BADGES.CREATOR);
   if (u.c_score >= TOP_CURATOR_PERCENTILE) ids.push(BADGES.TOP_CURATOR);
   if (u.followerCount >= CONNECTED_FOLLOWER_MIN) ids.push(BADGES.CONNECTED);
 

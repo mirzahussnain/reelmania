@@ -38,8 +38,10 @@ app.use("/api/users/errors",errorRouter);
 app.use("/api/webhook/user",hookRouter)
 
 import { startUserWorker } from "./workers/userWorker";
+import { startVideoEventsWorker } from "./workers/videoEventsWorker";
 
 app.listen(port, () => {
   logger.info(`Server is Running at port:${port}`);
-  startUserWorker().catch(err => logger.error({ err }, "Worker failed to start"));
+  startUserWorker().catch(err => logger.error({ err }, "User worker failed to start"));
+  startVideoEventsWorker().catch(err => logger.error({ err }, "Video-events worker failed to start"));
 });
