@@ -4,6 +4,7 @@ import { UserButton } from "@clerk/clerk-react";
 import { FaBell, FaCog } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
 import { getNavItems } from "../../../app/routes.config";
+import { NETWORK } from "../../constants/network";
 import { userType } from "../../../types";
 import { Button } from "../ui/Button";
 import { Sheet } from "../ui/Sheet";
@@ -17,7 +18,7 @@ interface MoreSheetProps {
 
 /**
  * Mobile "More" bottom sheet. The mobile bottom bar holds only the 3 primary
- * destinations + a More button; everything else (library, Following, account
+ * destinations + a More button; everything else (library, Synced, account
  * actions) lives here so the bar never overflows.
  */
 export const MoreSheet: React.FC<MoreSheetProps> = ({ isOpen, onClose, isSignedIn, user }) => {
@@ -26,7 +27,7 @@ export const MoreSheet: React.FC<MoreSheetProps> = ({ isOpen, onClose, isSignedI
 
   // Extra destinations not in the sidebar nav groups.
   const extraItems = isSignedIn
-    ? [{ path: "/following", label: "Following", icon: FiHeart }]
+    ? [{ path: "/following", label: NETWORK.SYNCED, icon: FiHeart }]
     : [];
 
   const go = (to: string) => {

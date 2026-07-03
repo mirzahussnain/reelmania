@@ -1,18 +1,20 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../utils/cn";
+import { NETWORK } from "../../constants/network";
 
 /**
- * Topbar — only the Home feed tabs (For You / Following).
+ * Topbar — only the Home feed tabs (For You / Synced).
  *
  * Account controls (avatar, notifications, settings) now live in the Sidebar.
  * The Topbar only renders on routes with `topbar: true` (currently /foryou and
  * /following — see routes.config.ts); Discover and Marketplace have their own
- * page headers and no top tabs.
+ * page headers and no top tabs. The route path stays /following; only the
+ * user-facing label is rebranded to the Sync vocabulary.
  */
 const HOME_TABS = [
   { label: "For You", to: "/foryou", isActive: (p: string) => p === "/foryou" || p === "/" },
-  { label: "Following", to: "/following", isActive: (p: string) => p === "/following" },
+  { label: NETWORK.SYNCED, to: "/following", isActive: (p: string) => p === "/following" },
 ];
 
 export const Topbar: React.FC = () => {

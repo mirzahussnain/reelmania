@@ -46,11 +46,11 @@ const Following = () => {
         </div>
 
         <h1 className="text-2xl md:text-3xl font-syne font-bold text-on-surface mb-2">
-          Your Following feed is empty
+          Your Synced feed is empty
         </h1>
         <p className="text-on-surface-variant font-inter max-w-md mb-8">
           Sync with creators and their latest videos will show up here. Head to Discover
-          to find people worth following.
+          to find people worth syncing with.
         </p>
 
         <Button onClick={() => navigateTo("/discover")} className="flex items-center gap-2">
