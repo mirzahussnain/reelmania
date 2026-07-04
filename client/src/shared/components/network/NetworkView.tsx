@@ -91,35 +91,36 @@ export const NodeCard: React.FC<{
 }> = ({ node, publicView }) => (
   <Link
     to={publicView ? `/share/profile/${node.username}` : `/users/@${node.username}`}
-    className="card-solid group p-5 hover:bg-surface-container hover:border-primary/20 transition-all duration-300 glow-black hover:glow-primary flex flex-col"
+    className="card-solid group p-5 min-h-[220px] hover:bg-surface-container hover:border-primary/20 transition-all duration-300 glow-black hover:glow-primary flex flex-col"
   >
-    <div className="flex items-start justify-between gap-3 mb-4">
-      <div className="flex items-center gap-4 min-w-0">
-        <img
-          src={node.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${node.username}`}
-          alt={node.username}
-          className="w-14 h-14 rounded-xl object-cover ring-2 ring-outline-variant/30 group-hover:ring-primary/50 transition-colors shrink-0"
-        />
-        <div className="min-w-0">
-          <h3 className="text-base font-syne font-bold text-on-surface group-hover:text-primary transition-colors truncate">
-            {node.first_name} {node.last_name}
-          </h3>
-          <p className="label-meta truncate">@{node.username}</p>
-          {/* Mutual connection — both follow each other. */}
-          {node.isMutual && (
-            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/15 border border-primary/30 px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
-              <TbNetwork className="text-xs" /> {NETWORK.IN_SYNC}
-            </span>
-          )}
-        </div>
-      </div>
+    <div className="flex items-start gap-3 mb-4">
+      <img
+        src={node.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${node.username}`}
+        alt={node.username}
+        className="w-14 h-14 rounded-xl object-cover ring-2 ring-outline-variant/30 group-hover:ring-primary/50 transition-colors shrink-0"
+      />
 
-      {/* Per-node metrics — placeholders until marketplace/analytics exist */}
-      <div className="flex flex-wrap justify-end gap-1.5 shrink-0 max-w-[130px]">
-        <MetricPill icon={<FiDownload />} value="—" title="Sales" hover="group-hover:bg-primary/10 group-hover:text-primary" />
-        <MetricPill icon={<FiBarChart2 />} value="—" title="Reach" hover="group-hover:bg-secondary/10 group-hover:text-secondary" />
-        <MetricPill icon={<FiEye />} value="—" title="Views" hover="group-hover:bg-tertiary/10 group-hover:text-tertiary" />
+      {/* Name block grows to fill; name/username truncate rather than squeezing. */}
+      <div className="min-w-0 flex-1">
+        <h3 className="text-base font-syne font-bold text-on-surface group-hover:text-primary transition-colors truncate">
+          {node.first_name} {node.last_name}
+        </h3>
+        <p className="label-meta truncate">@{node.username}</p>
+        {/* Mutual connection — both follow each other. */}
+        {node.isMutual && (
+          <span className="mt-1.5 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-primary/15 border border-primary/30 px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
+            <TbNetwork className="text-xs" /> {NETWORK.IN_SYNC}
+          </span>
+        )}
       </div>
+    </div>
+
+    {/* Per-node metrics — placeholders (—) until marketplace/analytics exist.
+        Below the profile details so they read on every width, mobile included. */}
+    <div className="flex flex-wrap gap-1.5 mb-4">
+      <MetricPill icon={<FiDownload />} value="—" title="Sales" hover="group-hover:bg-primary/10 group-hover:text-primary" />
+      <MetricPill icon={<FiBarChart2 />} value="—" title="Reach" hover="group-hover:bg-secondary/10 group-hover:text-secondary" />
+      <MetricPill icon={<FiEye />} value="—" title="Views" hover="group-hover:bg-tertiary/10 group-hover:text-tertiary" />
     </div>
 
     <BadgeRow
