@@ -109,14 +109,21 @@ export interface FollowerNode {
   c_score: number;
   is_verified: boolean;
   is_founding_member: boolean;
+  // True when the relationship is mutual (both follow each other). Computed
+  // per-page by getFollowers/getFollowing so the client can badge nodes "In Sync"
+  // inline instead of a separate tab. Absent on endpoints that don't compute it.
+  isMutual?: boolean;
 }
 
-/** A follower relationship row, including the following user's details. */
+/** A follow relationship row. Depending on which direction was queried, the
+ *  hydrated node is either the follower (getFollowers/getMutuals) or the followed
+ *  user (getFollowing — the "Following" list); each endpoint populates one side. */
 export interface FollowerEdge {
   follower_id: string;
   following_id: string;
   created_at: string;
-  users_followers_follower_idTousers: FollowerNode | null;
+  users_followers_follower_idTousers?: FollowerNode | null;
+  users_followers_following_idTousers?: FollowerNode | null;
 }
 
 /** Paginated followers list (`getFollowers`). */

@@ -1,16 +1,20 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { useGetUserFollowersQuery, useGetUserMutualsQuery, useGetMyProfileQuery } from "../utils/store/features/user/userApi";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useGetUserFollowersQuery, useGetUserFollowingQuery, useGetMyProfileQuery } from "../utils/store/features/user/userApi";
 import { useAppSelector } from "../utils/hooks/storeHooks";
 import { RootState } from "../utils/store/store";
 import { FiArrowLeft } from "react-icons/fi";
 import Loader from "../components/Loader";
 import { Button } from "../shared/components/ui/Button";
 import { NetworkView } from "../shared/components/network/NetworkView";
+import { NETWORK } from "../shared/constants/network";
 
 /** Owner's in-app network view. Thin wrapper around the shared NetworkView. */
 const NetworkRelations: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Deep-link from the Vault "Following" stat: ?tab=following opens that tab.
+  const initialTab = searchParams.get("tab") === "following" ? NETWORK.FOLLOWING : undefined;
   const user = useAppSelector((state: RootState) => state.user);
   const { token } = useAppSelector((state: RootState) => state.auth);
 
@@ -23,7 +27,8 @@ const NetworkRelations: React.FC = () => {
   const { data: followersData, isLoading } = useGetUserFollowersQuery(userProfile?.id || "", {
     skip: !userProfile?.id,
   });
-  const { data: mutualsData } = useGetUserMutualsQuery(userProfile?.id || "", {
+  // Owner-only "Following" list — the users this person follows.
+  const { data: followingData } = useGetUserFollowingQuery(userProfile?.id || "", {
     skip: !userProfile?.id,
   });
 
@@ -43,9 +48,10 @@ const NetworkRelations: React.FC = () => {
       <NetworkView
         userProfile={userProfile}
         followers={followersData?.data || []}
-        mutuals={mutualsData?.data || []}
+        following={followingData?.data || []}
         totalNodes={followersData?.meta?.total || 0}
         isOwner
+        initialTab={initialTab}
       />
     </div>
   );

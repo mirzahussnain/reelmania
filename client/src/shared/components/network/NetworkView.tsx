@@ -1,18 +1,20 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { TbNetwork } from "react-icons/tb";
-import { FiDownload, FiBarChart2, FiEye } from "react-icons/fi";
+import { FiDownload, FiBarChart2, FiEye, FiMoreVertical } from "react-icons/fi";
 import type { userType } from "../../../types";
 import type { FollowerEdge } from "../../contracts/api";
 import { BadgeRow } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { NETWORK } from "../../constants/network";
 
-// Real, functional tabs — not decorative. "Recent"/"High Resonance" sort the
-// fetched followers client-side; "In Sync" (mutuals) swaps to a separately-
-// fetched follows-back list, passed in via props.
-const NETWORK_TABS = ["Recent", "High Resonance", NETWORK.MUTUAL] as const;
-type NetworkTab = (typeof NETWORK_TABS)[number];
+// Category = the DIRECTIONAL relationship being viewed (unambiguous nouns):
+//   Followers (inbound) · Following (outbound, owner-only). Mutual isn't its own
+//   category — it's an attribute, surfaced as an "In Sync" badge on each node.
+// Sort is orthogonal — it just orders whichever list is active.
+type NetworkTab = typeof NETWORK.FOLLOWERS | typeof NETWORK.FOLLOWING;
+type SortMode = "Recent" | "High Resonance";
+const SORTS: SortMode[] = ["Recent", "High Resonance"];
 
 /* ─── C-Score ring — reads the real persisted percentile (0 until the job runs) ─── */
 export const CScoreRing: React.FC<{ score: number }> = ({ score }) => (
@@ -103,6 +105,12 @@ export const NodeCard: React.FC<{
             {node.first_name} {node.last_name}
           </h3>
           <p className="label-meta truncate">@{node.username}</p>
+          {/* Mutual connection — both follow each other. */}
+          {node.isMutual && (
+            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/15 border border-primary/30 px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
+              <TbNetwork className="text-xs" /> {NETWORK.IN_SYNC}
+            </span>
+          )}
         </div>
       </div>
 
@@ -134,10 +142,12 @@ interface NetworkViewProps {
   userProfile: userType;
   followers: FollowerEdge[];
   totalNodes: number;
-  /** Mutual connections (follows-back). Enables the "Mutuals" tab when provided. */
-  mutuals?: FollowerEdge[];
+  /** The users this person follows (outbound). Owner-only; enables the "Following" tab. */
+  following?: FollowerEdge[];
   /** True when the viewer owns this network — drives copy only; data is identical. */
   isOwner: boolean;
+  /** Tab to open on mount (deep-link from the Vault stats). Defaults to "Recent". */
+  initialTab?: NetworkTab;
 }
 
 /**
@@ -146,23 +156,45 @@ interface NetworkViewProps {
  * data is shown — the owner's persisted c_score and their actual connections.
  * Unmodelled vanity metrics were removed rather than faked.
  */
-export const NetworkView: React.FC<NetworkViewProps> = ({ userProfile, followers, totalNodes, mutuals, isOwner }) => {
+export const NetworkView: React.FC<NetworkViewProps> = ({ userProfile, followers, totalNodes, following, isOwner, initialTab }) => {
   const title = isOwner ? "Your Network" : `${userProfile.first_name}'s Network`;
-  const [tab, setTab] = useState<NetworkTab>("Recent");
 
-  // "Recent" keeps API order (created_at desc); "High Resonance" ranks by each
-  // node's real c_score; "Mutuals" uses the separately-fetched follows-back list.
+  // Following (outbound) is owner-only and hydrates the OTHER relation (the
+  // followed user), so its nodes are read from a different field than Followers.
+  const showFollowing = isOwner && following !== undefined;
+  const tabs: NetworkTab[] = [
+    NETWORK.FOLLOWERS,
+    ...(showFollowing ? [NETWORK.FOLLOWING] : []),
+  ];
+
+  // Honor the deep-linked category only if it's actually available (e.g.
+  // Following is owner-only); otherwise fall back to Followers.
+  const [tab, setTab] = useState<NetworkTab>(
+    initialTab && tabs.includes(initialTab) ? initialTab : NETWORK.FOLLOWERS
+  );
+  const [sort, setSort] = useState<SortMode>("Recent");
+  // Mobile: the sort pills collapse into a three-dot dropdown to keep the tab
+  // bar on a single row.
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+
+  // Which relation-side node each tab renders: Following → the followed user;
+  // Followers → the follower. Defined before nodes so the c_score sort reads the
+  // correct side.
+  const nodeOf = (edge: FollowerEdge) =>
+    tab === NETWORK.FOLLOWING
+      ? edge.users_followers_following_idTousers
+      : edge.users_followers_follower_idTousers;
+
+  // Category picks the base list; sort orders it. "Recent" keeps API order
+  // (created_at desc); "High Resonance" ranks by each node's real c_score.
   const nodes = useMemo(() => {
-    if (tab === NETWORK.MUTUAL) return mutuals ?? [];
-    if (tab === "High Resonance") {
-      return [...followers].sort(
-        (a, b) =>
-          (b.users_followers_follower_idTousers?.c_score ?? 0) -
-          (a.users_followers_follower_idTousers?.c_score ?? 0)
-      );
+    const base = tab === NETWORK.FOLLOWING ? following ?? [] : followers;
+    if (sort === "High Resonance") {
+      return [...base].sort((a, b) => (nodeOf(b)?.c_score ?? 0) - (nodeOf(a)?.c_score ?? 0));
     }
-    return followers;
-  }, [followers, mutuals, tab]);
+    return base;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [followers, following, tab, sort]);
 
   return (
     <div className="w-full">
@@ -197,26 +229,72 @@ export const NetworkView: React.FC<NetworkViewProps> = ({ userProfile, followers
         </div>
 
         <div className="lg:col-span-2">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <h3 className="label-meta text-primary flex items-center gap-2">
-              <TbNetwork className="text-base" /> Connected Nodes
-            </h3>
-            <div className="flex flex-wrap items-center gap-2">
-              {NETWORK_TABS.map((t) => (
+          <div className="flex items-center justify-between gap-3 mb-4">
+            {/* Category = directional relationship. */}
+            <div className="flex items-center gap-2 min-w-0">
+              {tabs.map((t) => (
                 <Button key={t} variant="pill" active={tab === t} onClick={() => setTab(t)}>
                   {t}
                 </Button>
               ))}
             </div>
+
+            {/* Sort = ordering of the active list (orthogonal to category).
+                sm+: inline pills. Mobile: a three-dot dropdown so the bar stays
+                on one row. */}
+            <div className="shrink-0">
+              <div className="hidden sm:flex items-center gap-2">
+                {SORTS.map((s) => (
+                  <Button key={s} variant="pill" active={sort === s} onClick={() => setSort(s)}>
+                    {s}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="relative sm:hidden">
+                <Button
+                  variant="pill"
+                  active={sort !== "Recent"}
+                  onClick={() => setSortMenuOpen((o) => !o)}
+                  aria-label="Sort"
+                >
+                  <FiMoreVertical />
+                </Button>
+                {sortMenuOpen && (
+                  <>
+                    {/* Click-away backdrop */}
+                    <div className="fixed inset-0 z-10" onClick={() => setSortMenuOpen(false)} />
+                    <div className="absolute right-0 mt-2 z-20 min-w-[160px] card-glass rounded-xl p-1 shadow-2xl">
+                      {SORTS.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => {
+                            setSort(s);
+                            setSortMenuOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                            sort === s
+                              ? "text-primary bg-primary/10 font-semibold"
+                              : "text-on-surface-variant hover:bg-surface-container"
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
           {nodes.length === 0 ? (
             <div className="card-solid p-10 text-center text-on-surface-variant/60">
-              No connections yet.
+              {tab === NETWORK.FOLLOWING ? "You're not following anyone yet." : "No followers yet."}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {nodes.map((f) => {
-                const node = f.users_followers_follower_idTousers;
+                const node = nodeOf(f);
                 return node ? <NodeCard key={node.id} node={node} /> : null;
               })}
             </div>

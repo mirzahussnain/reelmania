@@ -60,6 +60,13 @@ export const userApi = createApi({
       }),
       providesTags: ["Users"],
     }),
+    getUserFollowing: builder.query<FollowersResponse, string>({
+      query: (userId) => ({
+        url: `/${userId}/following`,
+        method: "GET",
+      }),
+      providesTags: ["Users"],
+    }),
     checkUserFollower: builder.query<CheckFollowerResponse, { followingId: string, followerId: string }>({
       query: ({ followingId, followerId }) => ({
         url: `/${followingId}/check-follower?followerId=${followerId}`,
@@ -107,6 +114,7 @@ export const {
   useGetUserFollowersQuery,
   useLazyGetUserFollowersQuery,
   useGetUserMutualsQuery,
+  useGetUserFollowingQuery,
   useCheckUserFollowerQuery,
   useLazyGetUsersQuery,
   useLazyUpdateUserRoleQuery

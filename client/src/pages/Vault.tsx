@@ -23,6 +23,7 @@ import { CollectionCard } from "../shared/components/collections/CollectionCard"
 import { useGetMyCollectionsQuery } from "../utils/store/features/collections/curationApi";
 import type { CollectionListItem } from "../shared/contracts/api";
 import { COLLECTION_UNIT, COLLECTION_NOUN_PLURAL } from "../shared/constants/curation";
+import { NETWORK } from "../shared/constants/network";
 
 const Vault: React.FC = () => {
   const navigate = useNavigate();
@@ -149,18 +150,25 @@ const Vault: React.FC = () => {
             </p>
 
             {/* Earned badges — server-derived */}
-            <BadgeRow badges={userProfile?.badges} size={80} className="justify-center lg:justify-start mb-6" />
+            <BadgeRow badges={userProfile?.badges} size={60} className="justify-center lg:justify-start mb-6" />
 
-            {/* Stats Block */}
-            <div className="flex items-center justify-center lg:justify-start gap-8 lg:gap-12">
+            {/* Stats Block — wraps on mobile (dividers hidden so wrapped rows
+                don't start with a stray divider); inline with dividers on sm+. */}
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-4 sm:gap-8 lg:gap-12">
               <StatBlock
                 value={userProfile?._count?.followers_followers_following_idTousers || 0}
-                label="Network"
+                label={NETWORK.FOLLOWERS}
                 onClick={() => navigate('/vault/network')}
               />
-              <div className="divider-v"></div>
+              <div className="divider-v hidden sm:block"></div>
+              <StatBlock
+                value={userProfile?._count?.followers_followers_follower_idTousers || 0}
+                label={NETWORK.FOLLOWING}
+                onClick={() => navigate('/vault/network?tab=following')}
+              />
+              <div className="divider-v hidden sm:block"></div>
               <StatBlock value={collections?.length || 0} label={COLLECTION_NOUN_PLURAL} />
-              <div className="divider-v"></div>
+              <div className="divider-v hidden sm:block"></div>
               {/* C-Score reads the persisted percentile; 0 until the scoring job runs. */}
               <StatBlock value={userProfile?.c_score ?? 0} label="C-Score" highlight />
             </div>

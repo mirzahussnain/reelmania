@@ -1,5 +1,5 @@
 import express from "express";
-import { getFollowers, getMutuals, getFollowingIds, updateFollower, checkFollower } from "../controllers/followerController";
+import { getFollowers, getMutuals, getFollowing, getFollowingIds, updateFollower, checkFollower } from "../controllers/followerController";
 import { authMiddleware } from "../middlewares/authMiddleware";
 
 const followerRouter = express.Router();
@@ -9,6 +9,9 @@ followerRouter.get("/:userId/followers", getFollowers);
 
 // GET mutual connections (follows back) for a specific user (Paginated)
 followerRouter.get("/:userId/mutuals", getMutuals);
+
+// GET the "Synced" list — users this person follows, with node details (Paginated)
+followerRouter.get("/:userId/following", getFollowing);
 
 // GET O(1) check if a specific user follows another user
 followerRouter.get("/:userId/check-follower", checkFollower);
