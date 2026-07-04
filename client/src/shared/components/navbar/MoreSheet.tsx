@@ -2,7 +2,6 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserButton } from "@clerk/clerk-react";
 import { FaBell, FaCog } from "react-icons/fa";
-import { FiHeart } from "react-icons/fi";
 import { getNavItems } from "../../../app/routes.config";
 import { userType } from "../../../types";
 import { Button } from "../ui/Button";
@@ -17,17 +16,13 @@ interface MoreSheetProps {
 
 /**
  * Mobile "More" bottom sheet. The mobile bottom bar holds only the 3 primary
- * destinations + a More button; everything else (library, Your Network, account
- * actions) lives here so the bar never overflows.
+ * destinations + a More button; everything else (library, account actions) lives
+ * here so the bar never overflows. The feed switcher (For You / Following) is NOT
+ * here — it floats at the top of the feed (see Layout / FeedTabs).
  */
 export const MoreSheet: React.FC<MoreSheetProps> = ({ isOpen, onClose, isSignedIn, user }) => {
   const navigateTo = useNavigate();
   const libraryItems = getNavItems("library");
-
-  // Extra destinations not in the sidebar nav groups.
-  const extraItems = isSignedIn
-    ? [{ path: "/following", label: "Your Network", icon: FiHeart }]
-    : [];
 
   const go = (to: string) => {
     navigateTo(to);
@@ -62,7 +57,7 @@ export const MoreSheet: React.FC<MoreSheetProps> = ({ isOpen, onClose, isSignedI
 
       {/* Destinations grid */}
       <div className="grid grid-cols-3 gap-3">
-        {[...extraItems, ...libraryItems.map((r) => ({ path: r.path, label: r.nav!.label, icon: r.nav!.icon }))].map(
+        {libraryItems.map((r) => ({ path: r.path, label: r.nav!.label, icon: r.nav!.icon })).map(
           ({ path, label, icon: Icon }) => (
             <Link
               key={path}

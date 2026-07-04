@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import PlayerCard from "../components/PlayerCard";
 import { useAppSelector } from "../utils/hooks/storeHooks";
@@ -74,25 +75,40 @@ const Home = () => {
         })
       )}
 
-      {/* Global Comments Tray */}
-      <motion.div
-        ref={commentsTrayRef}
-        initial={false}
-        animate={{
-          x: screenWidth >= 1024 ? (isCommentsOpen ? "-20%" : "150%") : 0,
-          y: screenWidth >= 1024 ? "calc(-50% + 40px)" : (isCommentsOpen ? "0%" : "100%"),
-          opacity: isCommentsOpen ? 1 : 0
-        }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`fixed z-[50] w-full lg:w-[28rem] h-[60dvh] lg:h-[85dvh] bottom-0 lg:bottom-auto lg:top-1/2 right-0 card-glass lg:rounded-2xl rounded-t-2xl shadow-2xl ${isCommentsOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
-      >
-        {videos && videos[activeVideoIndex] && (
-          <Comments
-            video={videos[activeVideoIndex]}
-            setIsModalOpen={({ isOpen }: { isOpen: boolean }) => setIsCommentsOpen(isOpen)}
+      {/* Comment sheet — portaled to <body> so it escapes the feed's z-10
+          stacking context and can layer above the bottom navbar (z-50). */}
+      {createPortal(
+        <>
+          {/* Mobile backdrop — dims the video behind the near-full-height sheet. */}
+          <div
+            onClick={() => setIsCommentsOpen(false)}
+            className={`lg:hidden fixed inset-0 z-[59] bg-black/70 transition-opacity duration-300 ${isCommentsOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           />
-        )}
-      </motion.div>
+
+          <motion.div
+            ref={commentsTrayRef}
+            initial={false}
+            animate={{
+              x: screenWidth >= 1024 ? (isCommentsOpen ? "-20%" : "150%") : 0,
+              y: screenWidth >= 1024 ? "calc(-50% + 40px)" : (isCommentsOpen ? "0%" : "100%"),
+              opacity: isCommentsOpen ? 1 : 0
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            // Mobile: near-full-height, more opaque than the glass default so text is
+            // legible over the video; overflow-hidden clips children to the rounded top.
+            style={screenWidth < 1024 ? { background: "color-mix(in srgb, var(--color-surface-container) 92%, transparent)" } : undefined}
+            className={`fixed z-[60] w-full lg:w-[28rem] h-[92dvh] lg:h-[85dvh] bottom-0 lg:bottom-auto lg:top-1/2 right-0 card-glass lg:rounded-2xl rounded-t-2xl overflow-hidden shadow-2xl ${isCommentsOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+          >
+            {videos && videos[activeVideoIndex] && (
+              <Comments
+                video={videos[activeVideoIndex]}
+                setIsModalOpen={({ isOpen }: { isOpen: boolean }) => setIsCommentsOpen(isOpen)}
+              />
+            )}
+          </motion.div>
+        </>,
+        document.body
+      )}
 
       {/* Custom Neon Navigation Arrows */}
       <div className="fixed right-6 bottom-24 lg:top-1/2 lg:-translate-y-1/2 lg:bottom-auto hidden lg:flex flex-col gap-4 z-[40]">

@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import { Sidebar } from "../shared/components/layout/Sidebar";
 import { Topbar } from "../shared/components/layout/Topbar";
+import { MobileFeedTopBar } from "../shared/components/layout/MobileFeedTopBar";
 import { CanvasNetworkBackground } from "../shared/components/ui/CanvasNetworkBackground";
 import useScreenWidth from "../utils/hooks/useScreenWidth";
 import { isStandaloneRoute, routeHasTopbar } from "../app/routes.config";
@@ -33,6 +34,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return (
       <div className="w-full h-[100dvh] overflow-hidden relative bg-background flex flex-col">
         <CanvasNetworkBackground />
+
+        {/* In-feed top bar (speed · For You/Following tabs · volume), TikTok-style:
+            a single fixed instance over the feed, so controls don't scroll away
+            with each video. Feed routes only. */}
+        {routeHasTopbar(location.pathname) && <MobileFeedTopBar />}
+
         {/* Scrollable content area. Full-height feed pages (Home) manage their
             own internal scroll and stay h-full; normal long pages (Discover,
             Marketplace) scroll here. */}

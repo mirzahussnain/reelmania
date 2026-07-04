@@ -61,8 +61,10 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
         </div>
       </div>
 
-      {/* Top Header Controls (Settings & Mute) */}
-      <div className="relative w-full p-4 flex items-start justify-between pointer-events-auto z-30">
+      {/* Top Header Controls (Settings & Mute). Desktop only — on mobile these
+          live in the single global MobileFeedTopBar so they don't scroll with
+          each video. Breakpoint matches Layout's isMobile (≤1016px). */}
+      <div className="relative w-full p-4 flex max-[1016px]:hidden items-start justify-between pointer-events-auto z-30">
         
         {/* Top Left: Settings / Speed Control */}
         <div className="relative">
@@ -147,8 +149,9 @@ export const VideoControlsOverlay: React.FC<VideoControlsOverlayProps> = ({
         </div>
       </div>
 
-      {/* Bottom Progress Bar */}
-      <div className="relative w-full h-1 group pointer-events-auto z-30">
+      {/* Bottom Progress Bar — pinned to the bottom so it stays put even when the
+          top header is hidden on mobile (justify-between would otherwise float it up). */}
+      <div className="absolute bottom-0 left-0 w-full h-1 group pointer-events-auto z-30">
         {/* The thin custom track */}
         <div className="absolute bottom-0 w-full h-[3px] bg-on-media/20 group-hover:h-1.5 transition-all">
           <div 

@@ -38,7 +38,7 @@ export const useFollowingFeed = (inView: boolean) => {
         setCursor(res?.meta?.nextCursor ?? undefined);
         setHasMore(Boolean(res?.meta?.nextCursor));
       } catch {
-        toast.error("Failed to load your Network feed");
+        toast.error("Failed to load your Following feed");
       } finally {
         loadingRef.current = false;
       }
