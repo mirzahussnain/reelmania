@@ -1,16 +1,25 @@
 /**
- * Network vocabulary — Kinetix's follow verbs, kept in one place so the wording
- * is a one-line rebrand (mirrors curation.ts's Kine/Scope). The follow graph is
- * asymmetric (see the "Network = followers" model), so:
+ * Network vocabulary — kept in one place so the wording is a one-line rebrand
+ * (mirrors curation.ts's Kine/Scope). The follow graph is a set of DIRECTED
+ * edges, so the labels are split by role to avoid the ambiguous "Network count":
  *
- *   SYNC   = follow / connect to someone
- *   DESYNC = unfollow / disconnect
- *   SYNCED = state when you follow them
- *   MUTUAL = both follow each other ("In Sync")
+ *   Directional NOUNS (counts + lists) stay industry-standard so a number is
+ *   never ambiguous about which direction it means:
+ *     FOLLOWERS = people who follow you   (inbound edges → you)
+ *     FOLLOWING = people you follow        (outbound edges → them)
+ *
+ *   ACTION verbs carry the Kinetix "timeline" brand vibe:
+ *     SYNC   = follow
+ *     UNSYNC = unfollow
+ *
+ *   The two-way state (both follow each other) is the one place the brand term
+ *   reads best as a relationship:
+ *     IN_SYNC = mutual
  */
 export const NETWORK = {
+  FOLLOWERS: "Followers",
+  FOLLOWING: "Following",
   SYNC: "Sync",
-  DESYNC: "Desync",
-  SYNCED: "Synced",
-  MUTUAL: "In Sync",
+  UNSYNC: "Unsync",
+  IN_SYNC: "In Sync",
 } as const;

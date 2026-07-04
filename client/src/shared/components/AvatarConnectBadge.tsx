@@ -126,7 +126,7 @@ export const AvatarConnectBadge: React.FC<AvatarConnectBadgeProps> = ({
           {status === "success" && (
             <div
               className="bg-primary text-on-primary rounded-full p-[3px] glow-primary-sm animate-in zoom-in duration-300"
-              title="Connected"
+              title={NETWORK.FOLLOWING}
             >
               <FiCheck className="w-3 h-3" strokeWidth={3.5} />
             </div>

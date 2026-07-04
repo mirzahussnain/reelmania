@@ -78,7 +78,7 @@ const VideoInfo = () => {
               )}
               onClick={isSignedIn ? handleFollow : () => navigateTo("/sign-in")}
             >
-              {followStatus ? NETWORK.SYNCED : NETWORK.SYNC}
+              {followStatus ? NETWORK.UNSYNC : NETWORK.SYNC}
             </Button>
           )}
         </div>

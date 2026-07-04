@@ -11,7 +11,7 @@ import { useFollowingFeed } from "../shared/hooks/useFollowingFeed";
 import { Button } from "../shared/components/ui/Button";
 
 /**
- * Following feed — videos from the creators the signed-in user syncs with
+ * Your Network feed — videos from the creators the signed-in user follows
  * (uploaded_by.id ∈ my following set), newest first.
  *
  * Auth-gated via routes.config (`access: "auth"`). When the user follows no one
@@ -46,11 +46,11 @@ const Following = () => {
         </div>
 
         <h1 className="text-2xl md:text-3xl font-syne font-bold text-on-surface mb-2">
-          Your Synced feed is empty
+          Your Network feed is empty
         </h1>
         <p className="text-on-surface-variant font-inter max-w-md mb-8">
           Sync with creators and their latest videos will show up here. Head to Discover
-          to find people worth syncing with.
+          to find people worth following.
         </p>
 
         <Button onClick={() => navigateTo("/discover")} className="flex items-center gap-2">

@@ -67,7 +67,7 @@ const PublicNetwork: React.FC = () => {
       }
     : followStatus
       ? {
-          heading: `You're Synced with ${userProfile.first_name}`,
+          heading: `You're Following ${userProfile.first_name}`,
           sub: `Their latest creations and Scopes surface in your feed. Explore their profile for more.`,
           label: "View Profile",
           onClick: () => navigate(`/users/@${userProfile.username}`),

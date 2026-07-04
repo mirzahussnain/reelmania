@@ -52,7 +52,7 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
       </h1>
 
       {/* Earned badges — server-derived, client only renders */}
-      <BadgeRow badges={userProfile.badges} size={84} className="justify-center mt-4" />
+      <BadgeRow badges={userProfile.badges} size={64} className="justify-center mt-4" />
 
       <div className="w-full flex justify-center px-4 mt-4">
         <p className="text-on-surface-variant text-sm md:text-base w-[90%] max-w-[500px] text-center leading-relaxed font-mono">
@@ -62,7 +62,7 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
 
       {/* Stats Block */}
       <div className="card-glass flex items-center gap-8 md:gap-16 px-8 md:px-16 py-6 mt-10">
-        <StatBlock value={followerCount.toLocaleString()} label="Network" tone="primary" align="center" />
+        <StatBlock value={followerCount.toLocaleString()} label={NETWORK.FOLLOWERS} tone="primary" align="center" />
         <div className="divider-v"></div>
         <StatBlock value={videoCount} label={`${COLLECTION_UNIT}s`} align="center" />
         <div className="divider-v"></div>
@@ -83,7 +83,7 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
           {followStatus ? (
             <>
               <HiOutlineUserRemove className="text-xl" />
-              {NETWORK.DESYNC}
+              {NETWORK.UNSYNC}
             </>
           ) : (
             <>
