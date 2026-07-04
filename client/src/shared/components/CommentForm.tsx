@@ -15,7 +15,7 @@ export const CommentForm = ({
 }) => {
   return (
     <form
-      className="w-full shrink-0 p-4 rounded-b-2xl border-t border-outline-variant/20 bg-surface-container/50 backdrop-blur-md"
+      className="w-full shrink-0 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] lg:pb-4 rounded-b-2xl border-t border-outline-variant/20 bg-surface-container/50 backdrop-blur-md"
       onSubmit={handleSumbit}
     >
       <div className="w-full flex justify-start items-start gap-3">

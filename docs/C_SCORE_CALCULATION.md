@@ -170,8 +170,9 @@ The cheapest, highest-leverage seeding — **zero external API**. Before public 
 10–20 respected editors with VIP early access ("a premium portfolio app that sells your
 project files with zero friction").
 
-- Add `is_verified` (a.k.a. founding member) → a **score floor** (e.g. 80+) **and** a
-  permanent badge.
+- Set `is_founding_member` → a **score floor** (e.g. 80+) **and** a permanent
+  "Founding Member" badge. (Distinct from `is_verified`, which is authenticity-only with no
+  score effect — see §9.1.)
 - **The score boost decays** (like the prior); the **badge stays permanent.** This gives the
   founding cohort the trust-routing role during Weeks 1–3 — so regular users who follow them
   have high-value nodes to route trust through — **without** minting a permanent aristocracy
@@ -294,23 +295,51 @@ batch-publish.
 
 ## 9. Schema (user-service / Postgres)
 
-Folds into the same user-schema migration. Raw external counts are stored (auditable);
-`externalPrior`, `α`, and the whitelist floor are computed **inside the job**, not at write
-time — so the decay curve can be retuned without a migration.
+**Status: implemented** (migration `20260701000000_user_cscore_and_external_metrics`,
+Postgres). Raw external counts are stored (auditable); `externalPrior`, `α`, and the
+founding-member floor are computed **inside the job**, not at write time — so the decay
+curve can be retuned without a migration.
+
+Three status axes are kept **distinct** — never conflated (see §9.1):
 
 ```prisma
 model users {
   // … existing fields …
-  is_verified        Boolean   @default(false)  // VIP / founding member — floor + permanent badge
-  external_followers Int?                        // raw, audited (YouTube subscriber count)
-  external_source    String?                     // "youtube"
-  cScore             Int       @default(0)       // the persisted score the ring reads
-  cScoreUpdatedAt    DateTime?                   // freshness + job monitoring
+  is_founding_member Boolean   @default(false)  // provenance; decaying C-Score seed floor + badge
+  is_verified        Boolean   @default(false)  // authenticity mark only — NO score effect
+  is_active          Boolean   @default(true)   // soft-disable; bounds the scoring pool
+  c_score            Int       @default(0)       // the persisted percentile the ring reads
+  c_score_raw        Float     @default(0)       // un-normalized; seeds next run's iteration
+  c_score_updated_at DateTime?                   // freshness + job monitoring
+}
+
+// 1:1 side table (keeps the hot users row lean); YouTube only at launch.
+model user_external_metrics {
+  user_id            String   @unique
+  youtube_channel_id String?  @unique
+  youtube_followers  Int      @default(0)        // → externalPrior input
+  youtube_view_count BigInt   @default(0)
+  last_synced_at     DateTime @default(now())
 }
 ```
 
-The SVG ring (PublicProfile / Vault / NetworkRelations) simply reads `cScore`. No
+The SVG ring (PublicProfile / Vault / NetworkRelations) simply reads `c_score`. No
 computation on the client, ever.
+
+### 9.1 Status axes & badges (never conflate)
+
+| Axis | Nature | Storage |
+|---|---|---|
+| **Founding member** | provenance (early/hand-picked), immutable | `is_founding_member` — grants decaying seed floor + badge |
+| **Verified** | authenticity, grantable to organically-grown stars too | `is_verified` — **cosmetic only, no score effect** so rank stays earned |
+| **Earned status** (Top Curator, Rising, Bestseller…) | derived from c_score / followers / sales | **not stored** — computed as badges |
+
+Badges are a **derived, pure function** over facts already on the profile payload
+(`src/constants/badges.ts` → `deriveBadges`), not a table — O(rules) per user, one home for
+every threshold, client is a dumb renderer. A stored `user_badges` table is only warranted
+later for arbitrary admin-granted awards (event/campaign badges). v1 badges:
+`Founding Member`, `Verified`, `Top Curator` (c_score ≥ 90), `Connected` (followers ≥ 50);
+v2 adds `Creator/Seller`, `Bestseller`, `Rising` once marketplace + score history exist.
 
 ---
 
@@ -330,7 +359,7 @@ computation on the client, ever.
 
 ## 11. Solo-Dev Build Order
 
-1. **`is_verified` floor** — Day 1, no external API, immediate network seeding.
+1. **`is_founding_member` floor** — Day 1, no external API, immediate network seeding.
 2. **`α`-blend + decay** in the scoring worker — makes all seeding transient; protects the
    value thesis.
 3. **Scoring worker v1** — network resonance + engagement, staged in-memory compute, batched

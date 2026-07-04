@@ -15,6 +15,7 @@ import { cn } from "../shared/utils/cn";
 import { Button } from "../shared/components/ui/Button";
 import { Sheet } from "../shared/components/ui/Sheet";
 import { CurateButton } from "../shared/components/collections/CurateButton";
+import { NETWORK } from "../shared/constants/network";
 
 const VideoInfo = () => {
   const navigateTo = useNavigate();
@@ -77,7 +78,7 @@ const VideoInfo = () => {
               )}
               onClick={isSignedIn ? handleFollow : () => navigateTo("/sign-in")}
             >
-              {followStatus ? "Following" : "Follow"}
+              {followStatus ? NETWORK.UNSYNC : NETWORK.SYNC}
             </Button>
           )}
         </div>

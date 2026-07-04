@@ -19,15 +19,72 @@ model followers {
   @@index([following_id], map: "idx_followers_following_id")
 }
 
+// App-role taxonomy. Curator = every user (default); Admin = reserved privileged
+// role. "Creator" is intentionally NOT stored — it is derived at point-of-use
+// (uploads / has a payout account). Single source of truth: src/constants/roles.ts.
+enum Role {
+  Curator
+  Admin
+}
+
 model users {
-  id                                      String      @id
-  first_name                              String
-  last_name                               String
-  role                                    String      @default("Consumer")
-  created_at                              DateTime    @default(now()) @db.Timestamp(6)
-  email                                   String      @unique
-  username                                String      @unique
-  avatar_url                              String
-  followers_followers_follower_idTousers  followers[] @relation("followers_follower_idTousers")
-  followers_followers_following_idTousers followers[] @relation("followers_following_idTousers")
+  id         String  @id
+  first_name String
+  last_name  String
+  role       Role    @default(Curator)
+  bio        String?
+  avatar_url String
+  email      String  @unique
+  username   String  @unique
+
+  // ── Platform status ──
+  // Three distinct axes — never conflate them:
+  //  • is_founding_member — provenance (early/hand-picked). Immutable. Grants the
+  //    decaying C-Score seed floor + a "Founding Member" badge.
+  //  • is_verified — authenticity mark only (no score effect, so rank stays earned).
+  //    Grantable to anyone, including organically-grown stars.
+  //  • Earned status (Top Curator, etc.) is NOT stored — it is derived from c_score
+  //    / followers / sales as badges (see src/constants/badges.ts).
+  is_founding_member Boolean @default(false)
+  is_verified        Boolean @default(false)
+  is_active          Boolean @default(true) // soft-disable; bounds the C-Score pool
+
+  // ── Creator signal (kept fresh from video.events; see videoEventsWorker) ──
+  // Creator badge = video_count > 0; Top Creator ranks by magnitude. A single
+  // counter serves both — no separate has_uploaded boolean to drift from it.
+  video_count Int @default(0)
+
+  // ── C-Score (written by the nightly worker; the ring only reads c_score) ──
+  c_score            Int       @default(0) // percentile ring value 0–100
+  c_score_raw        Float     @default(0) // un-normalized score; seeds next run's iteration
+  c_score_updated_at DateTime? // last nightly calculation
+
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt
+
+  external_metrics                        user_external_metrics?
+  followers_followers_follower_idTousers  followers[]            @relation("followers_follower_idTousers")
+  followers_followers_following_idTousers followers[]            @relation("followers_following_idTousers")
+}
+
+// Kept in its own 1:1 table so the hot `users` row stays lean. Populated by the
+// (future) external-sync job; only YouTube at launch — TikTok/IG deferred.
+model user_external_metrics {
+  id      String @id @default(uuid())
+  user_id String @unique
+  user    users  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  youtube_channel_id String? @unique
+  youtube_followers  Int     @default(0) // subscriber count → externalPrior input
+  youtube_view_count BigInt  @default(0)
+
+  last_synced_at DateTime @default(now())
+}
+
+// Idempotency ledger for consumed domain events (messaging-contract §3). A
+// consumer records event_id before applying the effect, in the same transaction,
+// so an at-least-once redelivery is a harmless no-op instead of a double-count.
+model processed_events {
+  event_id     String   @id
+  processed_at DateTime @default(now())
 }

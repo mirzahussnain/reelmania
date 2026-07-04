@@ -48,6 +48,7 @@ RabbitMQ broker
     ├── marketplace.curation-events.q ← curation.events (collection.item.added — affiliate/C-Score)
     ├── curation.user-events.q      ← user.events   (user.deleted)
     ├── curation.video-events.q     ← video.events  (video.deleted)
+    ├── video_user_events_queue     ← user.events   (user.updated → denormalized-identity sync; follow.changed → bust the Following-feed follow-set cache)
     └── video.subscription-events.q ← marketplace.events (subscription.updated)
 ```
 

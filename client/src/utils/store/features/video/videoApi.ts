@@ -48,6 +48,21 @@ export const videoApi = createApi({
             }),
             providesTags: ["Videos"]
         }),
+        fetchFollowingVideos: builder.query<VideoListResponse, { token: string | null; cursor?: string }>({
+            query: ({ token, cursor }) => {
+                const params = new URLSearchParams();
+                if (cursor) params.append("cursor", cursor);
+                const queryString = params.toString();
+                return {
+                    url: `/following${queryString ? '?' + queryString : ''}`,
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                };
+            },
+            providesTags: ["Videos"]
+        }),
         fetchVideoById:builder.query<VideoByIdResponse, string>({
             query:(videoId)=>`/${videoId}`,
         }),
@@ -190,6 +205,7 @@ export const {
    useDeleteUserVideoMutation,
    useLazyFetchAllVideosQuery,
    useLazyFetchForYouVideosQuery,
+   useLazyFetchFollowingVideosQuery,
    useLazyGetCommentsByVideoIdQuery,
    useLazyGetLikesByVideoIdQuery
 } = videoApi

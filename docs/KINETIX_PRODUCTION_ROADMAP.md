@@ -297,6 +297,17 @@ Tracked gaps from standing up `curation-service` ahead of its dependencies:
    `video.deleted` to the `video.events` topic exchange from `deleteVideo`, and
    curation-service unlinks the orphaned `CollectionItem` rows. (marketplace-service's
    own `video.deleted` unlink consumer still pending — messaging-contract §5.)
+3. **Following feed is fan-out-on-READ (deferred scaling work)** — `getFollowingFeed`
+   resolves the caller's follow-set (cached in Redis, busted by the `follow.changed`
+   event) and does a cursor-paginated `uploaded_by.id $in [...]` query with a
+   `FOLLOWING_FANOUT_CAP` guardrail. This is correct + cheap at typical follow counts,
+   but degrades for power-users following tens of thousands against a huge corpus (large
+   `$in` + in-memory merge-sort, Mongo's 32MB sort ceiling). **Endgame = fan-out-on-WRITE:**
+   on `video.created`, push the videoId into each follower's precomputed Redis feed
+   (mirrors the For You queue) so the read becomes an O(K) `LRANGE`, with a **hybrid pull
+   for celebrity creators** (huge follower counts) to avoid write amplification — the
+   Twitter/IG model. Deferred until real power-user load justifies the write-path
+   complexity; the `follow.changed` event + follow-set cache are the groundwork.
 
 ---
 

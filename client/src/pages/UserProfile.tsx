@@ -2,7 +2,7 @@ import React from "react";
 import Loader from "../components/Loader";
 import { useUserProfile } from "../shared/hooks/useUserProfile";
 import { UserProfileHeader } from "../shared/components/profile/UserProfileHeader";
-import { UserVideoGrid } from "../shared/components/profile/UserVideoGrid";
+import { ProfileFeatured } from "../shared/components/profile/ProfileFeatured";
 
 const UserProfile: React.FC = () => {
   const {
@@ -12,7 +12,7 @@ const UserProfile: React.FC = () => {
     followerCount,
     followStatus,
     handleFollow,
-    isLoading
+    isLoading,
   } = useUserProfile();
 
   if (isLoading) {
@@ -30,7 +30,9 @@ const UserProfile: React.FC = () => {
   const isCurrentUser = currentUser?.id === userProfile.id;
 
   return (
-    <div className="page-shell pb-24">
+    // Transparent bg so the app's network-mesh background shows through
+    // (page-shell's opaque bg-surface would hide it).
+    <div className="w-full h-full overflow-y-auto overflow-x-hidden scrollbar-hide bg-transparent text-on-surface pt-6 pb-24 flex flex-col items-center">
       <UserProfileHeader
         userProfile={userProfile}
         followerCount={followerCount}
@@ -39,7 +41,11 @@ const UserProfile: React.FC = () => {
         followStatus={followStatus}
         handleFollow={handleFollow}
       />
-      <UserVideoGrid userVideos={userVideos || []} />
+      <ProfileFeatured
+        userProfile={userProfile}
+        userVideos={userVideos || []}
+        isCurrentUser={isCurrentUser}
+      />
     </div>
   );
 };

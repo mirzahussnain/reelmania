@@ -338,6 +338,16 @@ export const createVideo = async (req: Request, res: Response) => {
         };
         const result = await prisma.videos.create({ data: videoData });
 
+        // Notify other services of the new Kine. user-service increments the
+        // uploader's video_count (Creator badge / Top Creator). Fire-and-forget:
+        // a publish failure must not fail the upload the user already succeeded at.
+        rabbitMQService
+            .publish(VIDEO_EXCHANGE, "video.created", {
+                videoId: result.id,
+                uploaderId: result.uploaded_by.id,
+            })
+            .catch((err) => logger.error({ err }, "publish video.created failed"));
+
         ok(res, result, undefined, "Video Created Successfully.");
         return;
     } catch (err: unknown) {
@@ -371,7 +381,10 @@ export const deleteVideo = async (req: Request, res: Response) => {
                 // AssetVideoLinks). Fire-and-forget: a publish failure must not
                 // fail the delete the user already succeeded at.
                 rabbitMQService
-                    .publish(VIDEO_EXCHANGE, "video.deleted", { videoId })
+                    .publish(VIDEO_EXCHANGE, "video.deleted", {
+                        videoId,
+                        uploaderId: result.uploaded_by.id,
+                    })
                     .catch((err) => logger.error({ err }, "publish video.deleted failed"));
                 ok(res, null, undefined, "Video Deleted Successfully.");
                 return;
