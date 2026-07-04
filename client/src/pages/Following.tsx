@@ -93,7 +93,7 @@ const Following = () => {
           {/* Mobile backdrop — dims the video behind the near-full-height sheet. */}
           <div
             onClick={() => setIsCommentsOpen(false)}
-            className={`lg:hidden fixed inset-0 z-[59] bg-black/70 transition-opacity duration-300 ${isCommentsOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+            className={`lg:hidden fixed inset-0 z-[59] bg-scrim/70 transition-opacity duration-300 ${isCommentsOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           />
 
           <motion.div
