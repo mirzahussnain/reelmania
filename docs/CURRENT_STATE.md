@@ -77,4 +77,14 @@ Shipped on this branch:
 
 - `save_count` — saves live in curation-service; source from its snapshot, don't
   denormalize a drift-prone copy here.
-- `share_count` in C-Score — an unverified click-count; keep out of the score.
+- `share_count` — **not added at all** (not just kept out of C-Score). Today
+  "share" is copy-link + email/WhatsApp/Twitter *intent* buttons
+  (`components/Share.tsx`) — none report a verified share, so a counter would
+  tally trivially-inflatable button clicks, not distribution. It's the
+  inert-column trap; Mongo makes adding it later free, so there's no cost to
+  waiting. If distribution should ever count, the correct mechanism is
+  **referral attribution** — a share link carrying a token
+  (`?ref=<curatorId|shareToken>`) and counting **verified visits/conversions**
+  through it. That *is* the affiliate mechanism (roadmap Phase E), a money-backed
+  signal that doubles as curator attribution — a raw `share_count` is a strictly
+  worse proxy for it.

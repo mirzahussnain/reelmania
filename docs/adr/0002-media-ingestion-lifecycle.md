@@ -88,6 +88,19 @@ same `videos` row.
   quality signal on embeds), or add transcoding/quality variants (extends the
   native worker and the `PROCESSING` state).
 
+## Related decision — no `share_count`
+
+Considered and **rejected** (2026-07-05). "Share" today is copy-link +
+email/WhatsApp/Twitter *intent* buttons (`client/src/components/Share.tsx`); none
+confirm a real share. A `share_count` would therefore count trivially-inflatable
+button clicks, not distribution — the inert-column trap, and worse, a gameable
+signal. Kept out of the model entirely (not merely out of C-Score). Mongo makes
+a later additive counter free, so deferral costs nothing. If distribution should
+ever count, use **referral attribution** — a share link carrying `?ref=<token>`
+and counting **verified visits/conversions** (the Phase E affiliate mechanism,
+which doubles as curator attribution), never a raw click tally. See
+`CURRENT_STATE.md` → "Decided against".
+
 ## Status of the fields today
 
 Shipped on the `feature/video-service` branch (schema + backfill):
