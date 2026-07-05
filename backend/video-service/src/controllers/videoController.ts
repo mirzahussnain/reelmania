@@ -9,6 +9,7 @@ import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
 import { rabbitMQService, VIDEO_EXCHANGE } from "../utils/rabbitmq";
 import { sanitizeSoftware } from "../constants/softwareVocab";
+import { sanitizeHashtags, normalizeHashtag } from "../utils/hashtags";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
@@ -40,7 +41,9 @@ export const getVideos = async (req: Request, res: Response) => {
 
         if (q) {
             if (type === "hashtag") {
-                whereClause.hashtags = { has: q };
+                // Tags are stored normalized, so normalize the query the same way
+                // ("#Gaming" / "Gaming" both match stored "gaming").
+                whereClause.hashtags = { has: normalizeHashtag(q) };
             } else if (type === "title") {
                 whereClause.title = { contains: q, mode: 'insensitive' };
             }
@@ -335,7 +338,9 @@ export const createVideo = async (req: Request, res: Response) => {
             description: req_data.description,
             uploaded_by: req_data.uploaded_by,
             uploaded_at: req_data.uploaded_at,
-            hashtags: req_data.hashtags,
+            // Never trust client tags — normalize/dedupe/cap so the feed's
+            // hashtag weighting and explore's exact-match search stay consistent.
+            hashtags: sanitizeHashtags(req_data.hashtags),
             video_url: publicUrl,
             // NATIVE upload path — embed sources come in through a separate flow.
             source_type: "NATIVE" as const,

@@ -4,6 +4,7 @@ import { useCurrentUser } from "./useCurrentUser";
 import { toast } from "react-toastify";
 import type { VideoVisibility } from "../../types";
 import { sanitizeSoftware } from "../constants/softwareVocab";
+import { sanitizeHashtags } from "../utils/hashtags";
 
 // Probe intrinsic media metadata from the selected file entirely client-side
 // (no upload needed) so we can persist duration + dimensions. Resolution is what
@@ -149,7 +150,7 @@ export const useVideoUpload = (onSuccess?: () => void) => {
         },
         title,
         description: description.trim() || undefined,
-        hashtags,
+        hashtags: sanitizeHashtags(hashtags),
         visibility,
         software_used: sanitizeSoftware(softwareUsed),
         uploaded_at: new Date(),

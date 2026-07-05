@@ -14,14 +14,22 @@
  * updated_at, external_url, embed_id, uploaded_by.avatar_url) are intentionally
  * NOT touched — null/absent is a valid value for them.
  *
+ * It also normalizes existing `hashtags` through the SAME sanitizer the write
+ * path uses (utils/hashtags), so tags stored before normalization ("#Gaming",
+ * " lifestyle", dupes, the form's stray "") line up with the feed's exact-match
+ * weighting + explore search. This pass only writes docs whose tags actually
+ * change, so it too is safe to re-run.
+ *
  * Run:  npx prisma generate && npx tsx prisma/backfill-video-fields.ts
  * (honours VIDEO_DATABASE_URL; override it to point at the target DB.)
  */
 import { PrismaClient } from "@prisma/client";
+import { sanitizeHashtags } from "../src/utils/hashtags";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // Pass 1 — set defaults on docs missing the new required/defaulted fields.
   const result = (await prisma.$runCommandRaw({
     update: "videos",
     updates: [
@@ -38,6 +46,21 @@ async function main() {
     `[backfill] matched=${result.n ?? 0} modified=${result.nModified ?? 0} ` +
       `(fields: visibility, view_count, source_type, software_used)`
   );
+
+  // Pass 2 — normalize existing hashtags. Reads are safe now that pass 1 has
+  // populated the required fields. Only writes docs whose tags actually change.
+  const docs = await prisma.videos.findMany({ select: { id: true, hashtags: true } });
+  let hashtagsChanged = 0;
+  for (const doc of docs) {
+    const normalized = sanitizeHashtags(doc.hashtags);
+    // Cheap deep-equality via JSON — order matters, which is what we want (the
+    // sanitizer preserves first-seen order).
+    if (JSON.stringify(normalized) === JSON.stringify(doc.hashtags)) continue;
+    await prisma.videos.update({ where: { id: doc.id }, data: { hashtags: normalized } });
+    hashtagsChanged++;
+  }
+
+  console.log(`[backfill] hashtags normalized on ${hashtagsChanged}/${docs.length} docs`);
 }
 
 main()
