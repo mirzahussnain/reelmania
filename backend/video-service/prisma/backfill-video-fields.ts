@@ -37,6 +37,7 @@ async function main() {
       { q: { view_count: { $exists: false } }, u: { $set: { view_count: 0 } }, multi: true },
       { q: { source_type: { $exists: false } }, u: { $set: { source_type: "NATIVE" } }, multi: true },
       { q: { software_used: { $exists: false } }, u: { $set: { software_used: [] } }, multi: true },
+      { q: { processing_status: { $exists: false } }, u: { $set: { processing_status: "READY" } }, multi: true },
     ],
     // Ordered:false so one failing sub-update doesn't abort the rest.
     ordered: false,
@@ -44,7 +45,7 @@ async function main() {
 
   console.log(
     `[backfill] matched=${result.n ?? 0} modified=${result.nModified ?? 0} ` +
-      `(fields: visibility, view_count, source_type, software_used)`
+      `(fields: visibility, view_count, source_type, software_used, processing_status)`
   );
 
   // Pass 2 — normalize existing hashtags. Reads are safe now that pass 1 has

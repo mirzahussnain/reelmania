@@ -50,6 +50,7 @@ export type LoaderType = {
 
 export type VideoVisibility = "PUBLIC" | "UNLISTED" | "PRIVATE" | "DRAFT";
 export type VideoSourceType = "NATIVE" | "YOUTUBE" | "TIKTOK" | "VIMEO";
+export type VideoProcessingStatus = "UPLOADED" | "PROCESSING" | "READY" | "FAILED";
 
 export type VideoType={
   id? : string,
@@ -71,6 +72,8 @@ export type VideoType={
   duration?:number
   width?:number
   height?:number
+  fps?:number
+  processing_status?:VideoProcessingStatus
   visibility?:VideoVisibility
 }
 

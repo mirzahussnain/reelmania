@@ -329,6 +329,7 @@ export const createVideo = async (req: Request, res: Response) => {
             duration?: number;
             width?: number;
             height?: number;
+            fps?: number;
             visibility?: "PUBLIC" | "UNLISTED" | "PRIVATE" | "DRAFT";
             software_used?: string[];
         } = metadata;
@@ -348,6 +349,11 @@ export const createVideo = async (req: Request, res: Response) => {
             duration: req_data.duration,
             width: req_data.width,
             height: req_data.height,
+            fps: req_data.fps,
+            // No processing worker yet, so client-probed media is taken as-is and
+            // the Kine is immediately READY. When the ffprobe worker lands, set
+            // this to UPLOADED here and let the worker flip it to READY/FAILED.
+            processing_status: "READY" as const,
             visibility: req_data.visibility ?? "PUBLIC",
             // Never trust client tags — keep only known-vocab slugs.
             software_used: sanitizeSoftware(req_data.software_used),

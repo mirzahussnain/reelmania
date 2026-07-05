@@ -30,6 +30,17 @@ enum SourceType {
   VIMEO
 }
 
+// Media-processing lifecycle. NATIVE uploads land as UPLOADED and a post-upload
+// worker (ffprobe → duration/width/height/fps + poster frame) flips them to
+// READY (or FAILED). Trusted media metadata is only guaranteed once READY — this
+// is what PRO tier gating (4K/60) reads. Embeds are READY immediately.
+enum ProcessingStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
+}
+
 model videos {
   id           String     @id @default(auto()) @map("_id") @db.ObjectId
   hashtags     String[]
@@ -48,9 +59,13 @@ model videos {
   // so The Radar can filter/match on it. Multikey-indexed below.
   software_used String[]
   // Media metadata — powers PRO tier gating (4K/60 uploads) and player UI.
+  // Extracted server-side (ffprobe) once processing_status is READY; the client
+  // must never be trusted for these since they gate paid limits.
   duration     Int?       // seconds
   width        Int?
   height       Int?
+  fps          Int?       // frames/sec — the "/60" half of the 4K/60 PRO gate
+  processing_status ProcessingStatus @default(READY)
   visibility   Visibility @default(PUBLIC)
   commentCount Int        @default(0)
   likeCount    Int        @default(0)
