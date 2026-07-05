@@ -1,5 +1,6 @@
 import { clerkClient, getAuth } from "@clerk/express";
 import { Response, NextFunction, Request } from "express";
+import { touchLastActive } from "../utils/activity";
 
 // Requires a signed-in user. Returns 401 JSON (an API must not redirect).
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
@@ -8,6 +9,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         res.status(401).json({ success: false, message: "Authentication required" });
         return;
     }
+    // Record activity (throttled, fire-and-forget) for the C-Score pool window.
+    touchLastActive(auth.userId);
     next();
 };
 
