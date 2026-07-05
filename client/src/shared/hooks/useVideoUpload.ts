@@ -2,9 +2,43 @@ import { useState, useRef, useEffect } from "react";
 import { useUploadVideoMutation, useGenerateUploadUrlMutation } from "../../utils/store/features/video/videoApi";
 import { useCurrentUser } from "./useCurrentUser";
 import { toast } from "react-toastify";
+import type { VideoVisibility } from "../../types";
+import { sanitizeSoftware } from "../constants/softwareVocab";
+
+// Probe intrinsic media metadata from the selected file entirely client-side
+// (no upload needed) so we can persist duration + dimensions. Resolution is what
+// lets the backend enforce PRO tier gating (4K/60) later. Fail-soft: if the
+// browser can't read the file we just store nothing rather than block the upload.
+type MediaMeta = { duration?: number; width?: number; height?: number };
+const probeMediaMeta = (file: File): Promise<MediaMeta> =>
+  new Promise((resolve) => {
+    try {
+      const el = document.createElement("video");
+      el.preload = "metadata";
+      const url = URL.createObjectURL(file);
+      el.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        resolve({
+          duration: Number.isFinite(el.duration) ? Math.round(el.duration) : undefined,
+          width: el.videoWidth || undefined,
+          height: el.videoHeight || undefined,
+        });
+      };
+      el.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve({});
+      };
+      el.src = url;
+    } catch {
+      resolve({});
+    }
+  });
 
 export const useVideoUpload = (onSuccess?: () => void) => {
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [visibility, setVisibility] = useState<VideoVisibility>("PUBLIC");
+  const [softwareUsed, setSoftwareUsed] = useState<string[]>([]);
   const [hashtags, setHashtags] = useState([""]);
   const [cachedFile, setCachedFile] = useState<File | null>(null);
   const [fileURL, setFileURL] = useState<string | null>(null);
@@ -27,6 +61,9 @@ export const useVideoUpload = (onSuccess?: () => void) => {
     setCachedFile(null);
     setFileURL(null);
     setTitle("");
+    setDescription("");
+    setVisibility("PUBLIC");
+    setSoftwareUsed([]);
     setHashtags([]);
   };
 
@@ -101,13 +138,22 @@ export const useVideoUpload = (onSuccess?: () => void) => {
 
       // Step 3: Save metadata to MongoDB
       toast.info("Storing Video Metadata...");
+      const mediaMeta = await probeMediaMeta(cachedFile);
       const metaData = {
         Likes: [],
         comments: [],
-        uploaded_by: { id: user?.id, username: user?.username },
+        uploaded_by: {
+          id: user?.id,
+          username: user?.username,
+          avatar_url: user?.avatar_url,
+        },
         title,
+        description: description.trim() || undefined,
         hashtags,
+        visibility,
+        software_used: sanitizeSoftware(softwareUsed),
         uploaded_at: new Date(),
+        ...mediaMeta,
       };
       
       const response = await postToMongo({ metadata: metaData, fileName, token }).unwrap();
@@ -133,6 +179,12 @@ export const useVideoUpload = (onSuccess?: () => void) => {
   return {
     title,
     setTitle,
+    description,
+    setDescription,
+    visibility,
+    setVisibility,
+    softwareUsed,
+    setSoftwareUsed,
     hashtags,
     setHashtags,
     fileURL,

@@ -10,6 +10,7 @@ import { useGetUserProfileQuery, useUpdateUserFollowerMutation, useCheckUserFoll
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { toast } from "react-toastify";
 import { AUTH_REQUIRED } from "../constants/messages";
+import { SOFTWARE_LABELS } from "../constants/softwareVocab";
 
 interface VideoInfoOverlayProps {
   video: VideoType;
@@ -97,16 +98,35 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
               {video?.title}
             </h1>
             
-            {/* Using hashtags as the description block for now */}
             <div className={cn(
-              "flex flex-wrap items-center gap-2 transition-all duration-300 ease-in-out font-[family-name:var(--font-inter)] text-on-media-dim",
+              "transition-all duration-300 ease-in-out font-[family-name:var(--font-inter)] text-on-media-dim",
               isExpanded ? "opacity-100 scale-y-100 mt-1 h-auto" : "opacity-0 scale-y-0 h-0 overflow-hidden"
             )}>
-              {video.hashtags.map((hashtag, index) => (
-                <span className="font-semibold text-xs drop-shadow-md" key={index}>
-                  #{hashtag}
-                </span>
-              ))}
+              {video.description && (
+                <p className="text-xs drop-shadow-md mb-2 whitespace-pre-line">{video.description}</p>
+              )}
+
+              {/* Made with — the tools this Kine was built in (The Radar signal). */}
+              {video.software_used && video.software_used.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                  {video.software_used.map((slug) => (
+                    <span
+                      key={slug}
+                      className="bg-primary/10 border border-primary/20 text-primary font-semibold text-[10px] px-2 py-0.5 rounded-full drop-shadow-md"
+                    >
+                      {SOFTWARE_LABELS[slug] ?? slug}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-2">
+                {video.hashtags.map((hashtag, index) => (
+                  <span className="font-semibold text-xs drop-shadow-md" key={index}>
+                    #{hashtag}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
           

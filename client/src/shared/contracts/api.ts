@@ -10,7 +10,7 @@
  * pagination under `meta`. Client types are derived from this envelope rather
  * than hand-mirrored against Prisma — see `types.ts` for the domain DTOs.
  */
-import type { VideoType, CommentType, VideoLikes, userType } from "../../types";
+import type { VideoType, CommentType, VideoLikes, userType, VideoVisibility } from "../../types";
 
 /** Pagination / list metadata returned alongside list endpoints. */
 export interface ApiMeta {
@@ -76,13 +76,26 @@ export type GenerateUploadUrlResponse = ApiResponse<{
 /** Metadata persisted alongside a freshly uploaded file. */
 export interface UploadVideoMetadata {
   title: string;
+  description?: string;
   hashtags: string[];
-  uploaded_by: { id: string; username: string };
+  uploaded_by: { id: string; username: string; avatar_url?: string };
   uploaded_at: Date;
+  thumbnail_url?: string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  visibility?: VideoVisibility;
+  software_used?: string[];
 }
 
 /** Result of persisting video metadata. */
 export type CreateVideoResponse = ApiResponse<VideoType>;
+
+/** Result of registering a view (deduped server-side). */
+export type RegisterViewResponse = ApiResponse<{
+  counted: boolean;
+  view_count?: number;
+}>;
 
 /** Generic message-only / no-content response (delete, SAS, etc.). */
 export type MessageResponse = ApiResponse<null>;

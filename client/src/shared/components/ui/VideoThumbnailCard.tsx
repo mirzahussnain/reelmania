@@ -13,6 +13,22 @@ import { MOCK_VIDEO_METADATA } from "../../constants/mocks";
 // it represents collections, not individual videos, and is not yet modelled.
 type VideoCardVariant = "grid" | "vault";
 
+// mm:ss from seconds; blank sentinel when duration wasn't captured (older videos).
+const formatDuration = (seconds?: number): string => {
+  if (!seconds || seconds < 0) return "--:--";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+};
+
+// Compact view count: 1.2K, 3.4M.
+const formatViews = (n?: number): string => {
+  const v = n ?? 0;
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
+  return `${v}`;
+};
+
 interface VideoThumbnailCardProps {
   video: VideoType;
   variant?: VideoCardVariant;
@@ -37,13 +53,14 @@ export const VideoThumbnailCard: React.FC<VideoThumbnailCardProps> = ({
       >
         <video
           src={video.video_url}
+          poster={video.thumbnail_url}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
-        {/* Duration Badge — duration not captured at upload yet. */}
+        {/* Duration Badge */}
         <div className="absolute top-3 right-3 bg-media-scrim backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-jetbrains font-bold text-on-media">
-          --:--
+          {formatDuration(video.duration)}
         </div>
 
         {/* NEW Badge */}
@@ -77,6 +94,7 @@ export const VideoThumbnailCard: React.FC<VideoThumbnailCardProps> = ({
       <video
         className="w-full h-full object-cover"
         src={video?.video_url}
+        poster={video?.thumbnail_url}
         onMouseEnter={(e) => e.currentTarget.play()}
         onMouseLeave={(e) => e.currentTarget.pause()}
         muted
@@ -95,7 +113,7 @@ export const VideoThumbnailCard: React.FC<VideoThumbnailCardProps> = ({
       {/* Duration Badge */}
       <div className="absolute top-3 right-3 bg-primary/10 border border-primary/20 backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-jetbrains font-bold text-primary flex items-center gap-1">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/></svg>
-        {mockData.duration}
+        {video?.duration ? formatDuration(video.duration) : mockData.duration}
       </div>
 
       <div className="absolute inset-0 bg-gradient-to-t from-scrim/90 via-scrim/20 to-transparent pointer-events-none" />
@@ -126,7 +144,7 @@ export const VideoThumbnailCard: React.FC<VideoThumbnailCardProps> = ({
               @{video?.uploaded_by?.username}
             </Link>
             <span className="text-[9px] md:text-[10px] font-jetbrains text-on-surface-variant mt-0.5">
-              {mockData.views} views
+              {video?.view_count !== undefined ? formatViews(video.view_count) : mockData.views} views
             </span>
           </div>
 
