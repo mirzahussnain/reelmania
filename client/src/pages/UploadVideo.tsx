@@ -6,6 +6,7 @@ import { useVideoUpload } from "../shared/hooks/useVideoUpload";
 import { cn } from "../shared/utils/cn";
 import { Button } from "../shared/components/ui/Button";
 import { SOFTWARE_VOCAB } from "../shared/constants/softwareVocab";
+import { CATEGORY_VOCAB } from "../shared/constants/categoryVocab";
 
 type Props = {
   isOpen: boolean;
@@ -22,6 +23,8 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
     setVisibility,
     softwareUsed,
     setSoftwareUsed,
+    category,
+    setCategory,
     hashtags,
     setHashtags,
     fileURL,
@@ -178,6 +181,25 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
                   <option value="UNLISTED">Unlisted — only people with the link</option>
                   <option value="PRIVATE">Private — only you</option>
                   <option value="DRAFT">Draft — save without publishing</option>
+                </select>
+              </div>
+
+              <div className="w-full">
+                <label className="block text-on-surface font-semibold text-sm mb-2" htmlFor="category">
+                  Category <span className="text-on-surface-variant font-normal text-xs">(primary discipline — powers discovery)</span>
+                </label>
+                <select
+                  id="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full bg-surface-container-lowest border border-hairline/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:glow-primary transition-all"
+                >
+                  <option value="">— Select a category —</option>
+                  {CATEGORY_VOCAB.map((cat) => (
+                    <option key={cat.slug} value={cat.slug}>
+                      {cat.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 

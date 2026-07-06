@@ -86,6 +86,7 @@ export interface UploadVideoMetadata {
   height?: number;
   fps?: number;
   visibility?: VideoVisibility;
+  category?: string;
   software_used?: string[];
 }
 

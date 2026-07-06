@@ -9,6 +9,7 @@ import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
 import { rabbitMQService, VIDEO_EXCHANGE } from "../utils/rabbitmq";
 import { sanitizeSoftware } from "../constants/softwareVocab";
+import { sanitizeCategory, CATEGORY_SLUGS } from "../constants/categoryVocab";
 import { sanitizeHashtags, normalizeHashtag } from "../utils/hashtags";
 
 export const getVideos = async (req: Request, res: Response) => {
@@ -46,6 +47,10 @@ export const getVideos = async (req: Request, res: Response) => {
                 whereClause.hashtags = { has: normalizeHashtag(q) };
             } else if (type === "title") {
                 whereClause.title = { contains: q, mode: 'insensitive' };
+            } else if (type === "category") {
+                // Only filter on a known category slug; ignore junk so a bad
+                // value returns the unfiltered public grid rather than nothing.
+                if (CATEGORY_SLUGS.has(q)) whereClause.category = q;
             }
         }
 
@@ -331,6 +336,7 @@ export const createVideo = async (req: Request, res: Response) => {
             height?: number;
             fps?: number;
             visibility?: "PUBLIC" | "UNLISTED" | "PRIVATE" | "DRAFT";
+            category?: string;
             software_used?: string[];
         } = metadata;
 
@@ -357,6 +363,8 @@ export const createVideo = async (req: Request, res: Response) => {
             // with trusted values before flipping to READY (or FAILED).
             processing_status: "UPLOADED" as const,
             visibility: req_data.visibility ?? "PUBLIC",
+            // Single controlled-vocab discipline; junk/unknown → undefined.
+            category: sanitizeCategory(req_data.category),
             // Never trust client tags — keep only known-vocab slugs.
             software_used: sanitizeSoftware(req_data.software_used),
         };

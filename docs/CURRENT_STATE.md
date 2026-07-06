@@ -38,8 +38,9 @@ Recently expanded from a bare upload record into a proper media model:
 
 `hashtags, title, description, uploaded_at, updated_at,
 uploaded_by{id,username,avatar_url}, video_url, thumbnail_url, source_type,
-external_url, embed_id, software_used[], duration, width, height, fps,
-processing_status, visibility, commentCount, likeCount, view_count` + Comment/Like.
+external_url, embed_id, category, software_used[], duration, width, height, fps,
+file_size_bytes, processing_status, visibility, commentCount, likeCount,
+view_count` + Comment/Like.
 
 Shipped on this branch:
 - **Metadata foundation:** description, thumbnail_url, duration/width/height, fps,
@@ -52,6 +53,9 @@ Shipped on this branch:
 - **Studio & Radar:** `source_type` (+ `external_url`/`embed_id` embed
   groundwork), `software_used[]` with a controlled vocabulary (client+server),
   indexed for The Radar.
+- **Discovery taxonomy:** single controlled-vocab `category` (primary discipline,
+  client+server vocab, indexed; explore supports `type=category`) — the top-level
+  discovery axis, distinct from hashtags and software_used.
 - **processing_status** enum — now driven by the native media pipeline: uploads
   land `UPLOADED` and publish `video.uploaded`; the ffprobe/thumbnail worker
   (`mediaProcessingWorker`) writes trusted `duration/width/height/fps` +

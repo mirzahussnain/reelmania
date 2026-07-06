@@ -55,6 +55,10 @@ model videos {
   source_type  SourceType @default(NATIVE)
   external_url String?    // embed source URL (YouTube/TikTok/Vimeo)
   embed_id     String?    // provider video id, for building the player iframe
+  // Primary discipline of the Kine — a SINGLE controlled-vocab slug (see
+  // categoryVocab), the top-level axis for discovery/The Radar. Distinct from
+  // hashtags (freeform-ish) and software_used (tools). Indexed below.
+  category     String?
   // Tools this specific Kine was made with. Controlled vocab (see softwareVocab)
   // so The Radar can filter/match on it. Multikey-indexed below.
   software_used String[]
@@ -85,6 +89,8 @@ model videos {
   @@index([visibility, uploaded_at(sort: Desc)])
   // The Radar filters/matches Kines by the tools they were made with.
   @@index([software_used])
+  // Discovery filters Kines by their primary discipline, newest-first.
+  @@index([category, uploaded_at(sort: Desc)])
 }
 
 model Comment {

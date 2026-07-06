@@ -4,6 +4,7 @@ import { useCurrentUser } from "./useCurrentUser";
 import { toast } from "react-toastify";
 import type { VideoVisibility } from "../../types";
 import { sanitizeSoftware } from "../constants/softwareVocab";
+import { sanitizeCategory } from "../constants/categoryVocab";
 import { sanitizeHashtags } from "../utils/hashtags";
 
 // Probe intrinsic media metadata from the selected file entirely client-side
@@ -40,6 +41,7 @@ export const useVideoUpload = (onSuccess?: () => void) => {
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<VideoVisibility>("PUBLIC");
   const [softwareUsed, setSoftwareUsed] = useState<string[]>([]);
+  const [category, setCategory] = useState<string>("");
   const [hashtags, setHashtags] = useState([""]);
   const [cachedFile, setCachedFile] = useState<File | null>(null);
   const [fileURL, setFileURL] = useState<string | null>(null);
@@ -65,6 +67,7 @@ export const useVideoUpload = (onSuccess?: () => void) => {
     setDescription("");
     setVisibility("PUBLIC");
     setSoftwareUsed([]);
+    setCategory("");
     setHashtags([]);
   };
 
@@ -152,6 +155,7 @@ export const useVideoUpload = (onSuccess?: () => void) => {
         description: description.trim() || undefined,
         hashtags: sanitizeHashtags(hashtags),
         visibility,
+        category: sanitizeCategory(category),
         software_used: sanitizeSoftware(softwareUsed),
         uploaded_at: new Date(),
         ...mediaMeta,
@@ -186,6 +190,8 @@ export const useVideoUpload = (onSuccess?: () => void) => {
     setVisibility,
     softwareUsed,
     setSoftwareUsed,
+    category,
+    setCategory,
     hashtags,
     setHashtags,
     fileURL,
