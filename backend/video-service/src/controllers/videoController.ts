@@ -410,13 +410,19 @@ export const deleteVideo = async (req: Request, res: Response) => {
             throw new Error("Video Does not exist");
         }
         
-        // Extract filename from URL (e.g. http://minio:9000/videos/filename.mp4 -> filename.mp4)
-        const parts = result.video_url.split('/');
-        const actualFileName = parts[parts.length - 1];
+        // Only NATIVE uploads own a stored file to remove. Embeds live on the
+        // provider (no video_url), so there's nothing in our bucket to delete —
+        // skip straight to removing the row.
+        let deleted = true;
+        if (result.source_type === "NATIVE" && result.video_url) {
+            // Extract filename from URL (e.g. http://minio:9000/videos/filename.mp4 -> filename.mp4)
+            const parts = result.video_url.split('/');
+            const actualFileName = parts[parts.length - 1];
 
-        const storageProvider = StorageFactory.getProvider();
-        const deleted = await storageProvider.deleteFile(actualFileName);
-        
+            const storageProvider = StorageFactory.getProvider();
+            deleted = await storageProvider.deleteFile(actualFileName);
+        }
+
         if (deleted) {
             const deleteResult = await prisma.videos.delete({ where: { id: videoId } });
             if (deleteResult) {

@@ -49,7 +49,11 @@ model videos {
   uploaded_at  DateTime
   updated_at   DateTime?  @updatedAt
   uploaded_by  Uploader
-  video_url    String
+  // The stored native file. Present for NATIVE; NULL for embeds (which live on
+  // the provider via external_url + embed_id). A row must have EITHER video_url
+  // (NATIVE) OR external_url + embed_id (embed) — an XOR invariant Prisma can't
+  // express, so it's enforced at write time per source_type.
+  video_url    String?
   thumbnail_url String?
   // Source of the media. NATIVE uses video_url; embeds use external_url/embed_id.
   source_type  SourceType @default(NATIVE)
