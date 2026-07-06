@@ -26,6 +26,13 @@ const DLQ = "video_media_processing_dlq";
 const ROUTING_KEY = "video.uploaded";
 const MAX_RETRIES = 3;
 
+// Hard ceiling on a stored native file. The client caps at this too, but that's
+// only UX — a caller can bypass the client and PUT straight to the presigned URL.
+// This is the authoritative check: because a video can't be published until the
+// worker marks it READY, an oversized upload can NEVER reach a feed even if it
+// slips into the bucket — the worker fails it here and deletes the object.
+const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES) || 50 * 1024 * 1024;
+
 export const startMediaProcessingWorker = async () => {
   await rabbitMQService.connect();
   const channel = rabbitMQService.getChannel();
@@ -99,6 +106,22 @@ const processVideo = async (data: { videoId?: string; fileName?: string }) => {
 
     // Trusted byte size straight off the downloaded object (not client-reported).
     const { size: fileSizeBytes } = await stat(srcPath);
+
+    // Authoritative size enforcement: reject oversized files that bypassed the
+    // client cap. Mark FAILED (keeps it out of feeds) and delete the bucket
+    // object so a bypass can't be used to dump storage.
+    if (fileSizeBytes > MAX_UPLOAD_BYTES) {
+      await prisma.videos.update({
+        where: { id: videoId },
+        data: { processing_status: "FAILED", file_size_bytes: fileSizeBytes },
+      });
+      await storage.deleteFile(fileName).catch((e) =>
+        logger.error({ err: e, videoId }, "[MediaWorker] oversized-file delete failed")
+      );
+      logger.warn({ videoId, fileSizeBytes, MAX_UPLOAD_BYTES }, "[MediaWorker] rejected oversized upload");
+      return;
+    }
+
     const meta = await probeMedia(srcPath);
 
     // Thumbnail is best-effort — a probe-able file with no extractable frame
