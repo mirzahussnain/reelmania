@@ -95,6 +95,9 @@ model videos {
   @@index([software_used])
   // Discovery filters Kines by their primary discipline, newest-first.
   @@index([category, uploaded_at(sort: Desc)])
+  // Embed import dedupes on (provider, provider-id) before creating a row;
+  // without this that lookup is a full collection scan.
+  @@index([source_type, embed_id])
 }
 
 model Comment {

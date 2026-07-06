@@ -12,6 +12,7 @@ import { sanitizeSoftware } from "../constants/softwareVocab";
 import { sanitizeCategory, CATEGORY_SLUGS } from "../constants/categoryVocab";
 import { sanitizeHashtags, normalizeHashtag } from "../utils/hashtags";
 import { parseEmbedUrl, fetchEmbedMeta } from "../utils/embedProviders";
+import { getExploreVersion, bumpExploreVersion } from "../utils/exploreCache";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
@@ -20,9 +21,12 @@ export const getVideos = async (req: Request, res: Response) => {
         const q = req.query.q as string | undefined;
         const type = req.query.type as string | undefined;
 
-        // Redis Caching
+        // Redis Caching. The version is folded into the key so a publish/edit can
+        // invalidate every page with an O(1) counter bump (see exploreCache) rather
+        // than an O(keyspace) KEYS scan.
         const redisClient = getRedisClient();
-        const cacheKey = `explore:limit_${limit}:cursor_${cursor || 'initial'}:q_${q || 'none'}:type_${type || 'none'}`;
+        const cacheVer = await getExploreVersion(redisClient);
+        const cacheKey = `explore:v${cacheVer}:limit_${limit}:cursor_${cursor || 'initial'}:q_${q || 'none'}:type_${type || 'none'}`;
         
         try {
             const cachedData = await redisClient.get(cacheKey);
@@ -508,16 +512,10 @@ export const registerView = async (req: Request, res: Response) => {
     }
 };
 
-// Drop the shared explore cache so a just-published/edited video surfaces on the
-// next feed read instead of waiting out the 60s TTL.
+// Invalidate the shared explore cache so a just-published/edited video surfaces
+// on the next feed read instead of waiting out the 60s TTL. O(1) counter bump.
 const bustExploreCache = async () => {
-    try {
-        const redisClient = getRedisClient();
-        const keys = await redisClient.keys("explore:*");
-        if (keys.length) await redisClient.del(keys);
-    } catch (err) {
-        logger.error({ err }, "explore cache bust failed");
-    }
+    await bumpExploreVersion(getRedisClient());
 };
 
 // POST /api/videos/import — the embed "Dead Asset" import (roadmap Phase B).

@@ -7,6 +7,7 @@ import prisma from "../utils/dbconnection.config";
 import { StorageFactory } from "../providers/StorageFactory";
 import { probeMedia, extractThumbnail } from "../utils/mediaProbe";
 import { getRedisClient } from "../utils/redis";
+import { bumpExploreVersion } from "../utils/exploreCache";
 import { logger } from "../utils/logger";
 
 /**
@@ -145,11 +146,5 @@ const markFailed = async (msg: any) => {
 };
 
 const bustExploreCache = async () => {
-  try {
-    const redis = getRedisClient();
-    const keys = await redis.keys("explore:*");
-    if (keys.length) await redis.del(keys);
-  } catch (err) {
-    logger.warn({ err }, "[MediaWorker] explore cache bust failed");
-  }
+  await bumpExploreVersion(getRedisClient());
 };
