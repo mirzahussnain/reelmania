@@ -1,6 +1,6 @@
 # ADR 0002 — Media ingestion & processing lifecycle (native uploads vs. embeds)
 
-- **Status:** Accepted (fields shipped; native worker + embed import deferred)
+- **Status:** Accepted (fields shipped; **native worker built**; embed import deferred)
 - **Date:** 2026-07-05
 - **Context phase:** KINETIX_PRODUCTION_ROADMAP Phase B (Assets & Collections),
   video-service schema expansion
@@ -42,9 +42,9 @@ same `videos` row.
 - Because the file goes straight to the bucket, ffprobe **cannot** run inline in
   the request — it is a **worker that pulls the object from storage**, not a
   request handler.
-- Lifecycle: `createVideo` writes `processing_status = UPLOADED`
-  (currently `READY`, see Status below) → worker sets `PROCESSING` → `READY`
-  on success or `FAILED` on a bad/corrupt file.
+- Lifecycle: `createVideo` writes `processing_status = UPLOADED` and publishes
+  `video.uploaded` → the worker sets `PROCESSING` → `READY` on success or
+  `FAILED` on a bad/corrupt file (after retries → DLQ).
 - **PRO gating (4K/60) reads these fields only when `NATIVE` and `READY`.**
 
 ### Embeds — synchronous, provider-sourced, READY on create
@@ -75,10 +75,15 @@ same `videos` row.
   (native PRO gating); embeds cost one synchronous API call and no infra; the
   same `videos` row + view/feed machinery serves both.
 - **Negative / follow-ups:**
-  - The **native ffprobe/thumbnail worker is not built yet.** Until it is, native
-    media metadata is client-probed and therefore **must not be wired to PRO
-    gating.** `createVideo` currently marks native uploads `READY` immediately as
-    a placeholder.
+  - The **native ffprobe/thumbnail worker is built** (`workers/mediaProcessingWorker.ts`,
+    `utils/mediaProbe.ts`): consumes `video.uploaded`, downloads the object,
+    runs ffprobe + a poster extract, writes trusted `duration/width/height/fps`
+    + `thumbnail_url`, and flips `UPLOADED → READY` (or `FAILED` → DLQ). ffmpeg
+    comes from apk (`ffmpeg-static`/`ffprobe-static` for local dev; the container
+    overrides via `FFMPEG_PATH`/`FFPROBE_PATH` because the static glibc binaries
+    can't run on Alpine/musl). Client-probed values are now **provisional only**,
+    overwritten by the worker — so PRO gating may now trust the fields **once
+    `NATIVE` and `READY`.**
   - The **embed import endpoint + UI are not built** (Phase B).
   - Embeds need a **freshness/availability** concern the native path doesn't: a
     provider video can be deleted/privatised after import. That is handled later
@@ -87,6 +92,26 @@ same `videos` row.
 - **Revisit if:** we start selling embed-derived assets (would force a real
   quality signal on embeds), or add transcoding/quality variants (extends the
   native worker and the `PROCESSING` state).
+
+### Deployment footprint & the dedicated-worker option
+
+The worker runs **in-process inside the video-service** (started from `app.ts`
+alongside the user-events worker). That keeps deployment to a single image, at
+the cost of putting **ffmpeg in the API image**: `apk add ffmpeg` adds **~184 MB**
+(ffmpeg + codec libs — libavcodec/x264/x265/vpx…; there is no lighter apk split)
+on top of the ~231 MB `node:24-alpine` base. The heavy `ffmpeg-static`/
+`ffprobe-static` npm packages (~400 MB of glibc binaries) are **devDependencies
+only** and `require()`d optionally, so `npm ci --production` skips them — the
+prod image carries only the apk ffmpeg, never the static ones.
+
+**Option (deferred): split the worker into its own image.** If media processing
+needs to scale independently, or the ~184 MB on the API image becomes a
+registry/cold-start cost, extract `mediaProcessingWorker` into a separate
+container (its own `CMD`, same codebase/env). Only that image installs ffmpeg;
+the API image drops back to a lean Node image. The two already communicate only
+through RabbitMQ (`video.uploaded`) + Mongo, so the split needs **no code change
+beyond a second entrypoint** — it's a packaging decision, made when the scaling
+or size pressure is real, not before.
 
 ## Related decision — no `share_count`
 
@@ -103,8 +128,10 @@ which doubles as curator attribution), never a raw click tally. See
 
 ## Status of the fields today
 
-Shipped on the `feature/video-service` branch (schema + backfill):
-`source_type`, `external_url`, `embed_id`, `duration`, `width`, `height`, `fps`,
-`processing_status`, `thumbnail_url`. **Producers are partial:** native metadata
-is client-probed (worker pending); embed import path is unbuilt. The fields are
-the groundwork; the two ingestion workers are the remaining work.
+Fields (schema + backfill): `source_type`, `external_url`, `embed_id`,
+`duration`, `width`, `height`, `fps`, `processing_status`, `thumbnail_url`.
+
+**Native producer: built** (`feature/media-pipeline`) — the ffprobe/thumbnail
+worker now produces trusted metadata + poster and drives `processing_status`.
+**Embed producer: unbuilt** — the import endpoint + UI remain the one open
+ingestion path (Phase B).

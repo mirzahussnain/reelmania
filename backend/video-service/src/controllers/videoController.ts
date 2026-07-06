@@ -9,7 +9,10 @@ import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
 import { rabbitMQService, VIDEO_EXCHANGE } from "../utils/rabbitmq";
 import { sanitizeSoftware } from "../constants/softwareVocab";
+import { sanitizeCategory, CATEGORY_SLUGS } from "../constants/categoryVocab";
 import { sanitizeHashtags, normalizeHashtag } from "../utils/hashtags";
+import { parseEmbedUrl, fetchEmbedMeta } from "../utils/embedProviders";
+import { getExploreVersion, bumpExploreVersion } from "../utils/exploreCache";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
@@ -18,9 +21,12 @@ export const getVideos = async (req: Request, res: Response) => {
         const q = req.query.q as string | undefined;
         const type = req.query.type as string | undefined;
 
-        // Redis Caching
+        // Redis Caching. The version is folded into the key so a publish/edit can
+        // invalidate every page with an O(1) counter bump (see exploreCache) rather
+        // than an O(keyspace) KEYS scan.
         const redisClient = getRedisClient();
-        const cacheKey = `explore:limit_${limit}:cursor_${cursor || 'initial'}:q_${q || 'none'}:type_${type || 'none'}`;
+        const cacheVer = await getExploreVersion(redisClient);
+        const cacheKey = `explore:v${cacheVer}:limit_${limit}:cursor_${cursor || 'initial'}:q_${q || 'none'}:type_${type || 'none'}`;
         
         try {
             const cachedData = await redisClient.get(cacheKey);
@@ -35,9 +41,10 @@ export const getVideos = async (req: Request, res: Response) => {
             logger.error({ err: cacheErr }, "Redis cache read error");
         }
 
-        // Explore only ever surfaces publicly visible videos — drafts, private
-        // (PRO) and unlisted videos must never leak into the public grid.
-        let whereClause: any = { visibility: "PUBLIC" };
+        // Explore only ever surfaces published videos — PUBLIC and fully
+        // processed. Excludes drafts/private/unlisted (visibility) and
+        // still-processing/failed uploads (processing_status). See PUBLISHED_FILTER.
+        let whereClause: any = { visibility: "PUBLIC", processing_status: "READY" };
 
         if (q) {
             if (type === "hashtag") {
@@ -46,6 +53,10 @@ export const getVideos = async (req: Request, res: Response) => {
                 whereClause.hashtags = { has: normalizeHashtag(q) };
             } else if (type === "title") {
                 whereClause.title = { contains: q, mode: 'insensitive' };
+            } else if (type === "category") {
+                // Only filter on a known category slug; ignore junk so a bad
+                // value returns the unfiltered public grid rather than nothing.
+                if (CATEGORY_SLUGS.has(q)) whereClause.category = q;
             }
         }
 
@@ -331,8 +342,24 @@ export const createVideo = async (req: Request, res: Response) => {
             height?: number;
             fps?: number;
             visibility?: "PUBLIC" | "UNLISTED" | "PRIVATE" | "DRAFT";
+            category?: string;
             software_used?: string[];
         } = metadata;
+
+        // The native wizard reviews BEFORE uploading, so createVideo is the final
+        // commit (not a bare draft). It stores the creator's metadata directly and
+        // targets the chosen visibility (default PUBLIC). The row is still UPLOADED
+        // until the worker reaches READY, and feeds require READY, so a PUBLIC video
+        // simply isn't discoverable until processed — no separate publish step.
+        const visibility = req_data.visibility ?? "PUBLIC";
+        const category = sanitizeCategory(req_data.category);
+
+        // Category is required to go public (same rule the publish endpoint applies
+        // to embeds). Drafts/unlisted/private may omit it.
+        if (visibility === "PUBLIC" && !category) {
+            fail(res, 400, "A category is required to publish");
+            return;
+        }
 
         const videoData = {
             title: req_data.title,
@@ -345,30 +372,37 @@ export const createVideo = async (req: Request, res: Response) => {
             video_url: publicUrl,
             // NATIVE upload path — embed sources come in through a separate flow.
             source_type: "NATIVE" as const,
-            thumbnail_url: req_data.thumbnail_url,
-            duration: req_data.duration,
-            width: req_data.width,
-            height: req_data.height,
-            fps: req_data.fps,
-            // No processing worker yet, so client-probed media is taken as-is and
-            // the Kine is immediately READY. When the ffprobe worker lands, set
-            // this to UPLOADED here and let the worker flip it to READY/FAILED.
-            processing_status: "READY" as const,
-            visibility: req_data.visibility ?? "PUBLIC",
+            // The worker (ADR 0002) fills the DERIVED fields; nothing trusted from
+            // the client here (they'd be spoofable to bypass PRO 4K/60 gating).
+            processing_status: "UPLOADED" as const,
+            visibility,
+            category,
             // Never trust client tags — keep only known-vocab slugs.
             software_used: sanitizeSoftware(req_data.software_used),
         };
         const result = await prisma.videos.create({ data: videoData });
 
-        // Notify other services of the new Kine. user-service increments the
-        // uploader's video_count (Creator badge / Top Creator). Fire-and-forget:
-        // a publish failure must not fail the upload the user already succeeded at.
+        // Kick off native media processing (ADR 0002): the ffprobe/thumbnail
+        // worker pulls the object off storage and writes trusted duration/
+        // width/height/fps + poster, then flips UPLOADED → READY. Fire-and-forget.
         rabbitMQService
-            .publish(VIDEO_EXCHANGE, "video.created", {
+            .publish(VIDEO_EXCHANGE, "video.uploaded", {
                 videoId: result.id,
-                uploaderId: result.uploaded_by.id,
+                fileName,
             })
-            .catch((err) => logger.error({ err }, "publish video.created failed"));
+            .catch((err) => logger.error({ err }, "publish video.uploaded failed"));
+
+        // A native upload is a commit-to-publish, so count it toward the creator
+        // now (embeds emit this at their explicit publish instead). Only when it's
+        // actually going public.
+        if (visibility === "PUBLIC") {
+            rabbitMQService
+                .publish(VIDEO_EXCHANGE, "video.created", {
+                    videoId: result.id,
+                    uploaderId: result.uploaded_by.id,
+                })
+                .catch((err) => logger.error({ err }, "publish video.created failed"));
+        }
 
         ok(res, result, undefined, "Video Created Successfully.");
         return;
@@ -388,13 +422,19 @@ export const deleteVideo = async (req: Request, res: Response) => {
             throw new Error("Video Does not exist");
         }
         
-        // Extract filename from URL (e.g. http://minio:9000/videos/filename.mp4 -> filename.mp4)
-        const parts = result.video_url.split('/');
-        const actualFileName = parts[parts.length - 1];
+        // Only NATIVE uploads own a stored file to remove. Embeds live on the
+        // provider (no video_url), so there's nothing in our bucket to delete —
+        // skip straight to removing the row.
+        let deleted = true;
+        if (result.source_type === "NATIVE" && result.video_url) {
+            // Extract filename from URL (e.g. http://minio:9000/videos/filename.mp4 -> filename.mp4)
+            const parts = result.video_url.split('/');
+            const actualFileName = parts[parts.length - 1];
 
-        const storageProvider = StorageFactory.getProvider();
-        const deleted = await storageProvider.deleteFile(actualFileName);
-        
+            const storageProvider = StorageFactory.getProvider();
+            deleted = await storageProvider.deleteFile(actualFileName);
+        }
+
         if (deleted) {
             const deleteResult = await prisma.videos.delete({ where: { id: videoId } });
             if (deleteResult) {
@@ -473,6 +513,184 @@ export const registerView = async (req: Request, res: Response) => {
         return;
     } catch (err: unknown) {
         logger.error({ err }, "registerView failed");
+        fail(res, 500, "Operation Failed", err);
+        return;
+    }
+};
+
+// Invalidate the shared explore cache so a just-published/edited video surfaces
+// on the next feed read instead of waiting out the 60s TTL. O(1) counter bump.
+const bustExploreCache = async () => {
+    await bumpExploreVersion(getRedisClient());
+};
+
+// POST /api/videos/import — the embed "Dead Asset" import (roadmap Phase B).
+// Given a provider URL, detect source + id, enrich via public oEmbed (no API
+// key), and create a DRAFT the creator then enriches (category + metadata) and
+// publishes via the wizard. Embeds carry no bytes, so there is nothing to
+// process — they land READY immediately, gated from feeds only by DRAFT.
+export const importVideo = async (req: Request, res: Response) => {
+    try {
+        const { url, uploaded_by } = req.body ?? {};
+        if (!uploaded_by?.id || !uploaded_by?.username) {
+            fail(res, 400, "uploaded_by { id, username } is required");
+            return;
+        }
+
+        const parsed = parseEmbedUrl(url);
+        if (!parsed) {
+            fail(res, 400, "Unsupported or unrecognized video URL (YouTube, Vimeo, TikTok)");
+            return;
+        }
+
+        // One import per (provider, video) — re-importing the same link returns a
+        // conflict with the existing row instead of creating a duplicate.
+        const existing = await prisma.videos.findFirst({
+            where: { source_type: parsed.source_type, embed_id: parsed.embed_id },
+            select: { id: true },
+        });
+        if (existing) {
+            fail(res, 409, "This video has already been imported");
+            return;
+        }
+
+        const meta = await fetchEmbedMeta(parsed.source_type, url);
+
+        const result = await prisma.videos.create({
+            data: {
+                title: meta.title || "Untitled import",
+                uploaded_by: {
+                    id: uploaded_by.id,
+                    username: uploaded_by.username,
+                    avatar_url: uploaded_by.avatar_url,
+                },
+                uploaded_at: new Date(),
+                hashtags: [],
+                source_type: parsed.source_type,
+                external_url: url,
+                embed_id: parsed.embed_id,
+                thumbnail_url: meta.thumbnail_url,
+                duration: meta.duration, // only Vimeo oEmbed provides it; else null
+                // Nothing to process for an embed; it's READY. Kept out of feeds by
+                // DRAFT until the creator adds a category and publishes.
+                processing_status: "READY" as const,
+                visibility: "DRAFT" as const,
+                software_used: [],
+            },
+        });
+
+        ok(res, result, undefined, "Video imported as draft");
+        return;
+    } catch (err: unknown) {
+        logger.error({ err }, "importVideo failed");
+        fail(res, 500, "Operation Failed", err);
+        return;
+    }
+};
+
+// PATCH /api/videos/:videoId — update a video's editable metadata (the wizard's
+// metadata step). Only provided fields are touched; all client input is
+// sanitized. PUBLIC is intentionally NOT settable here — publishing goes through
+// POST /:videoId/publish so the required-category rule can't be bypassed.
+export const updateVideoMetadata = async (req: Request, res: Response) => {
+    try {
+        const videoId = req.params.videoId;
+        if (!videoId || !OBJECT_ID.test(videoId)) {
+            fail(res, 400, "Valid Video Id is required");
+            return;
+        }
+
+        const body = req.body ?? {};
+        const data: Record<string, unknown> = {};
+
+        if (typeof body.title === "string") data.title = body.title;
+        if (typeof body.description === "string") data.description = body.description;
+        if ("hashtags" in body) data.hashtags = sanitizeHashtags(body.hashtags);
+        if ("software_used" in body) data.software_used = sanitizeSoftware(body.software_used);
+        if ("category" in body) data.category = sanitizeCategory(body.category) ?? null;
+        if (typeof body.visibility === "string") {
+            if (body.visibility === "PUBLIC") {
+                fail(res, 400, "Use POST /:videoId/publish to make a video public");
+                return;
+            }
+            if (["UNLISTED", "PRIVATE", "DRAFT"].includes(body.visibility)) {
+                data.visibility = body.visibility;
+            }
+        }
+
+        if (Object.keys(data).length === 0) {
+            fail(res, 400, "No updatable fields provided");
+            return;
+        }
+
+        const updated = await prisma.videos.update({ where: { id: videoId }, data });
+        await bustExploreCache();
+
+        ok(res, updated, undefined, "Video updated");
+        return;
+    } catch (err: unknown) {
+        logger.error({ err }, "updateVideoMetadata failed");
+        fail(res, 500, "Operation Failed", err);
+        return;
+    }
+};
+
+// POST /api/videos/:videoId/publish — the wizard's final step: flip a DRAFT to
+// PUBLIC. Enforces the two publish invariants: a category is required, and native
+// media must have finished processing (READY). Idempotent if already PUBLIC.
+export const publishVideo = async (req: Request, res: Response) => {
+    try {
+        const videoId = req.params.videoId;
+        if (!videoId || !OBJECT_ID.test(videoId)) {
+            fail(res, 400, "Valid Video Id is required");
+            return;
+        }
+
+        const video = await prisma.videos.findUnique({ where: { id: videoId } });
+        if (!video) {
+            fail(res, 404, "Video not found");
+            return;
+        }
+
+        if (video.visibility === "PUBLIC") {
+            ok(res, video, undefined, "Video is already public");
+            return;
+        }
+
+        // Required-at-publish (not schema-enforced, so drafts stay valid).
+        if (!video.category) {
+            fail(res, 400, "A category is required before publishing");
+            return;
+        }
+        // A native upload must have finished processing before it can go live —
+        // otherwise it would enter feeds without a thumbnail/trusted metadata.
+        // Embeds are always READY.
+        if (video.processing_status !== "READY") {
+            fail(res, 409, "Video is still processing");
+            return;
+        }
+
+        const updated = await prisma.videos.update({
+            where: { id: videoId },
+            data: { visibility: "PUBLIC" },
+        });
+
+        // First publish of a draft is when the content actually becomes real for
+        // the creator — notify so user-service counts it (native uploads that
+        // publish directly via createVideo already emit this at create time).
+        rabbitMQService
+            .publish(VIDEO_EXCHANGE, "video.created", {
+                videoId: updated.id,
+                uploaderId: updated.uploaded_by.id,
+            })
+            .catch((err) => logger.error({ err }, "publish video.created (on publish) failed"));
+
+        await bustExploreCache();
+
+        ok(res, updated, undefined, "Video published");
+        return;
+    } catch (err: unknown) {
+        logger.error({ err }, "publishVideo failed");
         fail(res, 500, "Operation Failed", err);
         return;
     }

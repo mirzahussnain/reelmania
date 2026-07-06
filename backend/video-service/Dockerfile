@@ -8,6 +8,12 @@ RUN npm run build
 
 FROM node:24-alpine
 WORKDIR /src
+# The media-processing worker shells out to ffmpeg/ffprobe. Use the musl-native
+# apk build rather than the glibc `ffmpeg-static` binaries (which can't run on
+# Alpine); mediaProbe honours these paths via FFMPEG_PATH/FFPROBE_PATH.
+RUN apk add --no-cache ffmpeg
+ENV FFMPEG_PATH=/usr/bin/ffmpeg
+ENV FFPROBE_PATH=/usr/bin/ffprobe
 # Set environment variables for runtime
 ENV VIDEO_DATABASE_URL=${VIDEO_DATABASE_URL}
 ENV VIDEO_SERVICE_PORT=${VIDEO_SERVICE_PORT}

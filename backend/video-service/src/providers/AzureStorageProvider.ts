@@ -54,4 +54,19 @@ export class AzureStorageProvider implements IStorageProvider {
     const blobClient = containerClient.getBlobClient(fileName);
     return blobClient.url;
   }
+
+  async downloadToFile(fileName: string, destPath: string): Promise<void> {
+    const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
+    const blobClient = containerClient.getBlobClient(fileName);
+    await blobClient.downloadToFile(destPath);
+  }
+
+  async uploadFile(fileName: string, filePath: string, contentType: string): Promise<string> {
+    const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
+    const blockBlobClient = containerClient.getBlockBlobClient(fileName);
+    await blockBlobClient.uploadFile(filePath, {
+      blobHTTPHeaders: { blobContentType: contentType },
+    });
+    return blockBlobClient.url;
+  }
 }

@@ -9,6 +9,8 @@ import { initializeSocketServer } from "../src/utils/socketServer"
 import { setSocketInstance } from "./controllers/socketController"
 import { connectRedis } from "../src/utils/redis";
 import { startUserEventsWorker } from "./workers/userEventsWorker";
+import { startMediaProcessingWorker } from "./workers/mediaProcessingWorker";
+import { startDraftReaper } from "./workers/draftReaper";
 import { pinoHttp } from "pino-http"
 import { logger } from "./utils/logger"
 
@@ -20,7 +22,7 @@ app.use(express.json());
 app.use(clerkMiddleware())
 app.use(cors({
     origin: origin_url, // Replace with your frontend URL
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true, // If you're using cookies or authentication
   }));
 
@@ -48,5 +50,7 @@ setSocketInstance(io);
 httpServer.listen(PORT,()=>{
     logger.info(`Server is running at PORT:${PORT}`)
     startUserEventsWorker().catch(err => logger.error({ err }, "UserEventsWorker failed to start"));
+    startMediaProcessingWorker().catch(err => logger.error({ err }, "MediaProcessingWorker failed to start"));
+    startDraftReaper();
 })
 

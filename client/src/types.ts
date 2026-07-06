@@ -68,11 +68,13 @@ export type VideoType={
   source_type?:VideoSourceType
   external_url?:string
   embed_id?:string
+  category?:string
   software_used?:string[]
   duration?:number
   width?:number
   height?:number
   fps?:number
+  file_size_bytes?:number
   processing_status?:VideoProcessingStatus
   visibility?:VideoVisibility
 }

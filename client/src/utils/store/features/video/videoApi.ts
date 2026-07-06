@@ -16,6 +16,11 @@ import type {
     MessageResponse,
     UploadVideoMetadata,
     RegisterViewResponse,
+    ImportVideoRequest,
+    ImportVideoResponse,
+    VideoMetadataPatch,
+    UpdateVideoResponse,
+    PublishVideoResponse,
 } from "../../../../shared/contracts/api";
 
 const BASE_URL=import.meta.env.VITE_VIDEO_SERVICE_URL as string;
@@ -178,6 +183,35 @@ export const videoApi = createApi({
               },
               invalidatesTags: ['Likes']
             }),
+        // Import an external video (YouTube/Vimeo/TikTok) as a DRAFT embed.
+        importVideo: builder.mutation<ImportVideoResponse, { body: ImportVideoRequest; token: string | null }>({
+            query: ({ body, token }) => ({
+                url: "/import",
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body,
+            }),
+            invalidatesTags: ["Videos"],
+        }),
+        // Update a draft/video's editable metadata (wizard metadata step).
+        updateVideoMetadata: builder.mutation<UpdateVideoResponse, { videoId: string; patch: VideoMetadataPatch; token: string | null }>({
+            query: ({ videoId, patch, token }) => ({
+                url: `/${videoId}`,
+                method: "PATCH",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: patch,
+            }),
+            invalidatesTags: ["Videos"],
+        }),
+        // Publish a DRAFT (wizard final step). Server enforces category + READY.
+        publishVideo: builder.mutation<PublishVideoResponse, { videoId: string; token: string | null }>({
+            query: ({ videoId, token }) => ({
+                url: `/${videoId}/publish`,
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            }),
+            invalidatesTags: ["Videos"],
+        }),
         // Register a view. Deduped server-side per (video, viewer); auth-optional.
         // Fire-and-forget from the player — we don't invalidate the feed on a view.
         registerView: builder.mutation<RegisterViewResponse, { videoId: string; viewerId?: string }>({
@@ -219,7 +253,10 @@ export const {
    useLazyFetchFollowingVideosQuery,
    useLazyGetCommentsByVideoIdQuery,
    useLazyGetLikesByVideoIdQuery,
-   useRegisterViewMutation
+   useRegisterViewMutation,
+   useImportVideoMutation,
+   useUpdateVideoMetadataMutation,
+   usePublishVideoMutation
 } = videoApi
 
 export default videoApi.reducer;

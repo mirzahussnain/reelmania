@@ -3,7 +3,7 @@
 > A living snapshot of where the app actually is, to sit alongside the aspirational
 > `KINETIX_PRODUCTION_ROADMAP.md`. Update this when a phase/branch lands.
 
-**As of:** 2026-07-05
+**As of:** 2026-07-06
 
 ## The honest one-liner
 
@@ -38,8 +38,9 @@ Recently expanded from a bare upload record into a proper media model:
 
 `hashtags, title, description, uploaded_at, updated_at,
 uploaded_by{id,username,avatar_url}, video_url, thumbnail_url, source_type,
-external_url, embed_id, software_used[], duration, width, height, fps,
-processing_status, visibility, commentCount, likeCount, view_count` + Comment/Like.
+external_url, embed_id, category, software_used[], duration, width, height, fps,
+file_size_bytes, processing_status, visibility, commentCount, likeCount,
+view_count` + Comment/Like.
 
 Shipped on this branch:
 - **Metadata foundation:** description, thumbnail_url, duration/width/height, fps,
@@ -52,18 +53,47 @@ Shipped on this branch:
 - **Studio & Radar:** `source_type` (+ `external_url`/`embed_id` embed
   groundwork), `software_used[]` with a controlled vocabulary (client+server),
   indexed for The Radar.
-- **processing_status** enum — landing spot for the media pipeline (see ADR 0002).
+- **Discovery taxonomy:** single controlled-vocab `category` (primary discipline,
+  client+server vocab, indexed; explore supports `type=category`) — the top-level
+  discovery axis, distinct from hashtags and software_used.
+- **processing_status** enum — now driven by the native media pipeline: uploads
+  land `UPLOADED` and publish `video.uploaded`; the ffprobe/thumbnail worker
+  (`mediaProcessingWorker`) writes trusted `duration/width/height/fps` +
+  `thumbnail_url` and flips `PROCESSING → READY` (or `FAILED` → DLQ). See ADR 0002.
 - **Hashtag normalization** — shared client/server sanitizer (split on
   whitespace/commas, strip `#`, lowercase, dedupe, cap), applied at write, search,
   client submit, and a data backfill.
 
 ## Known gaps / deferred (intentional)
 
-- **Native ffprobe/thumbnail worker** — `duration/width/height/fps` are currently
-  **client-probed (spoofable)** and `thumbnail_url` has no producer.
-  **Do not wire PRO gating to these until the worker lands.** (ADR 0002)
-- **Embed import endpoint + UI** — fields exist; ingest flow unbuilt (Phase B).
-  Native vs. embed lifecycle documented in **ADR 0002**.
+- **DRAFT → publish flow** — **built (manual)** on `feature/media-pipeline`. Both
+  ingestion paths land a DRAFT and end at an explicit publish, sharing `WizardBits`
+  + the Review step, but ordered per source:
+  - **Native (3 steps, upload deferred to the end):** Select file (local blob,
+    no upload) → Details (title + category required) → Review (feed-style preview:
+    the clip + entered metadata/tags) → **Upload** is the only network action:
+    presign → PUT → `createVideo` persists the metadata **PUBLIC** (`UPLOADED`).
+    Nothing hits storage until the final button, so Back is free and abandoning
+    leaves nothing behind — **no native drafts**. The worker fills the DERIVED
+    fields (duration/dims/fps/thumbnail/size); feeds require READY, so a PUBLIC
+    video simply isn't discoverable until processed. `video.created` is emitted at
+    create (for PUBLIC), counting it toward the creator.
+  - **Embed (3 steps):** `POST /import` (URL → provider detect → oEmbed enrich →
+    READY DRAFT — the create must come first to learn the video) → Details (`PATCH`
+    adds category etc.) → Review → `POST /:id/publish` (DRAFT→PUBLIC,
+    category-required; emits `video.created` on publish).
+  - `PATCH /:id` backs embed enrich + editing an existing draft. Drafts (embeds
+    or unpublished) live in the Manage Videos Drafts tab.
+  - Feeds gate on PUBLIC **+** READY, so drafts/processing/failed never surface.
+  - **Drafts** live in a Manage Videos tab (resume via a Details→Review modal, or
+    delete). Abandoned drafts are swept by a **30-day reaper** (`DRAFT_TTL_DAYS`)
+    that also deletes the storage object + emits `video.deleted` — in-process
+    daily (Redis-locked) or via `npm run reap:drafts` (k8s CronJob).
+  - **File-size** is enforced authoritatively in the media worker (oversized →
+    FAILED + object deleted); the client cap is UX-only.
+  **Still open:** the cron auto-fetch job (connected-channel ingestion) and the
+  asset-listing step (marketplace-service, schema-only). Native vs. embed
+  processing lifecycle documented in **ADR 0002**.
 - **C-Score scoring job** — schema implemented; nightly worker not built
   (`C_SCORE_CALCULATION.md`).
 - **Velocity trending** — current trending is all-time `likeCount`; velocity

@@ -49,12 +49,20 @@ model videos {
   uploaded_at  DateTime
   updated_at   DateTime?  @updatedAt
   uploaded_by  Uploader
-  video_url    String
+  // The stored native file. Present for NATIVE; NULL for embeds (which live on
+  // the provider via external_url + embed_id). A row must have EITHER video_url
+  // (NATIVE) OR external_url + embed_id (embed) — an XOR invariant Prisma can't
+  // express, so it's enforced at write time per source_type.
+  video_url    String?
   thumbnail_url String?
   // Source of the media. NATIVE uses video_url; embeds use external_url/embed_id.
   source_type  SourceType @default(NATIVE)
   external_url String?    // embed source URL (YouTube/TikTok/Vimeo)
   embed_id     String?    // provider video id, for building the player iframe
+  // Primary discipline of the Kine — a SINGLE controlled-vocab slug (see
+  // categoryVocab), the top-level axis for discovery/The Radar. Distinct from
+  // hashtags (freeform-ish) and software_used (tools). Indexed below.
+  category     String?
   // Tools this specific Kine was made with. Controlled vocab (see softwareVocab)
   // so The Radar can filter/match on it. Multikey-indexed below.
   software_used String[]
@@ -65,6 +73,10 @@ model videos {
   width        Int?
   height       Int?
   fps          Int?       // frames/sec — the "/60" half of the 4K/60 PRO gate
+  // Byte size of the stored native file, stat'd by the worker (trusted, unlike a
+  // client-reported size). Feeds storage accounting + PRO upload-size limits.
+  // Int caps at ~2GB, which is safe for short-form Kines; null for embeds.
+  file_size_bytes Int?
   processing_status ProcessingStatus @default(READY)
   visibility   Visibility @default(PUBLIC)
   commentCount Int        @default(0)
@@ -81,6 +93,11 @@ model videos {
   @@index([visibility, uploaded_at(sort: Desc)])
   // The Radar filters/matches Kines by the tools they were made with.
   @@index([software_used])
+  // Discovery filters Kines by their primary discipline, newest-first.
+  @@index([category, uploaded_at(sort: Desc)])
+  // Embed import dedupes on (provider, provider-id) before creating a row;
+  // without this that lookup is a full collection scan.
+  @@index([source_type, embed_id])
 }
 
 model Comment {

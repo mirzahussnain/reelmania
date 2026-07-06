@@ -11,6 +11,7 @@ import { useCurrentUser } from "../hooks/useCurrentUser";
 import { toast } from "react-toastify";
 import { AUTH_REQUIRED } from "../constants/messages";
 import { SOFTWARE_LABELS } from "../constants/softwareVocab";
+import { CATEGORY_LABELS } from "../constants/categoryVocab";
 
 interface VideoInfoOverlayProps {
   video: VideoType;
@@ -104,6 +105,15 @@ export const VideoInfoOverlay: React.FC<VideoInfoOverlayProps> = ({ video }) => 
             )}>
               {video.description && (
                 <p className="text-xs drop-shadow-md mb-2 whitespace-pre-line">{video.description}</p>
+              )}
+
+              {/* Primary discipline — the top-level discovery axis. */}
+              {video.category && (
+                <div className="mb-2">
+                  <span className="bg-on-media/15 border border-on-media/20 text-on-media font-semibold text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full drop-shadow-md">
+                    {CATEGORY_LABELS[video.category] ?? video.category}
+                  </span>
+                </div>
               )}
 
               {/* Made with — the tools this Kine was built in (The Radar signal). */}

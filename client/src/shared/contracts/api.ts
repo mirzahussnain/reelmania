@@ -86,11 +86,34 @@ export interface UploadVideoMetadata {
   height?: number;
   fps?: number;
   visibility?: VideoVisibility;
+  category?: string;
   software_used?: string[];
 }
 
 /** Result of persisting video metadata. */
 export type CreateVideoResponse = ApiResponse<VideoType>;
+
+/** Import an external video (YouTube/Vimeo/TikTok) as a DRAFT embed. */
+export interface ImportVideoRequest {
+  url: string;
+  uploaded_by: { id: string; username: string; avatar_url?: string };
+}
+
+/** Editable metadata patch for a video/draft (the wizard's metadata step).
+ *  `visibility` here can be UNLISTED/PRIVATE/DRAFT — going PUBLIC is a publish. */
+export interface VideoMetadataPatch {
+  title?: string;
+  description?: string;
+  hashtags?: string[];
+  category?: string;
+  software_used?: string[];
+  visibility?: Exclude<VideoVisibility, "PUBLIC">;
+}
+
+/** Import / patch / publish all return the single (updated) video. */
+export type ImportVideoResponse = ApiResponse<VideoType>;
+export type UpdateVideoResponse = ApiResponse<VideoType>;
+export type PublishVideoResponse = ApiResponse<VideoType>;
 
 /** Result of registering a view (deduped server-side). */
 export type RegisterViewResponse = ApiResponse<{

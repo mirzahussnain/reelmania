@@ -67,6 +67,9 @@ describe("getFollowingFeed", () => {
     expect(followingMock).not.toHaveBeenCalled();
     const where = prismaMock.videos.findMany.mock.calls[0][0].where;
     expect(where.uploaded_by.is.id.in).toEqual(["a", "b"]);
+    // Only published videos surface — PUBLIC and fully processed.
+    expect(where.visibility).toBe("PUBLIC");
+    expect(where.processing_status).toBe("READY");
   });
 
   it("caps the $in at FOLLOWING_FANOUT_CAP (1000)", async () => {
