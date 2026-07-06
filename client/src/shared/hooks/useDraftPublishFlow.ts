@@ -38,7 +38,7 @@ export const useDraftPublishFlow = (draft: VideoType | null, onDone?: () => void
 
   const handleSaveMetadata = async () => {
     try {
-      if (!draft || !token) throw new Error("Nothing to save.");
+      if (!draft?.id || !token) throw new Error("Nothing to save.");
       if (!title.trim()) throw new Error("Title is required.");
       if (!sanitizeCategory(category)) throw new Error("Pick a category to continue.");
       await updateMeta({
@@ -60,7 +60,7 @@ export const useDraftPublishFlow = (draft: VideoType | null, onDone?: () => void
 
   const handlePublish = async () => {
     try {
-      if (!draft || !token) throw new Error("Nothing to publish.");
+      if (!draft?.id || !token) throw new Error("Nothing to publish.");
       if (!isReady) throw new Error("Still processing — hang on a moment.");
       await publishVideo({ videoId: draft.id, token }).unwrap();
       toast.success("Published!");

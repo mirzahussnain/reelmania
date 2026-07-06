@@ -77,7 +77,7 @@ export const useEmbedPublishFlow = (onDone?: () => void) => {
 
   const handleSaveMetadata = async () => {
     try {
-      if (!draft || !token) throw new Error("Nothing to save.");
+      if (!draft?.id || !token) throw new Error("Nothing to save.");
       if (!title.trim()) throw new Error("Title is required.");
       if (!sanitizeCategory(category)) throw new Error("Pick a category to continue.");
 
@@ -102,7 +102,7 @@ export const useEmbedPublishFlow = (onDone?: () => void) => {
 
   const handlePublish = async () => {
     try {
-      if (!draft || !token) throw new Error("Nothing to publish.");
+      if (!draft?.id || !token) throw new Error("Nothing to publish.");
       await publishVideo({ videoId: draft.id, token }).unwrap();
       toast.success("Published!");
       reset();
