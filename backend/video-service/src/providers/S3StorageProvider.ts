@@ -1,6 +1,10 @@
-import { S3Client, DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, DeleteObjectCommand, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { IStorageProvider } from "../interfaces/IStorageProvider";
+import { createWriteStream } from "fs";
+import { readFile } from "fs/promises";
+import { pipeline } from "stream/promises";
+import { Readable } from "stream";
 
 export class S3StorageProvider implements IStorageProvider {
   private s3Client: S3Client;
@@ -68,5 +72,28 @@ export class S3StorageProvider implements IStorageProvider {
     // For Cloudflare R2 / S3 with public access or MinIO public policy
     const endpoint = process.env.S3_PUBLIC_DOMAIN || `${process.env.S3_ENDPOINT}/${this.bucketName}`;
     return `${endpoint}/${fileName}`;
+  }
+
+  async downloadToFile(fileName: string, destPath: string): Promise<void> {
+    // Use the internal (server-to-MinIO) client — the worker runs inside the
+    // network and must not depend on the public presign host being reachable.
+    const command = new GetObjectCommand({ Bucket: this.bucketName, Key: fileName });
+    const response = await this.s3Client.send(command);
+    if (!response.Body) {
+      throw new Error(`Empty body downloading ${fileName}`);
+    }
+    await pipeline(response.Body as Readable, createWriteStream(destPath));
+  }
+
+  async uploadFile(fileName: string, filePath: string, contentType: string): Promise<string> {
+    const body = await readFile(filePath);
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: fileName,
+      Body: body,
+      ContentType: contentType,
+    });
+    await this.s3Client.send(command);
+    return this.getPublicUrl(fileName);
   }
 }
