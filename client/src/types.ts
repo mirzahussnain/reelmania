@@ -48,20 +48,39 @@ export type LoaderType = {
 };
 
 
+export type VideoVisibility = "PUBLIC" | "UNLISTED" | "PRIVATE" | "DRAFT";
+export type VideoSourceType = "NATIVE" | "YOUTUBE" | "TIKTOK" | "VIMEO";
+export type VideoProcessingStatus = "UPLOADED" | "PROCESSING" | "READY" | "FAILED";
+
 export type VideoType={
   id? : string,
   likeCount: number,
   commentCount: number,
+  view_count?: number,
   hashtags:string[]
   title:string
+  description?:string
   uploaded_at:string
+  updated_at?:string
   uploaded_by:VideoUploader
   video_url?:string
+  thumbnail_url?:string
+  source_type?:VideoSourceType
+  external_url?:string
+  embed_id?:string
+  software_used?:string[]
+  duration?:number
+  width?:number
+  height?:number
+  fps?:number
+  processing_status?:VideoProcessingStatus
+  visibility?:VideoVisibility
 }
 
 export type VideoUploader={
   id:string,
   username:string,
+  avatar_url?:string,
 }
 
 export type VideoLikes={

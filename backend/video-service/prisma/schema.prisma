@@ -8,26 +8,79 @@ datasource db {
 }
 
 type Uploader {
-  id       String
-  username String
+  id         String
+  username   String
+  avatar_url String?
+}
+
+enum Visibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+  DRAFT
+}
+
+// Where the Kine's media comes from. NATIVE = we own the file in our bucket
+// (video_url). The embed sources point at an external provider via external_url
+// + embed_id and are the free-tier "Dead Asset" import path (roadmap Phase B).
+enum SourceType {
+  NATIVE
+  YOUTUBE
+  TIKTOK
+  VIMEO
+}
+
+// Media-processing lifecycle. NATIVE uploads land as UPLOADED and a post-upload
+// worker (ffprobe → duration/width/height/fps + poster frame) flips them to
+// READY (or FAILED). Trusted media metadata is only guaranteed once READY — this
+// is what PRO tier gating (4K/60) reads. Embeds are READY immediately.
+enum ProcessingStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
 }
 
 model videos {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  hashtags    String[]
-  title       String
-  uploaded_at DateTime
-  uploaded_by Uploader
-  video_url   String
-  commentCount Int      @default(0)
-  likeCount    Int      @default(0)
-  comments    Comment[]
-  likes       Like[]
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  hashtags     String[]
+  title        String
+  description  String?
+  uploaded_at  DateTime
+  updated_at   DateTime?  @updatedAt
+  uploaded_by  Uploader
+  video_url    String
+  thumbnail_url String?
+  // Source of the media. NATIVE uses video_url; embeds use external_url/embed_id.
+  source_type  SourceType @default(NATIVE)
+  external_url String?    // embed source URL (YouTube/TikTok/Vimeo)
+  embed_id     String?    // provider video id, for building the player iframe
+  // Tools this specific Kine was made with. Controlled vocab (see softwareVocab)
+  // so The Radar can filter/match on it. Multikey-indexed below.
+  software_used String[]
+  // Media metadata — powers PRO tier gating (4K/60 uploads) and player UI.
+  // Extracted server-side (ffprobe) once processing_status is READY; the client
+  // must never be trusted for these since they gate paid limits.
+  duration     Int?       // seconds
+  width        Int?
+  height       Int?
+  fps          Int?       // frames/sec — the "/60" half of the 4K/60 PRO gate
+  processing_status ProcessingStatus @default(READY)
+  visibility   Visibility @default(PUBLIC)
+  commentCount Int        @default(0)
+  likeCount    Int        @default(0)
+  view_count   Int        @default(0)
+  comments     Comment[]
+  likes        Like[]
 
   @@index([uploaded_at(sort: Desc), id])
   @@index([hashtags])
   @@index([uploaded_by.id, uploaded_at(sort: Desc)])
   @@index([likeCount(sort: Desc)])
+  // Feeds/explore filter to publicly visible videos; index keeps that cheap.
+  @@index([visibility, uploaded_at(sort: Desc)])
+  // The Radar filters/matches Kines by the tools they were made with.
+  @@index([software_used])
 }
 
 model Comment {

@@ -24,6 +24,7 @@ const getTrendingVideoIds = async (redisClient: any): Promise<string[]> => {
     }
 
     const trending = await prisma.videos.findMany({
+        where: { visibility: "PUBLIC" },
         orderBy: { likeCount: "desc" },
         take: 50,
         select: { id: true },
@@ -105,6 +106,7 @@ const generateFeedForUser = async (userId: string, redisClient: any, feedKey: st
 
             const recommended = await prisma.videos.findMany({
                 where: {
+                    visibility: "PUBLIC",
                     hashtags: { hasSome: topHashtags },
                     id: { notIn: interactedIds }
                 },
@@ -213,7 +215,10 @@ export const getFollowingFeed = async (req: Request, res: Response) => {
         const followingIds = allFollowingIds.slice(0, FOLLOWING_FANOUT_CAP);
 
         const videos = await prisma.videos.findMany({
-            where: { uploaded_by: { is: { id: { in: followingIds } } } },
+            where: {
+                visibility: "PUBLIC",
+                uploaded_by: { is: { id: { in: followingIds } } },
+            },
             // Composite sort: uploaded_at isn't unique, so id is the tiebreaker.
             // Without it, ties across page boundaries skip/duplicate items. Backed
             // by @@index([uploaded_at desc, id]).

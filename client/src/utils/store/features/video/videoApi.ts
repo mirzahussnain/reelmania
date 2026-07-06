@@ -15,6 +15,7 @@ import type {
     CreateVideoResponse,
     MessageResponse,
     UploadVideoMetadata,
+    RegisterViewResponse,
 } from "../../../../shared/contracts/api";
 
 const BASE_URL=import.meta.env.VITE_VIDEO_SERVICE_URL as string;
@@ -177,6 +178,16 @@ export const videoApi = createApi({
               },
               invalidatesTags: ['Likes']
             }),
+        // Register a view. Deduped server-side per (video, viewer); auth-optional.
+        // Fire-and-forget from the player — we don't invalidate the feed on a view.
+        registerView: builder.mutation<RegisterViewResponse, { videoId: string; viewerId?: string }>({
+            query: ({ videoId, viewerId }) => ({
+                url: `/${videoId}/view`,
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: viewerId ? { viewerId } : {},
+            }),
+        }),
         fetchSasToken: builder.query<MessageResponse, string | null>({
             query: (token) => ({
                 url: "/generate/sas",
@@ -207,7 +218,8 @@ export const {
    useLazyFetchForYouVideosQuery,
    useLazyFetchFollowingVideosQuery,
    useLazyGetCommentsByVideoIdQuery,
-   useLazyGetLikesByVideoIdQuery
+   useLazyGetLikesByVideoIdQuery,
+   useRegisterViewMutation
 } = videoApi
 
 export default videoApi.reducer;

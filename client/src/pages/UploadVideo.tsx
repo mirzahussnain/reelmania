@@ -5,6 +5,7 @@ import { MutatingDots } from "react-loader-spinner";
 import { useVideoUpload } from "../shared/hooks/useVideoUpload";
 import { cn } from "../shared/utils/cn";
 import { Button } from "../shared/components/ui/Button";
+import { SOFTWARE_VOCAB } from "../shared/constants/softwareVocab";
 
 type Props = {
   isOpen: boolean;
@@ -15,6 +16,12 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
   const {
     title,
     setTitle,
+    description,
+    setDescription,
+    visibility,
+    setVisibility,
+    softwareUsed,
+    setSoftwareUsed,
     hashtags,
     setHashtags,
     fileURL,
@@ -130,6 +137,20 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
               </div>
 
               <div className="w-full">
+                <label className="block text-on-surface font-semibold text-sm mb-2" htmlFor="description">
+                  Description <span className="text-on-surface-variant font-normal text-xs">(optional)</span>
+                </label>
+                <textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="w-full bg-surface-container-lowest border border-hairline/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:glow-primary transition-all resize-none"
+                  placeholder="What's this Kine about?"
+                />
+              </div>
+
+              <div className="w-full">
                 <label className="block text-on-surface font-semibold text-sm mb-2" htmlFor="hashtags">
                   Hashtags <span className="text-on-surface-variant font-normal text-xs">(comma separated)</span>
                 </label>
@@ -141,6 +162,55 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
                   className="w-full bg-surface-container-lowest border border-hairline/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:glow-primary transition-all"
                   placeholder="gaming, lifestyle, comedy"
                 />
+              </div>
+
+              <div className="w-full">
+                <label className="block text-on-surface font-semibold text-sm mb-2" htmlFor="visibility">
+                  Visibility
+                </label>
+                <select
+                  id="visibility"
+                  value={visibility}
+                  onChange={(e) => setVisibility(e.target.value as typeof visibility)}
+                  className="w-full bg-surface-container-lowest border border-hairline/10 rounded-lg py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:glow-primary transition-all"
+                >
+                  <option value="PUBLIC">Public — anyone can discover it</option>
+                  <option value="UNLISTED">Unlisted — only people with the link</option>
+                  <option value="PRIVATE">Private — only you</option>
+                  <option value="DRAFT">Draft — save without publishing</option>
+                </select>
+              </div>
+
+              <div className="w-full">
+                <label className="block text-on-surface font-semibold text-sm mb-2">
+                  Made with <span className="text-on-surface-variant font-normal text-xs">(tools — powers The Radar)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {SOFTWARE_VOCAB.map((tool) => {
+                    const selected = softwareUsed.includes(tool.slug);
+                    return (
+                      <button
+                        key={tool.slug}
+                        type="button"
+                        onClick={() =>
+                          setSoftwareUsed(
+                            selected
+                              ? softwareUsed.filter((s) => s !== tool.slug)
+                              : [...softwareUsed, tool.slug]
+                          )
+                        }
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                          selected
+                            ? "bg-primary/15 border-primary text-primary glow-primary-sm"
+                            : "bg-surface-container-lowest border-hairline/10 text-on-surface-variant hover:border-primary/40"
+                        )}
+                      >
+                        {tool.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
             </div>

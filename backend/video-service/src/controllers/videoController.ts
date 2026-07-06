@@ -8,6 +8,8 @@ import { shuffleArray } from "../utils/shuffleArray";
 import { ok, fail } from "../utils/http";
 import { logger } from "../utils/logger";
 import { rabbitMQService, VIDEO_EXCHANGE } from "../utils/rabbitmq";
+import { sanitizeSoftware } from "../constants/softwareVocab";
+import { sanitizeHashtags, normalizeHashtag } from "../utils/hashtags";
 
 export const getVideos = async (req: Request, res: Response) => {
     try {
@@ -33,22 +35,17 @@ export const getVideos = async (req: Request, res: Response) => {
             logger.error({ err: cacheErr }, "Redis cache read error");
         }
 
-        let whereClause: any = {};
+        // Explore only ever surfaces publicly visible videos — drafts, private
+        // (PRO) and unlisted videos must never leak into the public grid.
+        let whereClause: any = { visibility: "PUBLIC" };
 
         if (q) {
             if (type === "hashtag") {
-                whereClause = {
-                    hashtags: {
-                        has: q
-                    }
-                };
+                // Tags are stored normalized, so normalize the query the same way
+                // ("#Gaming" / "Gaming" both match stored "gaming").
+                whereClause.hashtags = { has: normalizeHashtag(q) };
             } else if (type === "title") {
-                whereClause = {
-                    title: {
-                        contains: q,
-                        mode: 'insensitive'
-                    }
-                };
+                whereClause.title = { contains: q, mode: 'insensitive' };
             }
         }
 
@@ -324,17 +321,42 @@ export const createVideo = async (req: Request, res: Response) => {
 
         const req_data: {
             title: string;
-            uploaded_by: { id: string; username: string };
+            description?: string;
+            uploaded_by: { id: string; username: string; avatar_url?: string };
             uploaded_at: Date;
             hashtags: string[];
+            thumbnail_url?: string;
+            duration?: number;
+            width?: number;
+            height?: number;
+            fps?: number;
+            visibility?: "PUBLIC" | "UNLISTED" | "PRIVATE" | "DRAFT";
+            software_used?: string[];
         } = metadata;
 
-        const videoData = { 
+        const videoData = {
             title: req_data.title,
+            description: req_data.description,
             uploaded_by: req_data.uploaded_by,
             uploaded_at: req_data.uploaded_at,
-            hashtags: req_data.hashtags,
-            video_url: publicUrl 
+            // Never trust client tags — normalize/dedupe/cap so the feed's
+            // hashtag weighting and explore's exact-match search stay consistent.
+            hashtags: sanitizeHashtags(req_data.hashtags),
+            video_url: publicUrl,
+            // NATIVE upload path — embed sources come in through a separate flow.
+            source_type: "NATIVE" as const,
+            thumbnail_url: req_data.thumbnail_url,
+            duration: req_data.duration,
+            width: req_data.width,
+            height: req_data.height,
+            fps: req_data.fps,
+            // No processing worker yet, so client-probed media is taken as-is and
+            // the Kine is immediately READY. When the ffprobe worker lands, set
+            // this to UPLOADED here and let the worker flip it to READY/FAILED.
+            processing_status: "READY" as const,
+            visibility: req_data.visibility ?? "PUBLIC",
+            // Never trust client tags — keep only known-vocab slugs.
+            software_used: sanitizeSoftware(req_data.software_used),
         };
         const result = await prisma.videos.create({ data: videoData });
 
@@ -395,6 +417,63 @@ export const deleteVideo = async (req: Request, res: Response) => {
         }
     } catch (err: unknown) {
         fail(res, 500, "Video could not be deleted", err);
+        return;
+    }
+};
+
+// POST /api/videos/:videoId/view — register a view.
+// Deduped per (video, viewer) for a short window via Redis so a single watcher
+// re-looping the clip can't inflate the count. viewer = userId when signed in,
+// else the client-supplied anonymous id. view_count feeds trending + C-Score
+// ("engagement on uploads", roadmap §5), so it must be a real signal, not spam.
+const VIEW_DEDUPE_TTL = 60 * 60; // 1h
+
+export const registerView = async (req: Request, res: Response) => {
+    try {
+        const videoId = req?.params?.videoId;
+        if (!videoId || !OBJECT_ID.test(videoId)) {
+            fail(res, 400, "Valid Video Id is required");
+            return;
+        }
+
+        const viewer =
+            (req.body?.viewerId as string | undefined) ||
+            req.ip ||
+            "anon";
+
+        const redisClient = getRedisClient();
+        const dedupeKey = `view:${videoId}:${viewer}`;
+
+        let firstView = true;
+        try {
+            // NX set: only the first viewer in the window wins.
+            firstView =
+                (await redisClient.set(dedupeKey, "1", {
+                    NX: true,
+                    EX: VIEW_DEDUPE_TTL,
+                })) === "OK";
+        } catch (cacheErr) {
+            // If Redis is down we still count — better a slightly noisy signal
+            // than a lost one. (View inflation risk is bounded by client behavior.)
+            logger.error({ err: cacheErr }, "View dedupe cache error");
+        }
+
+        if (!firstView) {
+            ok(res, { counted: false }, undefined, "View already counted");
+            return;
+        }
+
+        const updated = await prisma.videos.update({
+            where: { id: videoId },
+            data: { view_count: { increment: 1 } },
+            select: { view_count: true },
+        });
+
+        ok(res, { counted: true, view_count: updated.view_count }, undefined, "View registered");
+        return;
+    } catch (err: unknown) {
+        logger.error({ err }, "registerView failed");
+        fail(res, 500, "Operation Failed", err);
         return;
     }
 };

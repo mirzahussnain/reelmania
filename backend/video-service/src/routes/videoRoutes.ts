@@ -1,6 +1,6 @@
 import express from "express";
 
-import {addNewComment, createVideo, deleteVideo, getCommentsByVideoId, getLikesByVideoId, getUserVideos, getVideoById, getVideos, getVideosBatch, updateLikes, generateUploadUrl} from "../controllers/videoController";
+import {addNewComment, createVideo, deleteVideo, getCommentsByVideoId, getLikesByVideoId, getUserVideos, getVideoById, getVideos, getVideosBatch, updateLikes, generateUploadUrl, registerView} from "../controllers/videoController";
 import { authMiddleware } from "../middelwares/authMiddleware";
 
 import { getForYouFeed, getFollowingFeed } from "../controllers/feedController";
@@ -24,6 +24,7 @@ videoRouter.get("/:videoId",getVideoById)
 videoRouter.get("/:videoId/likes",getLikesByVideoId);
 videoRouter.get("/:videoId/comments",getCommentsByVideoId)
 
+videoRouter.post("/:videoId/view",registerView) // register a view (deduped, auth-optional)
 videoRouter.post("/:videoId/comments",authMiddleware,addNewComment) //add new comment
 videoRouter.put("/:videoId/likes",authMiddleware,updateLikes)
 videoRouter.delete("/:videoId",authMiddleware,deleteVideo)

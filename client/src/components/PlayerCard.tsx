@@ -4,6 +4,7 @@ import { useVideoPlayback } from "../shared/hooks/useVideoPlayback";
 import { useCustomPlayer } from "../shared/hooks/useCustomPlayer";
 import { useVideoLikes } from "../shared/hooks/useVideoLikes";
 import { useComments } from "../shared/hooks/useComments";
+import { useViewTracker } from "../shared/hooks/useViewTracker";
 import { VideoActions } from "../shared/components/VideoActions";
 import { VideoInfoOverlay } from "../shared/components/VideoInfoOverlay";
 import { VideoControlsOverlay } from "../shared/components/VideoControlsOverlay";
@@ -21,6 +22,14 @@ const PlayerCard = ({
   const { videoComments } = useComments(video);
   const [openShareModel, setOpenShareModel] = useState(false);
 
+  // Count a view only after the Kine stays on-screen for a few seconds (see
+  // useViewTracker) — not the instant it scrolls past. Anonymous viewers are
+  // deduped server-side by IP.
+  useViewTracker(videoRef as React.RefObject<HTMLElement | null>, {
+    videoId: video?.id,
+    viewerId: user?.id,
+  });
+
   return (
     <div className="relative w-full h-full lg:h-[85dvh] lg:rounded-2xl lg:flex lg:justify-center transition-all ease-in-out duration-300">
       <div className="relative w-full lg:w-auto lg:aspect-[9/16] h-full lg:rounded-2xl bg-scrim overflow-hidden glow-black group">
@@ -31,6 +40,7 @@ const PlayerCard = ({
           muted
           loop
           src={video?.video_url}
+          poster={video?.thumbnail_url}
           playsInline
         />
 
