@@ -41,7 +41,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
       isOpen={isOpen}
       onRequestClose={handleClose}
       contentLabel="Upload Video Modal"
-      className="outline-none w-full h-full lg:w-[640px] lg:h-auto lg:max-h-[85vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col overflow-hidden z-50"
+      className="outline-none w-full h-full lg:w-[640px] lg:h-auto lg:max-h-[94vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col overflow-hidden z-50"
       overlayClassName="fixed inset-0 bg-scrim/60 backdrop-blur-sm z-50"
     >
       <div className="w-full h-full bg-surface-container/90 backdrop-blur-xl border border-hairline/10 lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden">

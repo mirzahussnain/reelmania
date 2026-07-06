@@ -5,7 +5,7 @@ import {
   Stepper,
   PrimaryBtn,
   MetadataFields,
-  ReviewSummary,
+  ReviewPreview,
 } from "../shared/components/wizard/WizardBits";
 import type { VideoType } from "../types";
 
@@ -31,7 +31,7 @@ const EditDraftModal = ({ draft, isOpen, onClose, onPublished }: Props) => {
       isOpen={isOpen}
       onRequestClose={onClose}
       contentLabel="Edit Draft Modal"
-      className="outline-none w-full h-full lg:w-[640px] lg:h-auto lg:max-h-[85vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col overflow-hidden z-50"
+      className="outline-none w-full h-full lg:w-[640px] lg:h-auto lg:max-h-[94vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col overflow-hidden z-50"
       overlayClassName="fixed inset-0 bg-scrim/60 backdrop-blur-sm z-50"
     >
       <div className="w-full h-full bg-surface-container/90 backdrop-blur-xl border border-hairline/10 lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
@@ -43,9 +43,9 @@ const EditDraftModal = ({ draft, isOpen, onClose, onPublished }: Props) => {
         <div className="flex-1 overflow-y-auto p-6">
           {f.step === 2 && <MetadataFields values={values} setters={setters} previewUrl={previewUrl} />}
           {f.step === 3 && (
-            <ReviewSummary
+            <ReviewPreview
               values={values}
-              previewUrl={previewUrl}
+              posterUrl={previewUrl}
               note={
                 f.isFailed
                   ? "Processing failed — this file couldn't be read."
