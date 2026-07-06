@@ -87,7 +87,11 @@ export const MetadataFields = ({
 }: { values: MetadataValues; setters: MetadataSetters; previewUrl?: string }) => (
   <div className="flex flex-col gap-5">
     {previewUrl && (
-      <img src={previewUrl} alt="" className="w-full max-h-40 object-cover rounded-lg border border-hairline/10" />
+      <img
+        src={previewUrl}
+        alt=""
+        className="mx-auto h-[32vh] aspect-[9/16] object-cover rounded-xl border border-hairline/10 bg-scrim/40"
+      />
     )}
 
     <Field label="Title">
@@ -153,7 +157,11 @@ export const ReviewSummary = ({
 }: { values: MetadataValues; previewUrl?: string; note?: string }) => (
   <div className="flex flex-col gap-4">
     {previewUrl && (
-      <img src={previewUrl} alt="" className="w-full max-h-44 object-cover rounded-lg border border-hairline/10" />
+      <img
+        src={previewUrl}
+        alt=""
+        className="mx-auto h-[40vh] aspect-[9/16] object-cover rounded-xl border border-hairline/10 bg-scrim/40"
+      />
     )}
     <ReviewRow label="Title" value={values.title || "—"} />
     {values.description && <ReviewRow label="Description" value={values.description} />}

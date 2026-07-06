@@ -56,7 +56,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
           {f.step === 1 && (
             <div
               className={cn(
-                "w-full h-[300px] flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all cursor-pointer group",
+                "mx-auto h-[45vh] aspect-[9/16] flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all cursor-pointer group",
                 f.fileURL ? "border-transparent" : "border-primary/30 hover:border-primary hover:bg-primary/5"
               )}
               onClick={!f.fileURL ? triggerFileInput : undefined}
