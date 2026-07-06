@@ -3,7 +3,7 @@
 > A living snapshot of where the app actually is, to sit alongside the aspirational
 > `KINETIX_PRODUCTION_ROADMAP.md`. Update this when a phase/branch lands.
 
-**As of:** 2026-07-05
+**As of:** 2026-07-06
 
 ## The honest one-liner
 
@@ -52,18 +52,19 @@ Shipped on this branch:
 - **Studio & Radar:** `source_type` (+ `external_url`/`embed_id` embed
   groundwork), `software_used[]` with a controlled vocabulary (client+server),
   indexed for The Radar.
-- **processing_status** enum — landing spot for the media pipeline (see ADR 0002).
+- **processing_status** enum — now driven by the native media pipeline: uploads
+  land `UPLOADED` and publish `video.uploaded`; the ffprobe/thumbnail worker
+  (`mediaProcessingWorker`) writes trusted `duration/width/height/fps` +
+  `thumbnail_url` and flips `PROCESSING → READY` (or `FAILED` → DLQ). See ADR 0002.
 - **Hashtag normalization** — shared client/server sanitizer (split on
   whitespace/commas, strip `#`, lowercase, dedupe, cap), applied at write, search,
   client submit, and a data backfill.
 
 ## Known gaps / deferred (intentional)
 
-- **Native ffprobe/thumbnail worker** — `duration/width/height/fps` are currently
-  **client-probed (spoofable)** and `thumbnail_url` has no producer.
-  **Do not wire PRO gating to these until the worker lands.** (ADR 0002)
 - **Embed import endpoint + UI** — fields exist; ingest flow unbuilt (Phase B).
-  Native vs. embed lifecycle documented in **ADR 0002**.
+  Native vs. embed lifecycle documented in **ADR 0002**. This is now the only
+  open ingestion path — the native worker landed on `feature/media-pipeline`.
 - **C-Score scoring job** — schema implemented; nightly worker not built
   (`C_SCORE_CALCULATION.md`).
 - **Velocity trending** — current trending is all-time `likeCount`; velocity
