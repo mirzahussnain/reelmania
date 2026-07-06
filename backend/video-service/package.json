@@ -10,6 +10,7 @@
     "docker:run": "docker run -p 8001:8001 video-service",
     "prisma:deploy": "prisma migrate deploy",
     "db:backfill": "tsx prisma/backfill-video-fields.ts",
+    "reap:drafts": "tsx prisma/reap-drafts.ts",
     "healthcheck": "node dist/src/healthcheck.js",
     "test": "vitest run",
     "test:watch": "vitest"
