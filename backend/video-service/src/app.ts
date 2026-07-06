@@ -9,6 +9,7 @@ import { initializeSocketServer } from "../src/utils/socketServer"
 import { setSocketInstance } from "./controllers/socketController"
 import { connectRedis } from "../src/utils/redis";
 import { startUserEventsWorker } from "./workers/userEventsWorker";
+import { startMediaProcessingWorker } from "./workers/mediaProcessingWorker";
 import { pinoHttp } from "pino-http"
 import { logger } from "./utils/logger"
 
@@ -48,5 +49,6 @@ setSocketInstance(io);
 httpServer.listen(PORT,()=>{
     logger.info(`Server is running at PORT:${PORT}`)
     startUserEventsWorker().catch(err => logger.error({ err }, "UserEventsWorker failed to start"));
+    startMediaProcessingWorker().catch(err => logger.error({ err }, "MediaProcessingWorker failed to start"));
 })
 

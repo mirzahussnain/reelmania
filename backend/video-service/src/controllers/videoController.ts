@@ -350,10 +350,12 @@ export const createVideo = async (req: Request, res: Response) => {
             width: req_data.width,
             height: req_data.height,
             fps: req_data.fps,
-            // No processing worker yet, so client-probed media is taken as-is and
-            // the Kine is immediately READY. When the ffprobe worker lands, set
-            // this to UPLOADED here and let the worker flip it to READY/FAILED.
-            processing_status: "READY" as const,
+            // Client-probed media is stored ONLY as a provisional value for instant
+            // UX — it is NOT trusted (spoofable to bypass PRO 4K/60 gating). The row
+            // starts UPLOADED; the media-processing worker (ADR 0002) pulls the
+            // object, runs ffprobe + a poster extract, and overwrites these fields
+            // with trusted values before flipping to READY (or FAILED).
+            processing_status: "UPLOADED" as const,
             visibility: req_data.visibility ?? "PUBLIC",
             // Never trust client tags — keep only known-vocab slugs.
             software_used: sanitizeSoftware(req_data.software_used),
@@ -369,6 +371,18 @@ export const createVideo = async (req: Request, res: Response) => {
                 uploaderId: result.uploaded_by.id,
             })
             .catch((err) => logger.error({ err }, "publish video.created failed"));
+
+        // Kick off native media processing (ADR 0002): the ffprobe/thumbnail
+        // worker pulls the object off storage and writes trusted duration/
+        // width/height/fps + poster, then flips UPLOADED → READY. Fire-and-forget
+        // — a publish failure leaves the Kine UPLOADED (retryable), it doesn't
+        // fail the upload the user already completed.
+        rabbitMQService
+            .publish(VIDEO_EXCHANGE, "video.uploaded", {
+                videoId: result.id,
+                fileName,
+            })
+            .catch((err) => logger.error({ err }, "publish video.uploaded failed"));
 
         ok(res, result, undefined, "Video Created Successfully.");
         return;
