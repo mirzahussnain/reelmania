@@ -1,6 +1,6 @@
 import express from "express";
 
-import {addNewComment, createVideo, deleteVideo, getCommentsByVideoId, getLikesByVideoId, getUserVideos, getVideoById, getVideos, getVideosBatch, updateLikes, generateUploadUrl, registerView} from "../controllers/videoController";
+import {addNewComment, createVideo, deleteVideo, getCommentsByVideoId, getLikesByVideoId, getUserVideos, getVideoById, getVideos, getVideosBatch, updateLikes, generateUploadUrl, registerView, importVideo, updateVideoMetadata, publishVideo} from "../controllers/videoController";
 import { authMiddleware } from "../middelwares/authMiddleware";
 
 import { getForYouFeed, getFollowingFeed } from "../controllers/feedController";
@@ -15,6 +15,7 @@ videoRouter.get("/following", authMiddleware, getFollowingFeed)
 videoRouter.get("/generate-upload-url", (req, res) => { res.status(405).json({ error: "Method Not Allowed - Use POST" }); });
 videoRouter.post("/generate-upload-url", authMiddleware, generateUploadUrl);
 videoRouter.post("/video", authMiddleware, createVideo); // save metadata after upload
+videoRouter.post("/import", authMiddleware, importVideo); // import an embed as a DRAFT
 // Internal batch resolution for other services holding soft videoId refs.
 videoRouter.post("/batch", getVideosBatch);
 
@@ -26,6 +27,8 @@ videoRouter.get("/:videoId/comments",getCommentsByVideoId)
 
 videoRouter.post("/:videoId/view",registerView) // register a view (deduped, auth-optional)
 videoRouter.post("/:videoId/comments",authMiddleware,addNewComment) //add new comment
+videoRouter.post("/:videoId/publish",authMiddleware,publishVideo) // DRAFT -> PUBLIC (wizard final step)
+videoRouter.patch("/:videoId",authMiddleware,updateVideoMetadata) // edit draft/video metadata
 videoRouter.put("/:videoId/likes",authMiddleware,updateLikes)
 videoRouter.delete("/:videoId",authMiddleware,deleteVideo)
 

@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(clerkMiddleware())
 app.use(cors({
     origin: origin_url, // Replace with your frontend URL
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true, // If you're using cookies or authentication
   }));
 
