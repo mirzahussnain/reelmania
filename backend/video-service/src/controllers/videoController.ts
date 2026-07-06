@@ -36,9 +36,10 @@ export const getVideos = async (req: Request, res: Response) => {
             logger.error({ err: cacheErr }, "Redis cache read error");
         }
 
-        // Explore only ever surfaces publicly visible videos — drafts, private
-        // (PRO) and unlisted videos must never leak into the public grid.
-        let whereClause: any = { visibility: "PUBLIC" };
+        // Explore only ever surfaces published videos — PUBLIC and fully
+        // processed. Excludes drafts/private/unlisted (visibility) and
+        // still-processing/failed uploads (processing_status). See PUBLISHED_FILTER.
+        let whereClause: any = { visibility: "PUBLIC", processing_status: "READY" };
 
         if (q) {
             if (type === "hashtag") {

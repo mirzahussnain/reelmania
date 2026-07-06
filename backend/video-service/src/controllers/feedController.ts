@@ -10,6 +10,17 @@ import { interleaveByCreator } from "../utils/interleaveByCreator";
 const TRENDING_KEY = "trending:videoIds";
 const TRENDING_TTL = 300; // 5 minutes
 
+// The filter every public discovery surface (explore, trending, For You,
+// Following) must apply: only PUBLIC videos that have finished processing.
+// This excludes DRAFT/UNLISTED/PRIVATE (visibility) AND still-processing or
+// broken uploads — UPLOADED/PROCESSING/FAILED (processing_status). A native
+// upload only becomes discoverable once the media worker flips it to READY;
+// embeds are READY on import. Keep in sync with videoController's explore query.
+export const PUBLISHED_FILTER = {
+    visibility: "PUBLIC" as const,
+    processing_status: "READY" as const,
+};
+
 /**
  * Trending is global, so compute it once and share it across all users via a
  * short-lived Redis list instead of running an (indexed) likeCount scan on
@@ -24,7 +35,7 @@ const getTrendingVideoIds = async (redisClient: any): Promise<string[]> => {
     }
 
     const trending = await prisma.videos.findMany({
-        where: { visibility: "PUBLIC" },
+        where: { ...PUBLISHED_FILTER },
         orderBy: { likeCount: "desc" },
         take: 50,
         select: { id: true },
@@ -106,7 +117,7 @@ const generateFeedForUser = async (userId: string, redisClient: any, feedKey: st
 
             const recommended = await prisma.videos.findMany({
                 where: {
-                    visibility: "PUBLIC",
+                    ...PUBLISHED_FILTER,
                     hashtags: { hasSome: topHashtags },
                     id: { notIn: interactedIds }
                 },
@@ -216,7 +227,7 @@ export const getFollowingFeed = async (req: Request, res: Response) => {
 
         const videos = await prisma.videos.findMany({
             where: {
-                visibility: "PUBLIC",
+                ...PUBLISHED_FILTER,
                 uploaded_by: { is: { id: { in: followingIds } } },
             },
             // Composite sort: uploaded_at isn't unique, so id is the tiebreaker.
@@ -286,9 +297,10 @@ export const getForYouFeed = async (req: Request, res: Response) => {
             return;
         }
 
-        // Fetch Metadata
+        // Fetch Metadata. Re-apply the published filter defensively: a video may
+        // have been unpublished or flipped to FAILED after it was queued.
         const videos = await prisma.videos.findMany({
-            where: { id: { in: videoIds } }
+            where: { id: { in: videoIds }, ...PUBLISHED_FILTER }
         });
 
         // Ensure order matches the queue output
