@@ -66,9 +66,14 @@ Shipped on this branch:
 
 ## Known gaps / deferred (intentional)
 
-- **Embed import endpoint + UI** — fields exist; ingest flow unbuilt (Phase B).
-  Native vs. embed lifecycle documented in **ADR 0002**. This is now the only
-  open ingestion path — the native worker landed on `feature/media-pipeline`.
+- **Embed import + publish flow** — **built (manual)** on `feature/media-pipeline`:
+  `POST /import` (URL → provider detect → oEmbed enrich → READY DRAFT), `PATCH
+  /:id` (metadata), `POST /:id/publish` (DRAFT→PUBLIC, category-required +
+  READY-gated), plus a 3-step client wizard (Import → Details → Review). Feeds
+  gate on PUBLIC **+** READY, so drafts/processing/failed never surface.
+  **Still open:** the cron auto-fetch job (connected-channel ingestion) and the
+  asset-listing step (marketplace-service, schema-only). Native vs. embed
+  lifecycle documented in **ADR 0002**.
 - **C-Score scoring job** — schema implemented; nightly worker not built
   (`C_SCORE_CALCULATION.md`).
 - **Velocity trending** — current trending is all-time `likeCount`; velocity

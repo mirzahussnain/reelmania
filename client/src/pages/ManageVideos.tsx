@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { FaPlus } from "react-icons/fa";
+import { FiLink } from "react-icons/fi";
 import VideoCard from "../components/VideoCard";
 import UploadVideoModal from "../pages/UploadVideo";
+import ImportVideoModal from "../pages/ImportVideo";
 import ReactModal from "react-modal";
 import { useFetchUserVideosQuery } from "../utils/store/features/video/videoApi";
 import { useAuth } from "@clerk/clerk-react";
@@ -14,6 +16,7 @@ import { Button } from "../shared/components/ui/Button";
 
 const ManageVideos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const { isSignedIn } = useAuth();
   const user = useAppSelector((state: RootState) => state.user);
   const [userVideos, setUserVideos] = useState<VideoType[]>([]);
@@ -49,13 +52,24 @@ const ManageVideos = () => {
               bg-gradient-to-r from-primary/20 to-primary-container/40 lg:rounded-t-2xl"
           >
             <h2 className="ml-6 mt-2 text-xl">All Your Videos</h2>
-            <Button
-              variant="unstyled"
-              className="rounded-full p-2 bg-primary hover:bg-primary-container text-on-primary mr-3"
-              onClick={openModal}
-            >
-              <FaPlus />
-            </Button>
+            <div className="flex items-center gap-2 mr-3">
+              <Button
+                variant="unstyled"
+                title="Import from YouTube / Vimeo / TikTok"
+                className="rounded-full p-2 bg-surface-container-highest hover:bg-primary/20 text-on-surface border border-hairline/10"
+                onClick={() => setIsImportOpen(true)}
+              >
+                <FiLink />
+              </Button>
+              <Button
+                variant="unstyled"
+                title="Upload a video"
+                className="rounded-full p-2 bg-primary hover:bg-primary-container text-on-primary"
+                onClick={openModal}
+              >
+                <FaPlus />
+              </Button>
+            </div>
           </div>
 
           {userVideos?.length > 0 ? (
@@ -77,6 +91,7 @@ const ManageVideos = () => {
         </div>
       </main>
       <UploadVideoModal isOpen={isModalOpen} onClose={closeModal} />
+      <ImportVideoModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
     </div>
   );
 };
