@@ -1,7 +1,7 @@
 import os from "os";
 import path from "path";
 import { randomUUID } from "crypto";
-import { mkdtemp, rm } from "fs/promises";
+import { mkdtemp, rm, stat } from "fs/promises";
 import { rabbitMQService, VIDEO_EXCHANGE } from "../utils/rabbitmq";
 import prisma from "../utils/dbconnection.config";
 import { StorageFactory } from "../providers/StorageFactory";
@@ -96,6 +96,8 @@ const processVideo = async (data: { videoId?: string; fileName?: string }) => {
   try {
     await storage.downloadToFile(fileName, srcPath);
 
+    // Trusted byte size straight off the downloaded object (not client-reported).
+    const { size: fileSizeBytes } = await stat(srcPath);
     const meta = await probeMedia(srcPath);
 
     // Thumbnail is best-effort — a probe-able file with no extractable frame
@@ -116,6 +118,7 @@ const processVideo = async (data: { videoId?: string; fileName?: string }) => {
         width: meta.width,
         height: meta.height,
         fps: meta.fps,
+        file_size_bytes: fileSizeBytes,
         ...(thumbnailUrl ? { thumbnail_url: thumbnailUrl } : {}),
         processing_status: "READY",
       },

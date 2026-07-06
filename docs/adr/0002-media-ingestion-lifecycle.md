@@ -93,6 +93,26 @@ same `videos` row.
   quality signal on embeds), or add transcoding/quality variants (extends the
   native worker and the `PROCESSING` state).
 
+### Deployment footprint & the dedicated-worker option
+
+The worker runs **in-process inside the video-service** (started from `app.ts`
+alongside the user-events worker). That keeps deployment to a single image, at
+the cost of putting **ffmpeg in the API image**: `apk add ffmpeg` adds **~184 MB**
+(ffmpeg + codec libs — libavcodec/x264/x265/vpx…; there is no lighter apk split)
+on top of the ~231 MB `node:24-alpine` base. The heavy `ffmpeg-static`/
+`ffprobe-static` npm packages (~400 MB of glibc binaries) are **devDependencies
+only** and `require()`d optionally, so `npm ci --production` skips them — the
+prod image carries only the apk ffmpeg, never the static ones.
+
+**Option (deferred): split the worker into its own image.** If media processing
+needs to scale independently, or the ~184 MB on the API image becomes a
+registry/cold-start cost, extract `mediaProcessingWorker` into a separate
+container (its own `CMD`, same codebase/env). Only that image installs ffmpeg;
+the API image drops back to a lean Node image. The two already communicate only
+through RabbitMQ (`video.uploaded`) + Mongo, so the split needs **no code change
+beyond a second entrypoint** — it's a packaging decision, made when the scaling
+or size pressure is real, not before.
+
 ## Related decision — no `share_count`
 
 Considered and **rejected** (2026-07-05). "Share" today is copy-link +

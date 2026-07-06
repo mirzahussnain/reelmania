@@ -65,6 +65,10 @@ model videos {
   width        Int?
   height       Int?
   fps          Int?       // frames/sec — the "/60" half of the 4K/60 PRO gate
+  // Byte size of the stored native file, stat'd by the worker (trusted, unlike a
+  // client-reported size). Feeds storage accounting + PRO upload-size limits.
+  // Int caps at ~2GB, which is safe for short-form Kines; null for embeds.
+  file_size_bytes Int?
   processing_status ProcessingStatus @default(READY)
   visibility   Visibility @default(PUBLIC)
   commentCount Int        @default(0)

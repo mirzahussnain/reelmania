@@ -73,6 +73,7 @@ export type VideoType={
   width?:number
   height?:number
   fps?:number
+  file_size_bytes?:number
   processing_status?:VideoProcessingStatus
   visibility?:VideoVisibility
 }
