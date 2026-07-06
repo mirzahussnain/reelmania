@@ -78,6 +78,12 @@ Shipped on this branch:
     video counts toward the creator only when it goes public). Client shares
     `WizardBits` (stepper, metadata fields, review) across both modals.
   - Feeds gate on PUBLIC **+** READY, so drafts/processing/failed never surface.
+  - **Drafts** live in a Manage Videos tab (resume via a Details→Review modal, or
+    delete). Abandoned drafts are swept by a **30-day reaper** (`DRAFT_TTL_DAYS`)
+    that also deletes the storage object + emits `video.deleted` — in-process
+    daily (Redis-locked) or via `npm run reap:drafts` (k8s CronJob).
+  - **File-size** is enforced authoritatively in the media worker (oversized →
+    FAILED + object deleted); the client cap is UX-only.
   **Still open:** the cron auto-fetch job (connected-channel ingestion) and the
   asset-listing step (marketplace-service, schema-only). Native vs. embed
   processing lifecycle documented in **ADR 0002**.
