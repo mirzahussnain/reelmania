@@ -368,23 +368,18 @@ export const createVideo = async (req: Request, res: Response) => {
             // object, runs ffprobe + a poster extract, and overwrites these fields
             // with trusted values before flipping to READY (or FAILED).
             processing_status: "UPLOADED" as const,
-            visibility: req_data.visibility ?? "PUBLIC",
+            // Native uploads land as a DRAFT — same lifecycle as an embed import:
+            // the creator enriches (category + metadata) and then publishes via the
+            // wizard. Nothing enters feeds until publish flips it to PUBLIC (and the
+            // media worker has flipped it to READY). video.created is emitted at
+            // publish, not here, so drafts don't count toward the creator's total.
+            visibility: "DRAFT" as const,
             // Single controlled-vocab discipline; junk/unknown → undefined.
             category: sanitizeCategory(req_data.category),
             // Never trust client tags — keep only known-vocab slugs.
             software_used: sanitizeSoftware(req_data.software_used),
         };
         const result = await prisma.videos.create({ data: videoData });
-
-        // Notify other services of the new Kine. user-service increments the
-        // uploader's video_count (Creator badge / Top Creator). Fire-and-forget:
-        // a publish failure must not fail the upload the user already succeeded at.
-        rabbitMQService
-            .publish(VIDEO_EXCHANGE, "video.created", {
-                videoId: result.id,
-                uploaderId: result.uploaded_by.id,
-            })
-            .catch((err) => logger.error({ err }, "publish video.created failed"));
 
         // Kick off native media processing (ADR 0002): the ffprobe/thumbnail
         // worker pulls the object off storage and writes trusted duration/

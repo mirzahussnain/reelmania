@@ -66,14 +66,21 @@ Shipped on this branch:
 
 ## Known gaps / deferred (intentional)
 
-- **Embed import + publish flow** — **built (manual)** on `feature/media-pipeline`:
-  `POST /import` (URL → provider detect → oEmbed enrich → READY DRAFT), `PATCH
-  /:id` (metadata), `POST /:id/publish` (DRAFT→PUBLIC, category-required +
-  READY-gated), plus a 3-step client wizard (Import → Details → Review). Feeds
-  gate on PUBLIC **+** READY, so drafts/processing/failed never surface.
+- **Unified DRAFT → enrich → publish flow** — **built (manual)** on
+  `feature/media-pipeline`. BOTH ingestion paths now share one lifecycle and one
+  3-step wizard (Details → Review → Publish); only step 1 differs:
+  - **Native:** upload → `createVideo` makes a DRAFT (`UPLOADED`), media worker
+    reaches READY; the Review step polls and gates Publish on READY.
+  - **Embed:** `POST /import` (URL → provider detect → oEmbed enrich → READY
+    DRAFT).
+  - Shared: `PATCH /:id` (metadata), `POST /:id/publish` (DRAFT→PUBLIC,
+    category-required + READY-gated; emits `video.created` on first publish, so a
+    video counts toward the creator only when it goes public). Client shares
+    `WizardBits` (stepper, metadata fields, review) across both modals.
+  - Feeds gate on PUBLIC **+** READY, so drafts/processing/failed never surface.
   **Still open:** the cron auto-fetch job (connected-channel ingestion) and the
   asset-listing step (marketplace-service, schema-only). Native vs. embed
-  lifecycle documented in **ADR 0002**.
+  processing lifecycle documented in **ADR 0002**.
 - **C-Score scoring job** — schema implemented; nightly worker not built
   (`C_SCORE_CALCULATION.md`).
 - **Velocity trending** — current trending is all-time `likeCount`; velocity
