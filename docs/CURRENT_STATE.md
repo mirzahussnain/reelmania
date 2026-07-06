@@ -66,17 +66,24 @@ Shipped on this branch:
 
 ## Known gaps / deferred (intentional)
 
-- **Unified DRAFT → enrich → publish flow** — **built (manual)** on
-  `feature/media-pipeline`. BOTH ingestion paths now share one lifecycle and one
-  3-step wizard (Details → Review → Publish); only step 1 differs:
-  - **Native:** upload → `createVideo` makes a DRAFT (`UPLOADED`), media worker
-    reaches READY; the Review step polls and gates Publish on READY.
-  - **Embed:** `POST /import` (URL → provider detect → oEmbed enrich → READY
-    DRAFT).
-  - Shared: `PATCH /:id` (metadata), `POST /:id/publish` (DRAFT→PUBLIC,
-    category-required + READY-gated; emits `video.created` on first publish, so a
-    video counts toward the creator only when it goes public). Client shares
-    `WizardBits` (stepper, metadata fields, review) across both modals.
+- **DRAFT → publish flow** — **built (manual)** on `feature/media-pipeline`. Both
+  ingestion paths land a DRAFT and end at an explicit publish, sharing `WizardBits`
+  + the Review step, but ordered per source:
+  - **Native (3 steps, upload deferred to the end):** Select file (local blob,
+    no upload) → Details (title + category required) → Review (feed-style preview:
+    the clip + entered metadata/tags) → **Upload** is the only network action:
+    presign → PUT → `createVideo` persists the metadata **PUBLIC** (`UPLOADED`).
+    Nothing hits storage until the final button, so Back is free and abandoning
+    leaves nothing behind — **no native drafts**. The worker fills the DERIVED
+    fields (duration/dims/fps/thumbnail/size); feeds require READY, so a PUBLIC
+    video simply isn't discoverable until processed. `video.created` is emitted at
+    create (for PUBLIC), counting it toward the creator.
+  - **Embed (3 steps):** `POST /import` (URL → provider detect → oEmbed enrich →
+    READY DRAFT — the create must come first to learn the video) → Details (`PATCH`
+    adds category etc.) → Review → `POST /:id/publish` (DRAFT→PUBLIC,
+    category-required; emits `video.created` on publish).
+  - `PATCH /:id` backs embed enrich + editing an existing draft. Drafts (embeds
+    or unpublished) live in the Manage Videos Drafts tab.
   - Feeds gate on PUBLIC **+** READY, so drafts/processing/failed never surface.
   - **Drafts** live in a Manage Videos tab (resume via a Details→Review modal, or
     delete). Abandoned drafts are swept by a **30-day reaper** (`DRAFT_TTL_DAYS`)

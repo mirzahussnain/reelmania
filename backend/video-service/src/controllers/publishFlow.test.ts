@@ -21,8 +21,11 @@ vi.mock("../utils/embedProviders", async (importActual) => {
   const actual = await importActual<typeof import("../utils/embedProviders")>();
   return { ...actual, fetchEmbedMeta: fetchMetaMock };
 });
+vi.mock("../providers/StorageFactory", () => ({
+  StorageFactory: { getProvider: () => ({ getPublicUrl: (n: string) => `http://storage/${n}` }) },
+}));
 
-import { publishVideo, importVideo, updateVideoMetadata } from "./videoController";
+import { publishVideo, importVideo, updateVideoMetadata, createVideo } from "./videoController";
 
 const OID = "a".repeat(24);
 const mockRes = () => {
@@ -122,6 +125,46 @@ describe("importVideo", () => {
     expect(data.visibility).toBe("DRAFT");
     expect(data.processing_status).toBe("READY");
     expect(data.title).toBe("Cool clip");
+  });
+});
+
+describe("createVideo (native final commit)", () => {
+  const baseMeta = {
+    title: "My Kine",
+    uploaded_by: { id: "u1", username: "alice" },
+    uploaded_at: new Date(),
+  };
+
+  it("400s when going PUBLIC without a category", async () => {
+    const res = mockRes();
+    await createVideo(
+      { body: { metadata: { ...baseMeta, visibility: "PUBLIC" }, fileName: "f.mp4" } } as unknown as Request,
+      res
+    );
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(prismaMock.videos.create).not.toHaveBeenCalled();
+  });
+
+  it("persists metadata public and emits video.uploaded + video.created", async () => {
+    prismaMock.videos.create.mockImplementation(({ data }: any) => ({ id: OID, uploaded_by: { id: "u1" }, ...data }));
+    const res = mockRes();
+    await createVideo(
+      {
+        body: {
+          metadata: { ...baseMeta, visibility: "PUBLIC", category: "vfx_compositing", hashtags: ["a"] },
+          fileName: "f.mp4",
+        },
+      } as unknown as Request,
+      res
+    );
+
+    const data = prismaMock.videos.create.mock.calls[0][0].data;
+    expect(data.visibility).toBe("PUBLIC");
+    expect(data.category).toBe("vfx_compositing");
+    expect(data.processing_status).toBe("UPLOADED");
+    const events = publishMock.mock.calls.map((c) => c[1]);
+    expect(events).toContain("video.uploaded");
+    expect(events).toContain("video.created");
   });
 });
 

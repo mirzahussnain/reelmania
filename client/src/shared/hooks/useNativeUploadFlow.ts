@@ -3,37 +3,33 @@ import { toast } from "react-toastify";
 import {
   useGenerateUploadUrlMutation,
   useUploadVideoMutation,
-  useUpdateVideoMetadataMutation,
-  usePublishVideoMutation,
-  useFetchVideoByIdQuery,
 } from "../../utils/store/features/video/videoApi";
 import { useCurrentUser } from "./useCurrentUser";
-import { probeMediaMeta } from "../utils/probeMedia";
 import { sanitizeCategory } from "../constants/categoryVocab";
 import { sanitizeSoftware } from "../constants/softwareVocab";
 import { sanitizeHashtags } from "../utils/hashtags";
-import type { VideoType } from "../../types";
 
-// NATIVE upload wizard — the SAME lifecycle as the embed import flow
-// (useEmbedPublishFlow), just with a different Step 1:
-//   Step 1 UPLOAD    presign -> PUT to storage -> createVideo => READY-pending DRAFT
-//   Step 2 DETAILS   edit metadata; category REQUIRED to continue (PATCH)
-//   Step 3 REVIEW    wait for the media worker to reach READY, then publish
-// The adjustment vs. embed: a native file must finish processing before it can
-// go public, so Step 3 polls the row and gates Publish on processing_status.
+// NATIVE upload wizard — nothing is persisted until the FINAL step:
+//   Step 1 SELECT    pick a file from disk (local blob preview only, no upload)
+//   Step 2 DETAILS   fill metadata (title + category required to continue)
+//   Step 3 REVIEW    feed-style preview of the clip + entered metadata; the
+//                    "Upload" button is the ONLY thing that touches the network:
+//                    presign -> PUT to storage -> createVideo (persists metadata,
+//                    visibility PUBLIC). The media worker then fills the derived
+//                    fields and flips UPLOADED -> READY; feeds require READY, so
+//                    it goes live once processed.
+// Because upload is deferred, Back is free and abandoning the wizard leaves
+// nothing behind (no storage object, no row).
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
 export const useNativeUploadFlow = (onDone?: () => void) => {
   const { user, token } = useCurrentUser();
   const [generateUploadUrl] = useGenerateUploadUrlMutation();
   const [createVideo, { isLoading: isUploading }] = useUploadVideoMutation();
-  const [updateMeta, { isLoading: isSaving }] = useUpdateVideoMetadataMutation();
-  const [publishVideo, { isLoading: isPublishing }] = usePublishVideoMutation();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [file, setFile] = useState<File | null>(null);
   const [fileURL, setFileURL] = useState<string | null>(null);
-  const [draft, setDraft] = useState<VideoType | null>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -41,22 +37,11 @@ export const useNativeUploadFlow = (onDone?: () => void) => {
   const [category, setCategory] = useState("");
   const [softwareUsed, setSoftwareUsed] = useState<string[]>([]);
 
-  // Poll the draft's processing status only while on the Review step and not yet
-  // READY — the media worker flips UPLOADED -> READY out of band.
-  const { data: polled } = useFetchVideoByIdQuery(draft?.id as string, {
-    skip: !draft?.id || step !== 3,
-    pollingInterval: step === 3 ? 2500 : 0,
-  });
-  const status = polled?.data?.processing_status ?? draft?.processing_status;
-  const isReady = status === "READY";
-  const isFailed = status === "FAILED";
-
   const reset = () => {
     setStep(1);
     setFile(null);
     if (fileURL) URL.revokeObjectURL(fileURL);
     setFileURL(null);
-    setDraft(null);
     setTitle(""); setDescription(""); setHashtags([]); setCategory(""); setSoftwareUsed([]);
   };
 
@@ -70,10 +55,25 @@ export const useNativeUploadFlow = (onDone?: () => void) => {
     setFile(selected);
     if (fileURL) URL.revokeObjectURL(fileURL);
     setFileURL(URL.createObjectURL(selected));
+    if (!title.trim()) setTitle(selected.name.replace(/\.[^.]+$/, ""));
   };
 
-  // Step 1 -> 2: upload the bytes, then create a DRAFT with a filename title the
-  // creator refines in Step 2. Media metadata is provisional (server re-probes).
+  // Step 1 -> 2: purely local, no network.
+  const goToDetails = () => {
+    if (!file) { toast.error("Select a video first."); return; }
+    setStep(2);
+  };
+
+  // Step 2 -> 3: purely local, no network. Enforce publish requirements early so
+  // the Review step only ever shows a publishable clip.
+  const goToReview = () => {
+    if (!title.trim()) { toast.error("Title is required."); return; }
+    if (!sanitizeCategory(category)) { toast.error("Pick a category to continue."); return; }
+    setStep(3);
+  };
+
+  // Step 3 — the ONLY network action: upload the bytes, then persist the row with
+  // the creator's metadata, public. The worker fills the derived fields after.
   const handleUpload = async () => {
     try {
       if (!token || !user?.id || !user?.username) throw new Error("You must be signed in.");
@@ -89,77 +89,39 @@ export const useNativeUploadFlow = (onDone?: () => void) => {
       });
       if (!put.ok) throw new Error("Storage upload failed.");
 
-      const probe = await probeMediaMeta(file);
-      const defaultTitle = file.name.replace(/\.[^.]+$/, "");
-      const { data: created } = await createVideo({
+      await createVideo({
         metadata: {
-          title: defaultTitle,
-          hashtags: [],
-          uploaded_by: { id: user.id, username: user.username, avatar_url: user.avatar_url },
-          uploaded_at: new Date(),
-          ...probe,
-        },
-        fileName: signed.fileName,
-        token,
-      }).unwrap();
-
-      setDraft(created);
-      setTitle(created.title ?? defaultTitle);
-      setStep(2);
-    } catch (err) {
-      toast.error(messageFrom(err, "Upload failed."));
-    }
-  };
-
-  const handleSaveMetadata = async () => {
-    try {
-      if (!draft || !token) throw new Error("Nothing to save.");
-      if (!title.trim()) throw new Error("Title is required.");
-      if (!sanitizeCategory(category)) throw new Error("Pick a category to continue.");
-
-      const { data: updated } = await updateMeta({
-        videoId: draft.id,
-        patch: {
           title: title.trim(),
           description: description.trim() || undefined,
           hashtags: sanitizeHashtags(hashtags),
           category: sanitizeCategory(category),
           software_used: sanitizeSoftware(softwareUsed),
+          visibility: "PUBLIC",
+          uploaded_by: { id: user.id, username: user.username, avatar_url: user.avatar_url },
+          uploaded_at: new Date(),
         },
+        fileName: signed.fileName,
         token,
       }).unwrap();
 
-      setDraft(updated);
-      setStep(3);
-    } catch (err) {
-      toast.error(messageFrom(err, "Could not save."));
-    }
-  };
-
-  const handlePublish = async () => {
-    try {
-      if (!draft || !token) throw new Error("Nothing to publish.");
-      if (!isReady) throw new Error("Still processing — hang on a moment.");
-      await publishVideo({ videoId: draft.id, token }).unwrap();
-      toast.success("Published!");
+      toast.success("Uploaded! It'll go live once processing finishes.");
       reset();
       onDone?.();
     } catch (err) {
-      toast.error(messageFrom(err, "Publish failed."));
+      toast.error(messageFrom(err, "Upload failed."));
     }
   };
 
   return {
     step, setStep,
     file, fileURL, handleFileChange,
-    draft, status, isReady, isFailed,
     title, setTitle,
     description, setDescription,
     hashtags, setHashtags,
     category, setCategory,
     softwareUsed, setSoftwareUsed,
-    isUploading, isSaving, isPublishing,
-    handleUpload, handleSaveMetadata, handlePublish, reset,
+    isUploading,
+    goToDetails, goToReview, handleUpload, reset,
   };
 };
 

@@ -7,12 +7,12 @@ import {
   Stepper,
   PrimaryBtn,
   MetadataFields,
-  ReviewSummary,
+  ReviewPreview,
 } from "../shared/components/wizard/WizardBits";
 
 type Props = { isOpen: boolean; onClose: () => void };
 
-const STEPS = ["Upload", "Details", "Review"] as const;
+const STEPS = ["Select", "Details", "Review"] as const;
 
 const UploadVideoModal = ({ isOpen, onClose }: Props) => {
   const f = useNativeUploadFlow(onClose);
@@ -45,18 +45,17 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
       overlayClassName="fixed inset-0 bg-scrim/60 backdrop-blur-sm z-50"
     >
       <div className="w-full h-full bg-surface-container/90 backdrop-blur-xl border border-hairline/10 lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-        {/* Header + stepper */}
         <div className="bg-surface-container-highest/80 border-b border-hairline/5 py-4 px-6 shrink-0">
           <h2 className="text-center text-on-surface font-semibold text-lg mb-3">Upload a Video</h2>
           <Stepper steps={STEPS} current={f.step} />
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {/* STEP 1 — Upload */}
+          {/* STEP 1 — Select a file from disk (local preview only, no upload yet) */}
           {f.step === 1 && (
             <div
               className={cn(
-                "mx-auto h-[45vh] aspect-[9/16] flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all cursor-pointer group",
+                "mx-auto h-[52vh] aspect-[9/16] flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all cursor-pointer group",
                 f.fileURL ? "border-transparent" : "border-primary/30 hover:border-primary hover:bg-primary/5"
               )}
               onClick={!f.fileURL ? triggerFileInput : undefined}
@@ -64,7 +63,7 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
               <input type="file" id="fileInput" accept="video/*" onChange={f.handleFileChange} className="hidden" />
               {f.fileURL ? (
                 <div className="w-full h-full relative rounded-xl overflow-hidden glow-primary group">
-                  <video className="w-full h-full object-cover" src={f.fileURL} autoPlay loop muted />
+                  <video className="w-full h-full object-cover" src={f.fileURL} autoPlay loop muted playsInline />
                   <Button
                     variant="unstyled"
                     className="absolute top-2 right-2 p-2 bg-scrim/50 hover:bg-primary/80 text-on-media rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all"
@@ -87,49 +86,39 @@ const UploadVideoModal = ({ isOpen, onClose }: Props) => {
             </div>
           )}
 
-          {/* STEP 2 — Details */}
-          {f.step === 2 && <MetadataFields values={values} setters={setters} previewUrl={f.fileURL ?? undefined} />}
+          {/* STEP 2 — Details (still no upload) */}
+          {f.step === 2 && <MetadataFields values={values} setters={setters} />}
 
-          {/* STEP 3 — Review + processing gate */}
+          {/* STEP 3 — Feed-style review; Upload is the only network action */}
           {f.step === 3 && (
-            <ReviewSummary
+            <ReviewPreview
               values={values}
-              previewUrl={f.fileURL ?? undefined}
-              note={
-                f.isFailed
-                  ? "Processing failed — this file couldn't be read. Try re-uploading."
-                  : f.isReady
-                    ? "Ready. Publishing makes this public and eligible for feeds."
-                    : "Processing your video… Publish unlocks once it's ready."
-              }
+              videoUrl={f.fileURL ?? undefined}
+              note="This is how your Kine will look. Uploading publishes it — it goes live once processing finishes."
             />
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex justify-between gap-3 p-6 border-t border-hairline/5 shrink-0">
           <Button
             variant="unstyled"
             type="button"
             onClick={f.step === 1 ? handleClose : () => f.setStep((f.step - 1) as 1 | 2)}
             className="px-6 py-2.5 rounded-full text-on-surface-variant font-medium hover:bg-hairline/5 transition-colors"
+            disabled={f.isUploading}
           >
             {f.step === 1 ? "Cancel" : "Back"}
           </Button>
 
           {f.step === 1 && (
-            <PrimaryBtn onClick={f.handleUpload} disabled={f.isUploading || !f.file}>
-              {f.isUploading ? "Uploading…" : "Upload"}
-            </PrimaryBtn>
+            <PrimaryBtn onClick={f.goToDetails} disabled={!f.file}>Continue</PrimaryBtn>
           )}
           {f.step === 2 && (
-            <PrimaryBtn onClick={f.handleSaveMetadata} disabled={f.isSaving || !f.title.trim() || !f.category}>
-              {f.isSaving ? "Saving…" : "Continue"}
-            </PrimaryBtn>
+            <PrimaryBtn onClick={f.goToReview} disabled={!f.title.trim() || !f.category}>Continue</PrimaryBtn>
           )}
           {f.step === 3 && (
-            <PrimaryBtn onClick={f.handlePublish} disabled={f.isPublishing || !f.isReady}>
-              {f.isPublishing ? "Publishing…" : f.isReady ? "Publish" : "Processing…"}
+            <PrimaryBtn onClick={f.handleUpload} disabled={f.isUploading}>
+              {f.isUploading ? "Uploading…" : "Upload"}
             </PrimaryBtn>
           )}
         </div>

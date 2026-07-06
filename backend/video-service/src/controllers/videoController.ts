@@ -346,6 +346,21 @@ export const createVideo = async (req: Request, res: Response) => {
             software_used?: string[];
         } = metadata;
 
+        // The native wizard reviews BEFORE uploading, so createVideo is the final
+        // commit (not a bare draft). It stores the creator's metadata directly and
+        // targets the chosen visibility (default PUBLIC). The row is still UPLOADED
+        // until the worker reaches READY, and feeds require READY, so a PUBLIC video
+        // simply isn't discoverable until processed — no separate publish step.
+        const visibility = req_data.visibility ?? "PUBLIC";
+        const category = sanitizeCategory(req_data.category);
+
+        // Category is required to go public (same rule the publish endpoint applies
+        // to embeds). Drafts/unlisted/private may omit it.
+        if (visibility === "PUBLIC" && !category) {
+            fail(res, 400, "A category is required to publish");
+            return;
+        }
+
         const videoData = {
             title: req_data.title,
             description: req_data.description,
@@ -357,25 +372,11 @@ export const createVideo = async (req: Request, res: Response) => {
             video_url: publicUrl,
             // NATIVE upload path — embed sources come in through a separate flow.
             source_type: "NATIVE" as const,
-            thumbnail_url: req_data.thumbnail_url,
-            duration: req_data.duration,
-            width: req_data.width,
-            height: req_data.height,
-            fps: req_data.fps,
-            // Client-probed media is stored ONLY as a provisional value for instant
-            // UX — it is NOT trusted (spoofable to bypass PRO 4K/60 gating). The row
-            // starts UPLOADED; the media-processing worker (ADR 0002) pulls the
-            // object, runs ffprobe + a poster extract, and overwrites these fields
-            // with trusted values before flipping to READY (or FAILED).
+            // The worker (ADR 0002) fills the DERIVED fields; nothing trusted from
+            // the client here (they'd be spoofable to bypass PRO 4K/60 gating).
             processing_status: "UPLOADED" as const,
-            // Native uploads land as a DRAFT — same lifecycle as an embed import:
-            // the creator enriches (category + metadata) and then publishes via the
-            // wizard. Nothing enters feeds until publish flips it to PUBLIC (and the
-            // media worker has flipped it to READY). video.created is emitted at
-            // publish, not here, so drafts don't count toward the creator's total.
-            visibility: "DRAFT" as const,
-            // Single controlled-vocab discipline; junk/unknown → undefined.
-            category: sanitizeCategory(req_data.category),
+            visibility,
+            category,
             // Never trust client tags — keep only known-vocab slugs.
             software_used: sanitizeSoftware(req_data.software_used),
         };
@@ -383,15 +384,25 @@ export const createVideo = async (req: Request, res: Response) => {
 
         // Kick off native media processing (ADR 0002): the ffprobe/thumbnail
         // worker pulls the object off storage and writes trusted duration/
-        // width/height/fps + poster, then flips UPLOADED → READY. Fire-and-forget
-        // — a publish failure leaves the Kine UPLOADED (retryable), it doesn't
-        // fail the upload the user already completed.
+        // width/height/fps + poster, then flips UPLOADED → READY. Fire-and-forget.
         rabbitMQService
             .publish(VIDEO_EXCHANGE, "video.uploaded", {
                 videoId: result.id,
                 fileName,
             })
             .catch((err) => logger.error({ err }, "publish video.uploaded failed"));
+
+        // A native upload is a commit-to-publish, so count it toward the creator
+        // now (embeds emit this at their explicit publish instead). Only when it's
+        // actually going public.
+        if (visibility === "PUBLIC") {
+            rabbitMQService
+                .publish(VIDEO_EXCHANGE, "video.created", {
+                    videoId: result.id,
+                    uploaderId: result.uploaded_by.id,
+                })
+                .catch((err) => logger.error({ err }, "publish video.created failed"));
+        }
 
         ok(res, result, undefined, "Video Created Successfully.");
         return;

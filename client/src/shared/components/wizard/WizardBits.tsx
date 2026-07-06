@@ -143,6 +143,55 @@ export const MetadataFields = ({
   </div>
 );
 
+// Feed-style review: the actual clip in a 9:16 player with the entered metadata
+// overlaid, mirroring how a Kine looks in the feed (VideoInfoOverlay). Uses the
+// local blob for native; a poster image for embeds (no local bytes).
+export const ReviewPreview = ({
+  values, videoUrl, posterUrl, note,
+}: { values: MetadataValues; videoUrl?: string; posterUrl?: string; note?: string }) => (
+  <div className="flex flex-col items-center gap-3">
+    <div className="relative mx-auto h-[52vh] aspect-[9/16] rounded-xl overflow-hidden border border-hairline/10 bg-scrim/60">
+      {videoUrl ? (
+        <video src={videoUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+      ) : posterUrl ? (
+        <img src={posterUrl} alt="" className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-3xl text-on-media/60">🎬</div>
+      )}
+
+      {/* Bottom scrim + overlay, matching the feed's VideoInfoOverlay. */}
+      <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-scrim/90 via-scrim/40 to-transparent">
+        {values.category && (
+          <span className="inline-block mb-2 bg-on-media/15 border border-on-media/20 text-on-media font-semibold text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full">
+            {CATEGORY_LABELS[values.category] ?? values.category}
+          </span>
+        )}
+        <h3 className="text-on-media font-semibold text-sm line-clamp-1 drop-shadow-md">{values.title || "Untitled"}</h3>
+        {values.description && (
+          <p className="text-on-media-dim text-xs line-clamp-2 mt-1 drop-shadow-md">{values.description}</p>
+        )}
+        {values.softwareUsed.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {values.softwareUsed.map((s) => (
+              <span key={s} className="bg-primary/20 border border-primary/30 text-primary text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                {SOFTWARE_LABELS[s] ?? s}
+              </span>
+            ))}
+          </div>
+        )}
+        {values.hashtags.filter(Boolean).length > 0 && (
+          <div className="flex flex-wrap gap-x-2 mt-2">
+            {values.hashtags.filter(Boolean).map((h, i) => (
+              <span key={i} className="text-on-media text-xs font-semibold drop-shadow-md">#{h}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+    {note && <p className="text-xs text-on-surface-variant text-center">{note}</p>}
+  </div>
+);
+
 const ReviewRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex flex-col gap-0.5">
     <span className="text-on-surface-variant text-xs font-semibold uppercase tracking-wide">{label}</span>
