@@ -3,8 +3,16 @@ import os from "os";
 import path from "path";
 import { mkdtemp, rm, stat } from "fs/promises";
 import ffmpeg from "fluent-ffmpeg";
-import ffmpegStatic from "ffmpeg-static";
 import { probeMedia, extractThumbnail } from "./mediaProbe";
+
+// ffmpeg-static is a dev-only dependency; skip the whole suite if it (and no
+// system ffmpeg) is available, matching how mediaProbe resolves its binary.
+let ffmpegStatic: string | undefined;
+try {
+  ffmpegStatic = require("ffmpeg-static");
+} catch {
+  ffmpegStatic = undefined;
+}
 
 // Generate a deterministic synthetic clip with ffmpeg's testsrc so the pipeline
 // is exercised end-to-end (ffprobe read + thumbnail extract) without a fixture

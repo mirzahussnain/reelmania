@@ -1,13 +1,26 @@
 import ffmpeg from "fluent-ffmpeg";
-import ffmpegStatic from "ffmpeg-static";
-import ffprobeStatic from "ffprobe-static";
 
-// Resolve the ffmpeg/ffprobe binaries. Prefer an explicit env path (set in the
-// Alpine container to the apk-installed, musl-native /usr/bin binaries), and
-// fall back to the bundled glibc static binaries for local dev — those static
-// binaries do NOT run on Alpine/musl, hence the container override.
-const ffmpegPath = process.env.FFMPEG_PATH || (ffmpegStatic as unknown as string | null);
-const ffprobePath = process.env.FFPROBE_PATH || ffprobeStatic?.path;
+// Resolve the ffmpeg/ffprobe binaries.
+//
+// In production (Alpine) the image installs musl-native ffmpeg via apk and sets
+// FFMPEG_PATH/FFPROBE_PATH — so we use those and never touch the static packages.
+// For local dev those env vars are unset, so we fall back to the bundled
+// ffmpeg-static/ffprobe-static binaries. Those are DEV-ONLY dependencies (~400MB
+// of glibc binaries that can't even run on musl), so the require is optional:
+// prod won't have them installed, and must never crash for their absence.
+const resolveStatic = (mod: string, pick: (m: any) => string | undefined) => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return pick(require(mod));
+  } catch {
+    return undefined;
+  }
+};
+
+const ffmpegPath =
+  process.env.FFMPEG_PATH || resolveStatic("ffmpeg-static", (m) => m?.default ?? m);
+const ffprobePath =
+  process.env.FFPROBE_PATH || resolveStatic("ffprobe-static", (m) => m?.path);
 if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath);
 if (ffprobePath) ffmpeg.setFfprobePath(ffprobePath);
 
