@@ -1,4 +1,4 @@
-# ReelMania 🎬
+# Kinetix 🎬
 
 > A full-stack, production-grade short-form video streaming platform — built with a microservices architecture, real-time WebSocket events, cloud-native infrastructure, and Kubernetes orchestration on Microsoft Azure.
 
